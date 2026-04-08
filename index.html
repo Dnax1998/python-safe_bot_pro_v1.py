@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nebula Studio | Nowoczesny Design</title>
+  <!-- Font Awesome dla ikon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: #0b0c0e;
+      background-image: 
+        linear-gradient(rgba(10, 20, 40, 0.85) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(10, 20, 40, 0.85) 1px, transparent 1px);
+      background-size: 50px 50px;
+      color: #ffffff;
+      line-height: 1.6;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Animowane poświaty w tle */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -20%;
+      width: 140%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 40%, rgba(100, 50, 255, 0.15) 0%, transparent 40%),
+                  radial-gradient(circle at 70% 60%, rgba(0, 200, 255, 0.12) 0%, transparent 45%),
+                  radial-gradient(circle at 40% 80%, rgba(255, 70, 150, 0.1) 0%, transparent 50%);
+      z-index: -2;
+      animation: slowShift 18s infinite alternate ease-in-out;
+    }
+
+    @keyframes slowShift {
+      0% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+      100% { transform: translate(-5%, -3%) scale(1.1); opacity: 1; }
+    }
+
+    /* Efekt ziarna / szumu (opcjonalny, dla klimatu) */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJmIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjc1IiBudW1PY3RhdmVzPSIzIiAvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNmKSIgb3BhY2l0eT0iMC4wMjUiIC8+PC9zdmc+');
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Kontener */
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Nawigacja - szkło */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 0;
+      margin-bottom: 3rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      background: rgba(15, 20, 30, 0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-radius: 0 0 30px 30px;
+      padding: 1rem 2.5rem;
+      margin-top: 0.5rem;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: #e2e8f0;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      font-size: 1.05rem;
+      letter-spacing: 0.3px;
+      padding: 0.5rem 0;
+      border-bottom: 2px solid transparent;
+    }
+
+    .nav-links a:hover {
+      color: white;
+      border-bottom: 2px solid #60a5fa;
+    }
+
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(5px);
+      padding: 0.7rem 1.6rem !important;
+      border-radius: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 600 !important;
+    }
+
+    .nav-btn:hover {
+      background: rgba(96, 165, 250, 0.2);
+      border-color: #60a5fa;
+      border-bottom: 1px solid #60a5fa !important;
+    }
+
+    /* Sekcja Hero */
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+      min-height: 75vh;
+      padding: 2rem 0 4rem;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(96, 165, 250, 0.15);
+      backdrop-filter: blur(5px);
+      padding: 0.4rem 1.2rem;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #93c5fd;
+      border: 1px solid rgba(96, 165, 250, 0.3);
+      margin-bottom: 1.8rem;
+      letter-spacing: 0.5px;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 8vw, 5.2rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.03em;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #c084fc, #60a5fa, #2dd4bf);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      display: inline-block;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: #cbd5e1;
+      max-width: 550px;
+      margin-bottom: 2.5rem;
+      backdrop-filter: blur(2px);
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(145deg, #4f46e5, #3b82f6);
+      color: white;
+      border: none;
+      padding: 1rem 2.4rem;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      box-shadow: 0 8px 25px -5px #3b82f670;
+      transition: all 0.25s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      letter-spacing: 0.3px;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px -5px #1e3a8a;
+      background: linear-gradient(145deg, #6366f1, #2563eb);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: white;
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      padding: 1rem 2.4rem;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.25s ease;
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: #60a5fa;
+      transform: translateY(-3px);
+    }
+
+    /* Wizualizacja w hero (karty 3D) */
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .floating-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      transform: perspective(1200px) rotateY(-8deg) rotateX(5deg);
+      transform-style: preserve-3d;
+      animation: floatCards 7s infinite alternate ease-in-out;
+    }
+
+    @keyframes floatCards {
+      0% { transform: perspective(1200px) rotateY(-8deg) rotateX(5deg) translateY(0); }
+      100% { transform: perspective(1200px) rotateY(-4deg) rotateX(2deg) translateY(-20px); }
+    }
+
+    .glass-card {
+      background: rgba(20, 30, 45, 0.4);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      padding: 1.8rem 1.5rem;
+      width: 160px;
+      height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      box-shadow: 0 30px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255,255,255,0.08);
+      transition: all 0.2s;
+    }
+
+    .glass-card i {
+      font-size: 2.8rem;
+      margin-bottom: 1rem;
+      color: #93c5fd;
+      filter: drop-shadow(0 0 12px #3b82f660);
+    }
+
+    .glass-card span {
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
+
+    .glass-card.highlight {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid #3b82f6;
+    }
+
+    /* Sekcja usług */
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .section-sub {
+      color: #94a3b8;
+      font-size: 1.2rem;
+      margin-bottom: 3.5rem;
+      max-width: 600px;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin: 5rem 0 8rem;
+    }
+
+    .service-card {
+      background: rgba(15, 25, 40, 0.4);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 40px;
+      padding: 2.5rem 2rem;
+      transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+      box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.3);
+    }
+
+    .service-card:hover {
+      transform: translateY(-12px) scale(1.02);
+      background: rgba(30, 45, 70, 0.5);
+      border-color: rgba(96, 165, 250, 0.4);
+      box-shadow: 0 35px 45px -12px #1e3a8a60;
+    }
+
+    .service-icon {
+      font-size: 2.8rem;
+      margin-bottom: 1.8rem;
+      color: #60a5fa;
+    }
+
+    .service-card h3 {
+      font-size: 1.6rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .service-card p {
+      color: #b9c7da;
+      margin-bottom: 1.8rem;
+    }
+
+    .service-link {
+      color: #93c5fd;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: gap 0.2s;
+    }
+
+    .service-link:hover {
+      gap: 14px;
+      color: white;
+    }
+
+    /* Stopka */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 2.5rem 0;
+      margin-top: 2rem;
+      display: flex;
+      justify-content: space-between;
+      color: #94a3b8;
+      backdrop-filter: blur(5px);
+    }
+
+    /* Responsywność */
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+        min-height: auto;
+      }
+      .hero p {
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .cta-group {
+        justify-content: center;
+      }
+      .navbar {
+        padding: 1rem 1.5rem;
+      }
+      .nav-links {
+        gap: 1.5rem;
+      }
+      .floating-cards {
+        transform: perspective(800px) rotateY(0) rotateX(2deg);
+        margin-top: 2rem;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 0 1.2rem;
+      }
+      .navbar {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+      }
+      .floating-cards {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      .glass-card {
+        width: 100%;
+        height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Nawigacja Glass -->
+    <nav class="navbar">
+      <div class="logo">✦ NEBULA</div>
+      <div class="nav-links">
+        <a href="#">Start</a>
+        <a href="#">Usługi</a>
+        <a href="#">Portfolio</a>
+        <a href="#">O nas</a>
+        <a href="#" class="nav-btn">Kontakt</a>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-content">
+        <span class="badge"><i class="fas fa-bolt" style="margin-right: 8px;"></i> Nowa era designu</span>
+        <h1>
+          Tworzymy <br>
+          <span class="gradient-text">cyfrowe doświadczenia</span><br>
+          nowej generacji
+        </h1>
+        <p>
+          Łączymy zaawansowaną technologię z estetyką premium. 
+          Strony, aplikacje i identyfikacje wizualne, które wyróżniają markę.
+        </p>
+        <div class="cta-group">
+          <button class="btn-primary"><i class="fas fa-arrow-right" style="margin-right: 10px;"></i>Rozpocznij projekt</button>
+          <button class="btn-outline"><i class="fas fa-play" style="margin-right: 8px;"></i>Zobacz showreel</button>
+        </div>
+        <div style="margin-top: 3rem; display: flex; gap: 2rem; opacity: 0.7; font-size: 0.9rem;">
+          <span><i class="fas fa-check-circle" style="color: #34d399;"></i> 120+ zrealizowanych projektów</span>
+          <span><i class="fas fa-star" style="color: #fbbf24;"></i> 4.9 / 5.0 ocena klientów</span>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="floating-cards">
+          <div class="glass-card">
+            <i class="fas fa-code"></i>
+            <span>Dev</span>
+          </div>
+          <div class="glass-card highlight">
+            <i class="fas fa-paint-brush"></i>
+            <span>UX/UI</span>
+          </div>
+          <div class="glass-card">
+            <i class="fas fa-mobile-alt"></i>
+            <span>Mobile</span>
+          </div>
+          <div class="glass-card">
+            <i class="fas fa-cloud"></i>
+            <span>Cloud</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sekcja Usługi -->
+    <div style="margin-top: 3rem;">
+      <h2 class="section-title">Co robimy <span class="gradient-text">najlepiej</span></h2>
+      <div class="section-sub">Kompleksowe rozwiązania dopasowane do Twojej wizji.</div>
+    </div>
+
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="service-icon"><i class="fas fa-cube"></i></div>
+        <h3>Web 3.0 & AI</h3>
+        <p>Nowoczesne aplikacje webowe z integracją sztucznej inteligencji i animacjami 3D.</p>
+        <a href="#" class="service-link">Dowiedz się więcej <i class="fas fa-arrow-right"></i></a>
+      </div>
+      <div class="service-card">
+        <div class="service-icon"><i class="fas fa-figma"></i></div>
+        <h3>Product Design</h3>
+        <p>Projektowanie interfejsów z naciskiem na użyteczność i unikalny styl wizualny.</p>
+        <a href="#" class="service-link">Dowiedz się więcej <i class="fas fa-arrow-right"></i></a>
+      </div>
+      <div class="service-card">
+        <div class="service-icon"><i class="fas fa-chart-line"></i></div>
+        <h3>Branding</h3>
+        <p>Identyfikacja wizualna, która buduje rozpoznawalność i zaufanie do marki.</p>
+        <a href="#" class="service-link">Dowiedz się więcej <i class="fas fa-arrow-right"></i></a>
+      </div>
+    </div>
+
+    <!-- Stopka -->
+    <footer>
+      <div>© 2025 Nebula Studio. Wszystkie prawa zastrzeżone.</div>
+      <div style="display: flex; gap: 2rem;">
+        <a href="#" style="color: #94a3b8; text-decoration: none;"><i class="fab fa-twitter"></i></a>
+        <a href="#" style="color: #94a3b8; text-decoration: none;"><i class="fab fa-instagram"></i></a>
+        <a href="#" style="color: #94a3b8; text-decoration: none;"><i class="fab fa-linkedin"></i></a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Mały skrypt dla dodatkowego efektu (opcjonalnie) -->
+  <script>
+    // Efekt parallax dla tła przy ruchu myszy (delikatny)
+    document.addEventListener('mousemove', (e) => {
+      const moveX = (e.clientX - window.innerWidth / 2) * 0.005;
+      const moveY = (e.clientY - window.innerHeight / 2) * 0.005;
+      document.body.style.backgroundPosition = `${moveX}px ${moveY}px`;
+    });
+  </script>
+</body>
+</html>
