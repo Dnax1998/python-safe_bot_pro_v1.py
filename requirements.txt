@@ -1,3 +1,0 @@
-kucoin-python
-pandas
-requests
