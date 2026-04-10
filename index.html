@@ -3,522 +3,480 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nebula Studio | Nowoczesny Design</title>
-  <!-- Font Awesome dla ikon -->
+  <title>Profilaktyka zdrowia psychicznego</title>
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Google Fonts: Lora -->
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
     body {
-      background-color: #0b0c0e;
-      background-image: 
-        linear-gradient(rgba(10, 20, 40, 0.85) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(10, 20, 40, 0.85) 1px, transparent 1px);
-      background-size: 50px 50px;
-      color: #ffffff;
-      line-height: 1.6;
-      min-height: 100vh;
-      position: relative;
-    }
-
-    /* Animowane poświaty w tle */
-    body::before {
-      content: '';
-      position: fixed;
-      top: -50%;
-      left: -20%;
-      width: 140%;
-      height: 200%;
-      background: radial-gradient(circle at 30% 40%, rgba(100, 50, 255, 0.15) 0%, transparent 40%),
-                  radial-gradient(circle at 70% 60%, rgba(0, 200, 255, 0.12) 0%, transparent 45%),
-                  radial-gradient(circle at 40% 80%, rgba(255, 70, 150, 0.1) 0%, transparent 50%);
-      z-index: -2;
-      animation: slowShift 18s infinite alternate ease-in-out;
-    }
-
-    @keyframes slowShift {
-      0% { transform: translate(0, 0) scale(1); opacity: 0.6; }
-      100% { transform: translate(-5%, -3%) scale(1.1); opacity: 1; }
-    }
-
-    /* Efekt ziarna / szumu (opcjonalny, dla klimatu) */
-    body::after {
-      content: '';
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJmIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iLjc1IiBudW1PY3RhdmVzPSIzIiAvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNmKSIgb3BhY2l0eT0iMC4wMjUiIC8+PC9zdmc+');
-      opacity: 0.3;
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    /* Kontener */
-    .container {
-      max-width: 1300px;
-      margin: 0 auto;
-      padding: 0 2rem;
-      position: relative;
-      z-index: 2;
-    }
-
-    /* Nawigacja - szkło */
-    .navbar {
+      font-family: 'Lora', serif;   /* zmieniono na Lora */
+      background: #fafafa;
+      color: #1e1e2f;
+      line-height: 1.5;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem 0;
-      margin-bottom: 3rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(12px);
-      background: rgba(15, 20, 30, 0.3);
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Górna nawigacja */
+    .top-nav {
+      background: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+      padding: 0.8rem 2rem;
       position: sticky;
       top: 0;
-      z-index: 100;
-      border-radius: 0 0 30px 30px;
-      padding: 1rem 2.5rem;
-      margin-top: 0.5rem;
-      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      z-index: 10;
+      border-bottom: 1px solid #eee;
     }
 
-    .logo {
-      font-size: 1.8rem;
+    .nav-container {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .logo-area {
       font-weight: 700;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      text-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
+      font-size: 1.4rem;
+      color: #b81b1b;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-area i {
+      margin-right: 8px;
+      color: #b81b1b;
     }
 
     .nav-links {
       display: flex;
-      gap: 2.5rem;
-      align-items: center;
+      gap: 2.2rem;
+      font-weight: 500;
     }
 
     .nav-links a {
-      color: #e2e8f0;
       text-decoration: none;
-      font-weight: 500;
-      transition: all 0.2s ease;
+      color: #2d2d3a;
       font-size: 1.05rem;
-      letter-spacing: 0.3px;
-      padding: 0.5rem 0;
+      padding: 0.4rem 0;
       border-bottom: 2px solid transparent;
+      transition: 0.2s;
     }
 
-    .nav-links a:hover {
+    .nav-links a:hover,
+    .nav-links a.active {
+      border-bottom-color: #b81b1b;
+      color: #b81b1b;
+    }
+
+    /* Główna zawartość */
+    .main-content {
+      flex: 1;
+      max-width: 1300px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 0 1.5rem;
+    }
+
+    /* Czerwony baner – telefon zaufania */
+    .helpline-banner {
+      background: #b81b1b;
       color: white;
-      border-bottom: 2px solid #60a5fa;
-    }
-
-    .nav-btn {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(5px);
-      padding: 0.7rem 1.6rem !important;
-      border-radius: 40px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      font-weight: 600 !important;
-    }
-
-    .nav-btn:hover {
-      background: rgba(96, 165, 250, 0.2);
-      border-color: #60a5fa;
-      border-bottom: 1px solid #60a5fa !important;
-    }
-
-    /* Sekcja Hero */
-    .hero {
-      display: grid;
-      grid-template-columns: 1.1fr 1fr;
-      gap: 3rem;
-      align-items: center;
-      min-height: 75vh;
-      padding: 2rem 0 4rem;
-    }
-
-    .badge {
-      display: inline-block;
-      background: rgba(96, 165, 250, 0.15);
-      backdrop-filter: blur(5px);
-      padding: 0.4rem 1.2rem;
-      border-radius: 40px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: #93c5fd;
-      border: 1px solid rgba(96, 165, 250, 0.3);
-      margin-bottom: 1.8rem;
-      letter-spacing: 0.5px;
-    }
-
-    .hero h1 {
-      font-size: clamp(3rem, 8vw, 5.2rem);
-      font-weight: 800;
-      line-height: 1.1;
-      margin-bottom: 1.5rem;
-      letter-spacing: -0.03em;
-    }
-
-    .gradient-text {
-      background: linear-gradient(135deg, #c084fc, #60a5fa, #2dd4bf);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      display: inline-block;
-    }
-
-    .hero p {
-      font-size: 1.25rem;
-      color: #cbd5e1;
-      max-width: 550px;
-      margin-bottom: 2.5rem;
-      backdrop-filter: blur(2px);
-    }
-
-    .cta-group {
+      border-radius: 28px;
+      margin: 2.5rem 0 3rem 0;
+      padding: 2.5rem 2.8rem;
+      box-shadow: 0 12px 24px -8px rgba(184, 27, 27, 0.3);
       display: flex;
-      gap: 1.2rem;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .helpline-text {
+      display: flex;
+      align-items: center;
+      gap: 1.8rem;
       flex-wrap: wrap;
     }
 
-    .btn-primary {
-      background: linear-gradient(145deg, #4f46e5, #3b82f6);
-      color: white;
-      border: none;
-      padding: 1rem 2.4rem;
+    .helpline-icon {
+      font-size: 3.8rem;
+      color: #ffd7d7;
+    }
+
+    .helpline-call h2 {
+      font-size: 2.1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.3rem;
+    }
+
+    .helpline-call p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      font-weight: 400;
+    }
+
+    .helpline-number {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(4px);
+      padding: 1.2rem 2.5rem;
       border-radius: 60px;
-      font-weight: 600;
-      font-size: 1.1rem;
+      font-size: 2.6rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+      transition: 0.2s;
       cursor: pointer;
-      box-shadow: 0 8px 25px -5px #3b82f670;
-      transition: all 0.25s ease;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      letter-spacing: 0.3px;
     }
 
-    .btn-primary:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 30px -5px #1e3a8a;
-      background: linear-gradient(145deg, #6366f1, #2563eb);
+    .helpline-number i {
+      margin-right: 12px;
+      font-size: 2.2rem;
+      color: #ffecb3;
     }
 
-    .btn-outline {
-      background: transparent;
-      color: white;
-      border: 1.5px solid rgba(255, 255, 255, 0.25);
-      padding: 1rem 2.4rem;
-      border-radius: 60px;
-      font-weight: 600;
-      font-size: 1.1rem;
-      cursor: pointer;
-      backdrop-filter: blur(10px);
-      transition: all 0.25s ease;
+    .helpline-number:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.01);
     }
 
-    .btn-outline:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: #60a5fa;
-      transform: translateY(-3px);
+    /* Sekcja kart – TRZY KWADRATY */
+    .cards-section {
+      margin: 2rem 0 4rem 0;
     }
 
-    /* Wizualizacja w hero (karty 3D) */
-    .hero-visual {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-    }
-
-    .floating-cards {
+    .cards-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.5rem;
-      transform: perspective(1200px) rotateY(-8deg) rotateX(5deg);
-      transform-style: preserve-3d;
-      animation: floatCards 7s infinite alternate ease-in-out;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
     }
 
-    @keyframes floatCards {
-      0% { transform: perspective(1200px) rotateY(-8deg) rotateX(5deg) translateY(0); }
-      100% { transform: perspective(1200px) rotateY(-4deg) rotateX(2deg) translateY(-20px); }
-    }
-
-    .glass-card {
-      background: rgba(20, 30, 45, 0.4);
-      backdrop-filter: blur(15px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Karty – dopasowane do treści, bez przewijania */
+    .info-card {
+      background: white;
       border-radius: 28px;
-      padding: 1.8rem 1.5rem;
-      width: 160px;
-      height: 180px;
+      padding: 2.2rem 1.8rem 2rem 1.8rem;
+      box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.08);
+      transition: all 0.25s ease;
+      border: 1px solid #f0f0f5;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      box-shadow: 0 30px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255,255,255,0.08);
-      transition: all 0.2s;
+      height: auto;
+      min-height: 360px;
     }
 
-    .glass-card i {
-      font-size: 2.8rem;
-      margin-bottom: 1rem;
-      color: #93c5fd;
-      filter: drop-shadow(0 0 12px #3b82f660);
+    .info-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 24px 36px -12px rgba(184, 27, 27, 0.12);
+      border-color: #ffe1e1;
     }
 
-    .glass-card span {
-      font-weight: 600;
-      font-size: 1.2rem;
+    .card-icon {
+      font-size: 2.6rem;
+      color: #b81b1b;
+      margin-bottom: 1.4rem;
     }
 
-    .glass-card.highlight {
-      background: rgba(59, 130, 246, 0.15);
-      border: 1px solid #3b82f6;
-    }
-
-    /* Sekcja usług */
-    .section-title {
-      font-size: 2.8rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      letter-spacing: -0.02em;
-    }
-
-    .section-sub {
-      color: #94a3b8;
-      font-size: 1.2rem;
-      margin-bottom: 3.5rem;
-      max-width: 600px;
-    }
-
-    .services-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem;
-      margin: 5rem 0 8rem;
-    }
-
-    .service-card {
-      background: rgba(15, 25, 40, 0.4);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 40px;
-      padding: 2.5rem 2rem;
-      transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
-      box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.3);
-    }
-
-    .service-card:hover {
-      transform: translateY(-12px) scale(1.02);
-      background: rgba(30, 45, 70, 0.5);
-      border-color: rgba(96, 165, 250, 0.4);
-      box-shadow: 0 35px 45px -12px #1e3a8a60;
-    }
-
-    .service-icon {
-      font-size: 2.8rem;
-      margin-bottom: 1.8rem;
-      color: #60a5fa;
-    }
-
-    .service-card h3 {
-      font-size: 1.6rem;
-      margin-bottom: 1rem;
-      font-weight: 600;
-    }
-
-    .service-card p {
-      color: #b9c7da;
-      margin-bottom: 1.8rem;
-    }
-
-    .service-link {
-      color: #93c5fd;
+    /* Klikalny tytuł karty */
+    .card-title-link {
       text-decoration: none;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: gap 0.2s;
+      color: #1e1e2f;
+      display: block;
+      margin-bottom: 1.2rem;
     }
 
-    .service-link:hover {
-      gap: 14px;
-      color: white;
+    .card-title-link h3 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      line-height: 1.3;
+      border-left: 5px solid #b81b1b;
+      padding-left: 1rem;
+      transition: color 0.15s;
+      margin: 0;
+      word-break: break-word;
+    }
+
+    .card-title-link:hover h3 {
+      color: #b81b1b;
+    }
+
+    .card-content {
+      color: #3a3a4e;
+      font-size: 0.98rem;
+      flex: 1;
+    }
+
+    /* LISTY – tekst rozciąga się na całą szerokość */
+    .card-content ul {
+      list-style: none;
+      margin-top: 0.6rem;
+    }
+
+    .card-content li {
+      margin-bottom: 0.65rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      word-break: break-word;
+    }
+
+    .card-content li i {
+      color: #b81b1b;
+      font-size: 1rem;
+      margin-top: 0.2rem;
+      min-width: 18px;
+      flex-shrink: 0;
+    }
+
+    .list-text {
+      flex: 1;
+      word-break: break-word;
+    }
+
+    .small-note {
+      margin-top: 1.2rem;
+      font-size: 0.9rem;
+      color: #5e5e7a;
+      border-top: 1px dashed #ddd;
+      padding-top: 1rem;
     }
 
     /* Stopka */
-    footer {
-      border-top: 1px solid rgba(255,255,255,0.05);
-      padding: 2.5rem 0;
-      margin-top: 2rem;
-      display: flex;
-      justify-content: space-between;
-      color: #94a3b8;
-      backdrop-filter: blur(5px);
+    .footer {
+      background: white;
+      padding: 1.8rem 2rem;
+      margin-top: 2.5rem;
+      border-top: 1px solid #ececf0;
+      text-align: center;
+      color: #5b5b70;
+      font-size: 0.95rem;
+    }
+
+    .footer a {
+      color: #b81b1b;
+      text-decoration: none;
+      font-weight: 500;
     }
 
     /* Responsywność */
     @media (max-width: 900px) {
-      .hero {
-        grid-template-columns: 1fr;
-        text-align: center;
+      .cards-grid {
+        gap: 1.2rem;
+      }
+
+      .info-card {
+        padding: 1.8rem 1.4rem;
         min-height: auto;
       }
-      .hero p {
-        margin-left: auto;
-        margin-right: auto;
+
+      .helpline-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.8rem;
+        padding: 2rem 2rem;
       }
-      .cta-group {
-        justify-content: center;
+
+      .helpline-number {
+        font-size: 2rem;
+        padding: 1rem 1.8rem;
+        align-self: stretch;
+        text-align: center;
       }
-      .navbar {
-        padding: 1rem 1.5rem;
+
+      .nav-container {
+        flex-direction: column;
+        gap: 0.8rem;
       }
+
       .nav-links {
         gap: 1.5rem;
-      }
-      .floating-cards {
-        transform: perspective(800px) rotateY(0) rotateX(2deg);
-        margin-top: 2rem;
+        flex-wrap: wrap;
+        justify-content: center;
       }
     }
 
-    @media (max-width: 600px) {
-      .container {
-        padding: 0 1.2rem;
-      }
-      .navbar {
-        flex-direction: column;
-        gap: 1rem;
-      }
-      .nav-links {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 1rem;
-      }
-      .floating-cards {
+    @media (max-width: 640px) {
+      .cards-grid {
         grid-template-columns: 1fr;
-        gap: 1rem;
+        gap: 1.5rem;
       }
-      .glass-card {
-        width: 100%;
-        height: auto;
+
+      .helpline-call h2 {
+        font-size: 1.8rem;
       }
+
+      .helpline-number {
+        font-size: 1.8rem;
+      }
+
+      .main-content {
+        padding: 0 1rem;
+      }
+
+      .top-nav {
+        padding: 0.8rem 1rem;
+      }
+    }
+
+    i {
+      margin-right: 0;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Nawigacja Glass -->
-    <nav class="navbar">
-      <div class="logo">✦ NEBULA</div>
-      <div class="nav-links">
-        <a href="#">Start</a>
-        <a href="#">Usługi</a>
-        <a href="#">Portfolio</a>
-        <a href="#">O nas</a>
-        <a href="#" class="nav-btn">Kontakt</a>
-      </div>
-    </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-      <div class="hero-content">
-        <span class="badge"><i class="fas fa-bolt" style="margin-right: 8px;"></i> Nowa era designu</span>
-        <h1>
-          Tworzymy <br>
-          <span class="gradient-text">cyfrowe doświadczenia</span><br>
-          nowej generacji
-        </h1>
-        <p>
-          Łączymy zaawansowaną technologię z estetyką premium. 
-          Strony, aplikacje i identyfikacje wizualne, które wyróżniają markę.
-        </p>
-        <div class="cta-group">
-          <button class="btn-primary"><i class="fas fa-arrow-right" style="margin-right: 10px;"></i>Rozpocznij projekt</button>
-          <button class="btn-outline"><i class="fas fa-play" style="margin-right: 8px;"></i>Zobacz showreel</button>
-        </div>
-        <div style="margin-top: 3rem; display: flex; gap: 2rem; opacity: 0.7; font-size: 0.9rem;">
-          <span><i class="fas fa-check-circle" style="color: #34d399;"></i> 120+ zrealizowanych projektów</span>
-          <span><i class="fas fa-star" style="color: #fbbf24;"></i> 4.9 / 5.0 ocena klientów</span>
-        </div>
-      </div>
-      <div class="hero-visual">
-        <div class="floating-cards">
-          <div class="glass-card">
-            <i class="fas fa-code"></i>
-            <span>Dev</span>
-          </div>
-          <div class="glass-card highlight">
-            <i class="fas fa-paint-brush"></i>
-            <span>UX/UI</span>
-          </div>
-          <div class="glass-card">
-            <i class="fas fa-mobile-alt"></i>
-            <span>Mobile</span>
-          </div>
-          <div class="glass-card">
-            <i class="fas fa-cloud"></i>
-            <span>Cloud</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Sekcja Usługi -->
-    <div style="margin-top: 3rem;">
-      <h2 class="section-title">Co robimy <span class="gradient-text">najlepiej</span></h2>
-      <div class="section-sub">Kompleksowe rozwiązania dopasowane do Twojej wizji.</div>
+<header class="top-nav">
+  <div class="nav-container">
+    <div class="logo-area">
+      <i class="fas fa-brain"></i> Psychika w Równowadze
     </div>
-
-    <div class="services-grid">
-      <div class="service-card">
-        <div class="service-icon"><i class="fas fa-cube"></i></div>
-        <h3>Web 3.0 & AI</h3>
-        <p>Nowoczesne aplikacje webowe z integracją sztucznej inteligencji i animacjami 3D.</p>
-        <a href="#" class="service-link">Dowiedz się więcej <i class="fas fa-arrow-right"></i></a>
-      </div>
-      <div class="service-card">
-        <div class="service-icon"><i class="fas fa-figma"></i></div>
-        <h3>Product Design</h3>
-        <p>Projektowanie interfejsów z naciskiem na użyteczność i unikalny styl wizualny.</p>
-        <a href="#" class="service-link">Dowiedz się więcej <i class="fas fa-arrow-right"></i></a>
-      </div>
-      <div class="service-card">
-        <div class="service-icon"><i class="fas fa-chart-line"></i></div>
-        <h3>Branding</h3>
-        <p>Identyfikacja wizualna, która buduje rozpoznawalność i zaufanie do marki.</p>
-        <a href="#" class="service-link">Dowiedz się więcej <i class="fas fa-arrow-right"></i></a>
-      </div>
+    <div class="nav-links">
+      <a href="#" class="active"><i class="fas fa-home"></i> Strona Główna</a>
+      <a href="#"><i class="fas fa-map-pin"></i> Znajdź Poradnię</a>
+      <a href="#"><i class="fas fa-users"></i> O Nas</a>
+      <a href="#"><i class="fas fa-envelope"></i> Kontakt</a>
     </div>
-
-    <!-- Stopka -->
-    <footer>
-      <div>© 2025 Nebula Studio. Wszystkie prawa zastrzeżone.</div>
-      <div style="display: flex; gap: 2rem;">
-        <a href="#" style="color: #94a3b8; text-decoration: none;"><i class="fab fa-twitter"></i></a>
-        <a href="#" style="color: #94a3b8; text-decoration: none;"><i class="fab fa-instagram"></i></a>
-        <a href="#" style="color: #94a3b8; text-decoration: none;"><i class="fab fa-linkedin"></i></a>
-      </div>
-    </footer>
   </div>
+</header>
 
-  <!-- Mały skrypt dla dodatkowego efektu (opcjonalnie) -->
-  <script>
-    // Efekt parallax dla tła przy ruchu myszy (delikatny)
-    document.addEventListener('mousemove', (e) => {
-      const moveX = (e.clientX - window.innerWidth / 2) * 0.005;
-      const moveY = (e.clientY - window.innerHeight / 2) * 0.005;
-      document.body.style.backgroundPosition = `${moveX}px ${moveY}px`;
+<main class="main-content">
+  
+  <!-- CZERWONY BANER -->
+  <section class="helpline-banner">
+    <div class="helpline-text">
+      <div class="helpline-icon">
+        <i class="fas fa-hand-holding-heart"></i>
+      </div>
+      <div class="helpline-call">
+        <h2>Potrzebujesz rozmowy?</h2>
+        <p>Całodobowy, bezpłatny telefon zaufania</p>
+      </div>
+    </div>
+    <div class="helpline-number">
+      <i class="fas fa-phone-alt"></i> 116 123
+    </div>
+  </section>
+
+  <!-- TRZY KWADRATY -->
+  <section class="cards-section">
+    <div class="cards-grid">
+      
+      <!-- KARTA 1: Higiena -->
+      <div class="info-card">
+        <div class="card-icon">
+          <i class="fas fa-heart-circle-check"></i>
+        </div>
+        <a href="higiena-zdrowia-psychicznego.html" class="card-title-link">
+          <h3>Co to jest higiena zdrowia psychicznego?</h3>
+        </a>
+        <div class="card-content">
+          <p>To zbiór codziennych nawyków, które wzmacniają odporność psychiczną i dobrostan. Obejmuje:</p>
+          <ul>
+            <li><i class="fas fa-check-circle"></i> <span class="list-text"><strong>Regularny sen</strong> i regeneracja – minimum 7–8 godzin snu o stałych porach.</span></li>
+            <li><i class="fas fa-check-circle"></i> <span class="list-text"><strong>Zarządzanie stresem</strong> – techniki oddechowe, mindfulness, relaksacja.</span></li>
+            <li><i class="fas fa-check-circle"></i> <span class="list-text"><strong>Zdrowe granice</strong> w relacjach – umiejętność mówienia „nie” i dbania o własne potrzeby.</span></li>
+            <li><i class="fas fa-check-circle"></i> <span class="list-text"><strong>Aktywność fizyczna</strong> i czas na hobby – ruch poprawia nastrój, pasje dają radość.</span></li>
+          </ul>
+          <div class="small-note">
+            <i class="fas fa-lightbulb" style="color:#b87c1b;"></i> Profilaktyka to najskuteczniejsza forma dbania o psychikę.
+          </div>
+        </div>
+      </div>
+      
+      <!-- KARTA 2 (środkowa) – poradnie, oddziały, instytuty -->
+      <div class="info-card">
+        <div class="card-icon">
+          <i class="fas fa-hospital-user"></i>
+        </div>
+        <a href="gdzie-szukac-pomocy.html" class="card-title-link">
+          <h3>Gdzie szukać pomocy w kryzysie?</h3>
+        </a>
+        <div class="card-content">
+          <p>Profesjonalna pomoc jest dostępna w wielu miejscach. Skorzystaj z:</p>
+          <ul>
+            <li><i class="fas fa-school"></i> <span class="list-text"><strong>Poradnie psychologiczno-pedagogiczne</strong> – wsparcie dla dzieci, młodzieży i rodzin (diagnoza, terapia, konsultacje).</span></li>
+            <li><i class="fas fa-building"></i> <span class="list-text"><strong>Szpitale psychiatryczne</strong> – oddziały dzienne (terapia bez noclegu) oraz całodobowe (w sytuacjach ostrych, wymagających hospitalizacji).</span></li>
+            <li><i class="fas fa-flask"></i> <span class="list-text"><strong>Instytuty zdrowia psychicznego</strong> – specjalistyczne placówki badawczo-lecznicze, np. Instytut Psychiatrii i Neurologii w Warszawie.</span></li>
+          </ul>
+          <div class="small-note">
+            <i class="fas fa-map-location-dot"></i> W wielu miastach działają Centra Zdrowia Psychicznego (CZP) – pomoc bez skierowania.
+          </div>
+        </div>
+      </div>
+      
+      <!-- KARTA 3: Fundacje i Stowarzyszenia -->
+      <div class="info-card">
+        <div class="card-icon">
+          <i class="fas fa-hand-holding-hand"></i>
+        </div>
+        <a href="wsparcie-fundacje.html" class="card-title-link">
+          <h3>Wsparcie w Fundacjach i Stowarzyszeniach</h3>
+        </a>
+        <div class="card-content">
+          <p>Organizacje oferujące bezpłatną pomoc psychologiczną i grupy wsparcia:</p>
+          <ul>
+            <li><i class="fas fa-building"></i> <span class="list-text"><strong>Fundacja Itaka</strong> – pomoc w kryzysie emocjonalnym, telefon zaufania, centrum wsparcia.</span></li>
+            <li><i class="fas fa-building"></i> <span class="list-text"><strong>Fundacja Dajemy Dzieciom Siłę</strong> – pomoc psychologiczna dla dzieci i rodzin, interwencje.</span></li>
+            <li><i class="fas fa-building"></i> <span class="list-text"><strong>Stowarzyszenie „Niebieska Linia”</strong> – przeciwdziałanie przemocy domowej, porady prawne i psychologiczne.</span></li>
+            <li><i class="fas fa-building"></i> <span class="list-text"><strong>Fundacja eFkropka</strong> – wsparcie zdrowia psychicznego dzieci i młodzieży, konsultacje online.</span></li>
+          </ul>
+          <div class="small-note">
+            <i class="fas fa-globe"></i> Wiele z nich prowadzi dyżury online oraz telefony wsparcia – sprawdź ich strony.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <div style="margin: 2rem 0 1rem; padding: 1rem 0.5rem; border-top: 1px solid #eaeaf0; color: #4d4d66; font-size: 0.95rem; display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+    <span><i class="fas fa-shield-heart" style="color:#b81b1b;"></i> Pamiętaj: dbanie o higienę psychiczną to nie luksus – to konieczność.</span>
+    <span><i class="fas fa-clock"></i> Wsparcie dostępne 24/7</span>
+  </div>
+</main>
+
+<footer class="footer">
+  <div>
+    <i class="far fa-copyright"></i> 2026 Profilaktyka Zdrowia Psychicznego – Inicjatywa Społeczna  
+    <span style="margin: 0 12px;">|</span> 
+    <a href="#"><i class="fas fa-shield"></i> Polityka prywatności</a> 
+    <span style="margin: 0 12px;">|</span> 
+    <a href="#"><i class="fas fa-phone"></i> Kontakt: pomoc@psychikawrownowadze.pl</a>
+  </div>
+  <div style="margin-top: 0.8rem; font-size: 0.85rem;">
+    W sytuacji zagrożenia życia dzwoń pod <strong>112</strong> lub udaj się na SOR.
+  </div>
+</footer>
+
+<script>
+  (function() {
+    const navLinks = document.querySelectorAll('.nav-links a');
+    navLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        navLinks.forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+      });
     });
-  </script>
+
+    const phoneDiv = document.querySelector('.helpline-number');
+    if(phoneDiv) {
+      phoneDiv.addEventListener('click', () => {
+        alert('📞 Telefon Zaufania 116 123 – czynny całodobowo. W prawdziwej sytuacji zadzwoń.');
+      });
+    }
+  })();
+</script>
+
 </body>
 </html>
