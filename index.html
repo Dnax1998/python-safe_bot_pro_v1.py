@@ -16,7 +16,7 @@
             --card-green: #6a9c89;
             --card-blue: #5d93b1;
             --card-purple: #8e6e96;
-            --container-width: 1100px; /* Stała szerokość dla banera i kart */
+            --container-width: 1100px; /* Stała szerokość dla spójności */
         }
 
         body {
@@ -62,7 +62,7 @@
 
         .nav-links a:hover, .nav-links a.active { color: var(--header-blue); }
 
-        /* BANER HERO - INTENSYWNY I ZAOKRĄGLONY */
+        /* BANER HERO - CZERWONY PROSTOKĄT */
         .hero-wrapper {
             max-width: var(--container-width);
             margin: 40px auto;
@@ -74,7 +74,7 @@
             padding: 60px 40px;
             color: white;
             text-align: center;
-            border-radius: 20px; /* Mocne zaokrąglenie */
+            border-radius: 20px; /* Zaokrąglone rogi */
             box-shadow: 0 15px 35px rgba(214, 40, 40, 0.25);
             position: relative;
             overflow: hidden;
@@ -84,7 +84,6 @@
             font-size: 42px;
             margin-bottom: 25px;
             font-weight: 700;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
 
         .phones-container {
@@ -100,14 +99,11 @@
             align-items: center;
             gap: 15px;
             font-size: 20px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             padding: 10px 25px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: 0.3s;
         }
-
-        .phone-box:hover { background: rgba(255, 255, 255, 0.2); }
 
         .phone-box strong { font-size: 28px; }
 
@@ -121,26 +117,11 @@
             border-radius: 50px;
             cursor: pointer;
             transition: 0.3s;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
         .hero-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
             background: #f8f9fa;
-        }
-
-        /* DEKORACJA W TLE BANERA */
-        .hero::after {
-            content: '\f479';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            position: absolute;
-            right: -20px;
-            bottom: -20px;
-            font-size: 150px;
-            opacity: 0.07;
-            transform: rotate(-15px);
         }
 
         /* GRID KART */
@@ -178,10 +159,9 @@
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
         }
 
-        .card-body p { font-size: 14px; color: #666; margin-bottom: 20px; }
+        .card-body p { font-size: 14px; color: #666; margin-bottom: 15px; }
 
         .card-img {
             width: 100%;
@@ -189,6 +169,7 @@
             object-fit: cover;
             border-radius: 10px;
             margin-bottom: 20px;
+            margin-top: auto;
         }
 
         .card-btn {
@@ -199,18 +180,18 @@
             color: white;
             font-size: 14px;
             font-weight: 500;
-            transition: 0.3s;
         }
 
         .c-green { background: var(--card-green); }
         .c-blue { background: var(--card-blue); }
         .c-purple { background: var(--card-purple); }
 
-        /* STOPKA / INSTYTUCJE */
+        /* SEKCJA INSTYTUCJI */
         .institutions {
             background: #fff;
             padding: 60px 0;
             text-align: center;
+            border-top: 1px solid #eee;
         }
 
         .inst-grid {
@@ -234,7 +215,15 @@
         .inst-card h4 { margin: 0 0 10px 0; font-size: 16px; color: var(--header-blue); }
         .inst-card p { font-size: 12px; color: #888; margin: 0; }
 
-        @media (max-width: 900px) {
+        footer {
+            background: #222;
+            color: #777;
+            padding: 40px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        @media (max-width: 950px) {
             .cards-section, .inst-grid { grid-template-columns: 1fr; }
             .hero h1 { font-size: 30px; }
         }
@@ -261,14 +250,14 @@
             <div class="phones-container">
                 <div class="phone-box">
                     <i class="fa-solid fa-child-reaching"></i>
-                    <strong>116 111</strong> <span>Dla Dzieci i Młodzieży</span>
+                    <strong>116 111</strong> <span>Telefon dla Dzieci i Młodzieży</span>
                 </div>
                 <div class="phone-box">
                     <i class="fa-solid fa-headset"></i>
-                    <strong>800 70 222</strong> <span>Linia Wsparcia dla Dorosłych</span>
+                    <strong>800 70 222</strong> <span>Linia Wspierająca dla Dorosłych</span>
                 </div>
             </div>
-            <button class="hero-btn">Więcej informacji o pomocy</button>
+            <button class="hero-btn">Więcej informacji</button>
         </section>
     </div>
 
@@ -276,61 +265,62 @@
         <div class="card">
             <div class="card-header c-green">Higiena Psychiczna</div>
             <div class="card-body">
-                <p>Dowiedz się, jak dbać o równowagę emocjonalną, redukować codzienny stres i budować odporność psychiczną.</p>
-                <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Relaks">
-                <a href="#" class="card-btn c-green">Czytaj porady</a>
+                <p>Jak dbać o swoje samopoczucie na co dzień? Porady dotyczące relaksu, redukcji stresu i zdrowego stylu życia.</p>
+                <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Medytacja">
+                <a href="#" class="card-btn c-green">Poznaj zasady</a>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-header c-blue">Znajdź Poradnię</div>
+            <div class="card-header c-blue">Poradnie P-P</div>
             <div class="card-body">
-                <p>Skorzystaj z naszej wyszukiwarki, aby znaleźć najbliższą placówkę wsparcia psychologicznego w Twojej okolicy.</p>
-                <img src="https://images.unsplash.com/photo-1454165833767-027eeea15c3e?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Biuro">
-                <a href="poradnia.html" class="card-btn c-blue">Uruchom wyszukiwarkę</a>
+                <p>Gdzie szukać pomocy? Informacje o lokalnych poradniach, ich ofercie i sposobie zapisu na wizytę.</p>
+                <img src="https://images.unsplash.com/photo-1454165833767-027eeea15c3e?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Poradnia">
+                <a href="poradnia.html" class="card-btn c-blue">Znajdź poradnię</a>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-header c-purple">Nurty Terapii</div>
+            <div class="card-header c-purple">Wsparcie Fundacji</div>
             <div class="card-body">
-                <p>Nie wiesz, jaki rodzaj terapii wybrać? Sprawdź opisy najpopularniejszych nurtów i znajdź pomoc dla siebie.</p>
-                <img src="https://images.unsplash.com/photo-1573497620053-ea5310f94f17?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Rozmowa">
-                <a href="terapia.html" class="card-btn c-purple">Sprawdź nurty</a>
+                <p>Formy pomocy dostępne w organizacjach pozarządowych wspierających zdrowie psychiczne w całej Polsce.</p>
+                <img src="https://images.unsplash.com/photo-1573497620053-ea5310f94f17?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Wsparcie">
+                <a href="terapia.html" class="card-btn c-purple">Sprawdź fundacje</a>
             </div>
         </div>
     </main>
 
     <section class="institutions">
-        <h2 style="color: var(--header-blue);">System Wsparcia w Polsce</h2>
-        <p style="color: #888;">Poznaj miejsca, w których otrzymasz profesjonalną pomoc</p>
+        <h2 style="color: var(--header-blue);">Instytucje Zdrowia Psychicznego</h2>
+        <p style="color: #888; margin-bottom: 10px;">Jakie instytucje mogą Ci pomóc?</p>
         
         <div class="inst-grid">
             <div class="inst-card">
                 <i class="fa-solid fa-hospital-user"></i>
                 <h4>Szpitale</h4>
-                <p>Całodobowa opieka w stanach ostrych.</p>
+                <p>Leczenie całodobowe zaburzeń i kryzysów.</p>
             </div>
             <div class="inst-card">
-                <i class="fa-solid fa-user-doctor"></i>
-                <h4>PZP</h4>
-                <p>Poradnie Zdrowia Psychicznego.</p>
+                <i class="fa-solid fa-users-gear"></i>
+                <h4>Poradnie PZP</h4>
+                <p>Bezpłatna terapia i konsultacje lekarskie.</p>
             </div>
             <div class="inst-card">
                 <i class="fa-solid fa-house-chimney-medical"></i>
                 <h4>Centra CZŚ</h4>
-                <p>Wsparcie blisko miejsca zamieszkania.</p>
+                <p>Wsparcie środowiskowe w społeczności.</p>
             </div>
             <div class="inst-card">
-                <i class="fa-solid fa-shield-heart"></i>
-                <h4>OIK</h4>
-                <p>Ośrodki Interwencji Kryzysowej.</p>
+                <i class="fa-solid fa-kit-medical"></i>
+                <h4>Ośrodki OIK</h4>
+                <p>Pomoc w nagłych sytuacjach życiowych.</p>
             </div>
         </div>
     </section>
 
-    <footer style="background: #222; color: #777; padding: 30px; text-align: center; font-size: 13px;">
-        &copy; 2026 Portal Zdrowie Psychiczne. Materiał ma charakter informacyjny. W sytuacji zagrożenia życia dzwoń na 112.
+    <footer>
+        <p>&copy; 2026 Portal Zdrowie Psychiczne. Materiał ma charakter informacyjny.</p>
+        <p>W sytuacji zagrożenia życia zawsze dzwon na numer alarmowy 112.</p>
     </footer>
 
 </body>
