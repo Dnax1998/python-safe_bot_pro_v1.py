@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profilaktyka i Higiena Zdrowia Psychicznego</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Zmienne globalne */
+        :root {
+            --bg-color: #e6f2fa;
+            --accent-color: #0f7ca3;
+            --danger-color: #b81b1b;
+            --text-color: #333333;
+            --white: #ffffff;
+        }
+
+        /* Reset i ustawienia podstawowe */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Nawigacja */
+        nav {
+            background-color: var(--white);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            justify-content: flex-start;
+            gap: 30px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            padding: 20px 0;
+            display: inline-block;
+            transition: color 0.3s, border-bottom 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            color: var(--accent-color);
+        }
+
+        .nav-link.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+        }
+
+        /* Główny kontener strony */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+            width: 100%;
+        }
+
+        /* Baner z telefonem zaufania */
+        .crisis-banner {
+            background-color: var(--danger-color);
+            color: var(--white);
+            text-align: center;
+            padding: 30px 20px;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(184, 27, 27, 0.2);
+            margin-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .crisis-banner h2 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .crisis-banner p {
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .phone-number {
+            font-size: 3rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 30px;
+            border-radius: 50px;
+        }
+
+        .phone-number:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Sekcja kart informacyjnych */
+        .cards-section {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background-color: var(--white);
+            border-radius: 12px;
+            padding: 30px 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(15, 124, 163, 0.15);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            color: var(--accent-color);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .card-title a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 1.4rem;
+            font-weight: 700;
+            transition: color 0.2s;
+        }
+
+        .card-title a:hover {
+            text-decoration: underline;
+        }
+
+        .card-intro {
+            text-align: justify;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .card-list {
+            list-style: none;
+            margin-bottom: 20px;
+            flex-grow: 1; /* Pozwala wypchnąć notatkę na sam dół karty */
+        }
+
+        .card-list li {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
+        .card-list li i {
+            position: absolute;
+            left: 0;
+            top: 4px;
+            color: var(--accent-color);
+            font-size: 1.1rem;
+        }
+
+        .card-list li strong {
+            color: var(--accent-color);
+        }
+
+        .card-note {
+            font-style: italic;
+            font-size: 0.95rem;
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            color: #555;
+            margin-top: auto;
+        }
+
+        /* Stopka */
+        footer {
+            background-color: var(--white);
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .emergency-note {
+            color: var(--danger-color);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        /* Responsywność */
+        @media (max-width: 900px) {
+            .cards-section {
+                grid-template-columns: 1fr;
+            }
+            .phone-number {
+                font-size: 2.2rem;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .nav-list {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+            .nav-link {
+                padding: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <ul class="nav-list">
+                <li><a href="#" class="nav-link active">Strona Główna</a></li>
+                <li><a href="#" class="nav-link">Znajdź Poradnię</a></li>
+                <li><a href="#" class="nav-link">O Nas</a></li>
+                <li><a href="#" class="nav-link">Kontakt</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <header class="crisis-banner">
+            <h2>Potrzebujesz rozmowy?</h2>
+            <p>Całodobowy, bezpłatny telefon zaufania</p>
+            <div class="phone-number" id="emergency-phone">
+                <i class="fa-solid fa-phone-volume"></i> 116 123
+            </div>
+        </header>
+
+        <section class="cards-section">
+            
+            <article class="card">
+                <div class="card-icon">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <h3 class="card-title">
+                    <a href="#" class="simulated-link">Co to jest higiena zdrowia psychicznego?</a>
+                </h3>
+                <p class="card-intro">To zbiór codziennych nawyków, które wzmacniają odporność psychiczną i dobrostan. Obejmuje:</p>
+                <ul class="card-list">
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Regularny sen i regeneracja</strong> – minimum 7–8 godzin snu o stałych porach.</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Zarządzanie stresem</strong> – techniki oddechowe, mindfulness, relaksacja.</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Zdrowe granice w relacjach</strong> – umiejętność mówienia „nie” i dbania o własne potrzeby.</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Aktywność fizyczna i czas na hobby</strong> – ruch poprawia nastrój, pasje dają radość.</li>
+                </ul>
+                <p class="card-note">Profilaktyka to najskuteczniejsza forma dbania o psychikę.</p>
+            </article>
+
+            <article class="card">
+                <div class="card-icon">
+                    <i class="fa-solid fa-hospital-user"></i>
+                </div>
+                <h3 class="card-title">
+                    <a href="#" class="simulated-link">Gdzie szukać pomocy w kryzysie?</a>
+                </h3>
+                <p class="card-intro">Profesjonalna pomoc jest dostępna w wielu miejscach. Skorzystaj z:</p>
+                <ul class="card-list">
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Poradnie psychologiczno-pedagogiczne</strong> – wsparcie dla dzieci, młodzieży i rodzin (diagnoza, terapia, konsultacje).</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Szpitale psychiatryczne</strong> – oddziały dzienne (terapia bez noclegu) oraz całodobowe (w sytuacjach ostrych).</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Instytuty zdrowia psychicznego</strong> – specjalistyczne placówki badawczo-lecznicze, np. Instytut Psychiatrii i Neurologii w Warszawie.</li>
+                </ul>
+                <p class="card-note">W wielu miastach działają Centra Zdrowia Psychicznego (CZP) – pomoc bez skierowania.</p>
+            </article>
+
+            <article class="card">
+                <div class="card-icon">
+                    <i class="fa-solid fa-hand-holding-heart"></i>
+                </div>
+                <h3 class="card-title">
+                    <a href="#" class="simulated-link">Wsparcie w Fundacjach i Stowarzyszeniach</a>
+                </h3>
+                <p class="card-intro">Organizacje oferujące bezpłatną pomoc psychologiczną i grupy wsparcia:</p>
+                <ul class="card-list">
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Fundacja Itaka</strong> – pomoc w kryzysie emocjonalnym, telefon zaufania, centrum wsparcia.</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Fundacja Dajemy Dzieciom Siłę</strong> – pomoc psychologiczna dla dzieci i rodzin, interwencje.</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Stowarzyszenie „Niebieska Linia”</strong> – przeciwdziałanie przemocy domowej, porady prawne i psychologiczne.</li>
+                    <li><i class="fa-solid fa-circle-check"></i> <strong>Fundacja eFkropka</strong> – wsparcie zdrowia psychicznego dzieci i młodzieży, konsultacje online.</li>
+                </ul>
+                <p class="card-note">Wiele z nich prowadzi dyżury online oraz telefony wsparcia.</p>
+            </article>
+
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2026 Portal Profilaktyki Zdrowia Psychicznego. Wszelkie prawa zastrzeżone.</p>
+            <p class="emergency-note"><i class="fa-solid fa-triangle-exclamation"></i> W sytuacjach bezpośredniego zagrożenia życia lub zdrowia, dzwoń na numer alarmowy 112.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // 1. Obsługa kliknięcia w linki nawigacji (symulacja i zmiana aktywnego elementu)
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault(); // Zapobieganie przeładowaniu strony
+                    
+                    // Usuń klasę 'active' ze wszystkich linków
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    
+                    // Dodaj klasę 'active' do klikniętego elementu
+                    this.classList.add('active');
+                });
+            });
+
+            // 2. Obsługa kliknięcia w tytuły kart (symulacja przejścia)
+            const simulatedLinks = document.querySelectorAll('.simulated-link');
+            simulatedLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault(); // Zapobieganie przeładowaniu
+                    // Opcjonalna informacja w konsoli o działaniu symulacji
+                    console.log(`Zasymulowano przejście do podstrony: ${this.textContent}`);
+                });
+            });
+
+            // 3. Obsługa alertu po kliknięciu w numer telefonu w czerwonym banerze
+            const phoneBanner = document.getElementById('emergency-phone');
+            if (phoneBanner) {
+                phoneBanner.addEventListener('click', () => {
+                    alert('Telefon Zaufania 116 123 – czynny całodobowo.');
+                });
+            }
+            
+        });
+    </script>
+</body>
+</html>
