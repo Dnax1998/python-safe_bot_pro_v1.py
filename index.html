@@ -10,8 +10,8 @@
     <style>
         :root {
             --header-blue: #216694;
-            --accent-red: #b81b1b; 
-            --bg-gradient: linear-gradient(135deg, #a51d1d 0%, #d32f2f 100%); 
+            --accent-red: #b81b1b; /* Zmieniony na czerwony */
+            --bg-gradient: linear-gradient(135deg, #8b0000 0%, #d32f2f 100%); /* Czerwony gradient */
             --card-green: #6a9c89;
             --card-blue: #5d93b1;
             --card-purple: #8e6e96;
@@ -20,9 +20,18 @@
         body {
             margin: 0;
             font-family: 'Roboto', sans-serif;
-            background-color: #f4f7f9;
+            background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+            background-size: cover;
             color: #333;
-            line-height: 1.5;
+        }
+
+        /* Overlay dla tła */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            z-index: -1;
         }
 
         /* NAWIGACJA */
@@ -30,23 +39,27 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 8%;
-            background: #fff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 15px 10%;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         .logo {
             display: flex;
             align-items: center;
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 700;
             color: var(--header-blue);
         }
 
-        .logo i {
-            color: #d32f2f;
-            margin-right: 12px;
-            font-size: 30px;
+        .logo-img {
+            height: 50px;
+            margin-right: 15px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
         }
 
         .nav-links a {
@@ -54,8 +67,7 @@
             color: #555;
             font-size: 14px;
             font-weight: 500;
-            margin-left: 25px;
-            padding-bottom: 5px;
+            padding: 5px 10px;
         }
 
         .nav-links a.active {
@@ -63,169 +75,192 @@
             color: var(--header-blue);
         }
 
-        /* BANER HERO - CZERWONY */
+        /* HERO SECTION - CZERWONY */
         .hero {
             background: var(--bg-gradient);
-            padding: 60px 10%;
+            padding: 40px 10%;
             color: white;
             text-align: center;
             position: relative;
         }
 
         .hero h1 {
-            font-size: 40px;
+            font-size: 42px;
             margin-bottom: 30px;
-            font-weight: 700;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
         }
 
         .phones {
             display: inline-block;
             text-align: left;
-            margin-bottom: 35px;
+            margin-bottom: 30px;
         }
 
         .phone-row {
-            font-size: 20px;
+            font-size: 22px;
             margin-bottom: 15px;
             display: flex;
             align-items: center;
             cursor: pointer;
+            transition: transform 0.2s;
         }
 
-        .phone-row i { margin-right: 15px; font-size: 24px; }
+        .phone-row:hover { transform: scale(1.02); }
 
-        .phone-row strong { font-size: 28px; margin-right: 10px; }
+        .phone-row i { margin-right: 15px; color: #fff; }
+
+        .phone-row strong { font-size: 30px; margin-right: 10px; }
 
         .hero-btn {
-            background: rgba(0,0,0,0.2);
+            background: var(--accent-red); /* Czerwony przycisk */
             color: white;
-            border: 1px solid rgba(255,255,255,0.4);
-            padding: 12px 30px;
-            font-size: 16px;
-            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 12px 35px;
+            font-size: 18px;
+            border-radius: 5px;
             cursor: pointer;
             display: flex;
             align-items: center;
             margin: 0 auto;
-            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: background 0.3s;
         }
 
-        .hero-btn:hover { background: rgba(0,0,0,0.3); }
+        .hero-btn:hover {
+            background: #961515;
+        }
 
         .hero-icons {
             position: absolute;
-            right: 8%;
+            right: 10%;
             top: 50%;
             transform: translateY(-50%);
             display: flex;
             gap: 20px;
-            font-size: 70px;
-            opacity: 0.15;
+            font-size: 60px;
+            opacity: 0.2;
         }
 
-        /* GRID KART */
+        /* MAIN CARDS GRID */
         .main-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-            padding: 50px 8%;
+            gap: 20px;
+            padding: 40px 10%;
         }
 
         .card {
-            background: white;
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            min-height: 450px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            background: white;
+            min-height: 480px;
         }
 
         .card-header {
-            padding: 18px 20px;
+            padding: 20px;
             color: white;
-            font-size: 19px;
+            font-size: 18px;
             font-weight: 700;
         }
 
         .card-body {
             padding: 20px;
             flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-body p { margin-bottom: 15px; font-size: 14px; color: #444; }
-
-        .card-img {
-            width: 100%;
-            height: 160px;
-            object-fit: cover;
-            border-radius: 4px;
-            margin-top: auto;
         }
 
         .card-btn {
             align-self: flex-start;
-            margin-top: auto;
-            padding: 10px 20px;
+            margin: 20px;
+            padding: 10px 18px;
             border-radius: 5px;
             color: white;
-            font-size: 13px;
-            font-weight: 500;
+            font-size: 14px;
             cursor: pointer;
             border: none;
-            text-transform: none;
         }
 
-        /* Kolory sekcji */
-        .card-1-head { background-color: var(--card-green); }
-        .card-2-head { background-color: var(--card-blue); }
-        .card-3-head { background-color: var(--card-purple); }
+        /* Kolory Kart */
+        .card-1 { background-color: var(--card-green); }
+        .card-1-body { background-color: #f0f7f4; }
+        .card-2 { background-color: var(--card-blue); }
+        .card-2-body { background-color: #f0f4f8; }
+        .card-3 { background-color: var(--card-purple); }
+        .card-3-body { background-color: #f8f4f9; }
 
-        .btn-blue { background-color: var(--card-blue); }
-        .btn-purple { background-color: var(--card-purple); }
+        .card-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
 
-        /* DOLNA SEKCJA INSTYTUCJI */
-        .inst-section {
+        /* BOTTOM INSTITUTIONS SECTION */
+        .institutions {
             text-align: center;
-            padding: 40px 8%;
-            background: #f9f9f9;
+            padding: 40px 10%;
         }
 
-        .inst-title { color: var(--header-blue); font-size: 26px; margin-bottom: 5px; }
-        .inst-subtitle { color: #888; font-size: 14px; margin-bottom: 30px; display: block; }
+        .inst-title {
+            color: var(--header-blue);
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .inst-subtitle {
+            color: #777;
+            margin-bottom: 30px;
+            display: block;
+        }
 
         .inst-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
+            gap: 15px;
         }
 
         .inst-item {
             background: white;
-            padding: 25px 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .inst-item:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-
-        .inst-item i { font-size: 45px; color: var(--card-blue); margin-bottom: 15px; }
-        .inst-item h4 { font-size: 15px; color: var(--header-blue); margin-bottom: 8px; }
-        .inst-item p { font-size: 12px; color: #888; margin: 0; }
-
-        .footer-line {
-            margin-top: 50px;
             padding: 20px;
-            border-top: 1px solid #ddd;
-            color: #777;
-            font-size: 13px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: 0.3s;
+            cursor: pointer;
         }
 
-        @media (max-width: 950px) {
+        .inst-item:hover { transform: translateY(-5px); }
+
+        .inst-item i {
+            font-size: 40px;
+            color: var(--card-blue);
+            margin-bottom: 15px;
+        }
+
+        .inst-item h4 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: var(--header-blue);
+        }
+
+        .inst-item p {
+            font-size: 12px;
+            color: #777;
+        }
+
+        .footer-bar {
+            border-top: 1px solid #ccc;
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #555;
+        }
+
+        @media (max-width: 900px) {
             .main-grid, .inst-grid { grid-template-columns: 1fr; }
             .hero-icons { display: none; }
         }
@@ -235,12 +270,12 @@
 
     <nav class="navbar">
         <div class="logo">
-            <i class="fa-solid fa-heart-pulse"></i>
+            <img src="https://cdn-icons-png.flaticon.com/512/822/822143.png" class="logo-img" alt="logo">
             Zdrowie Psychiczne
         </div>
         <div class="nav-links">
             <a href="#" class="active">Strona Główna</a>
-            <a href="#" onclick="alert('Sekcja O Nas')">O Nas</a>
+            <a href="#" onclick="alert('Sekcja Znajdź Poradnie')">Znajdź Poradnie</a>
             <a href="#" onclick="alert('Sekcja Artykuły')">Artykuły</a>
             <a href="#" onclick="alert('Sekcja Kontakt')">Kontakt</a>
         </div>
@@ -248,82 +283,86 @@
 
     <header class="hero">
         <h1>Bezpłatne Telefony Zaufania</h1>
+        
         <div class="phones">
-            <div class="phone-row" onclick="alert('Łączenie z 116 111...')">
-                <i class="fa-solid fa-phone"></i>
+            <div class="phone-row" onclick="alert('Dzwonię pod 116 111')">
+                <i class="fa-solid fa-phone-volume"></i>
                 <strong>116 111</strong> - Telefon Zaufania dla Dzieci i Młodzieży
             </div>
-            <div class="phone-row" onclick="alert('Łączenie z 800 70 222...')">
-                <i class="fa-solid fa-headset"></i>
+            <div class="phone-row" onclick="alert('Dzwonię pod 800 70 222')">
+                <i class="fa-solid fa-phone-flip"></i>
                 <strong>800 70 222</strong> - Linia Wsparcia
             </div>
         </div>
-        <button class="hero-btn" onclick="alert('Więcej informacji o pomocy...')">
-            Więcej informacji <i class="fa-solid fa-chevron-right" style="margin-left:10px"></i>
+
+        <button class="hero-btn" onclick="alert('Przekierowanie do informacji...')">
+            Więcej informacji <i class="fa-solid fa-chevron-right" style="margin-left: 10px;"></i>
         </button>
+
         <div class="hero-icons">
             <i class="fa-solid fa-stethoscope"></i>
-            <i class="fa-solid fa-notes-medical"></i>
+            <i class="fa-solid fa-clipboard-list"></i>
         </div>
     </header>
 
     <section class="main-grid">
         <div class="card">
-            <div class="card-header card-1-head">Higiena Zdrowia Psychicznego</div>
-            <div class="card-body">
+            <div class="card-header card-1">Higiena Zdrowia Psychicznego</div>
+            <div class="card-body card-1-body">
                 <p><strong>Jak dbać o swoje samopoczucie na co dzień?</strong></p>
                 <p>Porady dotyczące relaksu, redukcji stresu i zdrowego stylu życia.</p>
-                <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Medytacja">
+                <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=400&q=80" class="card-img" alt="medytacja">
             </div>
         </div>
 
         <div class="card">
-            <div class="card-header card-2-head">Poradnie Psychologiczno-Pedagogiczne</div>
-            <div class="card-body">
+            <div class="card-header card-2">Poradnie Psychologiczno-Pedagogiczne</div>
+            <div class="card-body card-2-body">
                 <p><strong>Gdzie szukać pomocy?</strong></p>
                 <p>Informacje o lokalnych poradniach, ich ofercie i sposobie zapisu na wizytę.</p>
-                <button class="card-btn btn-blue" onclick="alert('Otwieranie wyszukiwarki poradni...')">Znajdź poradnię ></button>
+                <div style="height: 60px;"></div>
+                <button class="card-btn card-2" onclick="alert('Otwieram listę poradni...')">Znajdź poradnię ></button>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-header card-3-head">Wsparcie w Fundacjach i Stowarzyszeniach</div>
-            <div class="card-body">
+            <div class="card-header card-3">Wsparcie w Fundacjach i Stowarzyszeniach</div>
+            <div class="card-body card-3-body">
                 <p>Formy pomocy dostępne w organizacjach pozarządowych wspierających zdrowie psychiczne.</p>
-                <img src="https://images.unsplash.com/photo-1573497620053-ea5310f94f17?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Wsparcie">
-                <button class="card-btn btn-purple" style="margin-top:20px" onclick="alert('Przeglądanie organizacji...')">Sprawdź możliwości ></button>
+                <img src="https://images.unsplash.com/photo-1521791136064-7986c2959213?auto=format&fit=crop&w=400&q=80" class="card-img" alt="wsparcie">
+                <button class="card-btn card-3" onclick="alert('Pokazuję możliwości wsparcia...')">Sprawdź możliwości ></button>
             </div>
         </div>
     </section>
 
-    <section class="inst-section">
+    <section class="institutions">
         <h2 class="inst-title">Instytucje Zdrowia Psychicznego</h2>
         <span class="inst-subtitle">Jakie instytucje mogą Ci pomóc?</span>
 
         <div class="inst-grid">
-            <div class="inst-item" onclick="alert('Szczegóły: Szpitale Psychiatryczne')">
-                <i class="fa-solid fa-hospital-user"></i>
+            <div class="inst-item" onclick="alert('Szpitale Psychiatryczne - szczegóły')">
+                <i class="fa-solid fa-hospital"></i>
                 <h4>Szpitale Psychiatryczne</h4>
                 <p>Leczenie zaburzeń i kryzysów.</p>
             </div>
-            <div class="inst-item" onclick="alert('Szczegóły: Poradnie Zdrowia Psychicznego')">
-                <i class="fa-solid fa-users-gear"></i>
+            <div class="inst-item" onclick="alert('Poradnie Zdrowia Psychicznego - szczegóły')">
+                <i class="fa-solid fa-gears"></i>
                 <h4>Poradnie Zdrowia Psychicznego</h4>
                 <p>Terapia i konsultacje.</p>
             </div>
-            <div class="inst-item" onclick="alert('Szczegóły: Centra Zdrowia Środowiskowego')">
-                <i class="fa-solid fa-house-chimney-medical"></i>
+            <div class="inst-item" onclick="alert('Centra Zdrowia Środowiskowego - szczegóły')">
+                <i class="fa-solid fa-house-medical"></i>
                 <h4>Centra Zdrowia Środowiskowego</h4>
                 <p>Wsparcie w społeczności.</p>
             </div>
-            <div class="inst-item" onclick="alert('Szczegóły: Ośrodki Interwencji Kryzysowej')">
-                <i class="fa-solid fa-kit-medical"></i>
+            <div class="inst-item" onclick="alert('Ośrodki Interwencji Kryzysowej - szczegóły')">
+                <i class="fa-solid fa-user-doctor"></i>
                 <h4>Ośrodki Interwencji Kryzysowej</h4>
                 <p>Pomoc w nagłych sytuacjach.</p>
             </div>
         </div>
 
-        <div class="footer-line">
+        <div class="footer-bar">
             Profesjonalna pomoc w różnych obszarach zdrowia psychicznego.
         </div>
     </section>
