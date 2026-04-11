@@ -13,6 +13,7 @@
             --text-dark: #333;
             --border-color: #dee2e6;
             --teal-accent: #2a9d8f;
+            --header-blue: #216694;
         }
 
         body {
@@ -37,7 +38,7 @@
             align-items: center;
             font-size: 20px;
             font-weight: 700;
-            color: #216694;
+            color: var(--header-blue);
             text-decoration: none;
         }
 
@@ -48,10 +49,13 @@
             color: #666;
             font-size: 13px;
             margin-left: 20px;
+            transition: 0.2s;
         }
 
+        .nav-links a:hover { color: var(--header-blue); }
+
         .nav-links .active {
-            color: #216694;
+            color: var(--header-blue);
             background: #f0f4f8;
             padding: 5px 12px;
             border-radius: 4px;
@@ -66,7 +70,6 @@
         }
 
         .crisis-banner h2 { margin: 0 0 10px 0; font-size: 22px; display: flex; align-items: center; }
-        .crisis-banner h2 i { margin-right: 10px; }
         .crisis-banner p { margin: 0 0 20px 0; font-size: 14px; opacity: 0.9; }
 
         .crisis-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -78,10 +81,9 @@
             border-radius: 20px;
             font-size: 13px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
+            transition: 0.3s;
         }
-        .crisis-btn strong { margin-right: 5px; }
+        .crisis-btn:hover { background: rgba(255, 255, 255, 0.3); }
 
         /* FILTRY */
         .filters-container {
@@ -91,8 +93,6 @@
             border-radius: 12px;
             border: 1px solid var(--border-color);
         }
-
-        .filters-container h3 { margin-top: 0; font-size: 18px; color: #444; }
 
         .filter-grid {
             display: grid;
@@ -107,7 +107,6 @@
             border: 1px solid #ddd;
             border-radius: 6px;
             background: #fff;
-            color: #555;
         }
 
         .results-header {
@@ -119,19 +118,14 @@
             color: #666;
         }
 
-        .sort-btns { display: flex; gap: 10px; }
         .sort-btn {
             background: #fff;
             border: 1px solid var(--border-color);
             padding: 5px 12px;
             border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
             color: var(--teal-accent);
-            display: flex;
-            align-items: center;
+            cursor: pointer;
         }
-        .sort-btn.active { background: var(--teal-accent); color: white; border-color: var(--teal-accent); }
 
         /* LISTA PORADNI */
         .results-list { padding: 0 10%; margin-bottom: 50px; }
@@ -143,9 +137,7 @@
             padding: 25px;
             margin-bottom: 20px;
             position: relative;
-            transition: 0.2s;
         }
-        .clinic-card:hover { border-color: var(--teal-accent); }
 
         .badge-type {
             position: absolute;
@@ -159,35 +151,29 @@
         .badge-platna { background: #e9ecef; color: #666; }
         .badge-bezplatna { background: #d1f2eb; color: #16a085; }
 
-        .arrow-link { position: absolute; top: 22px; right: 20px; color: #ccc; }
-
-        .clinic-card h4 { margin: 0 0 10px 0; font-size: 17px; color: var(--text-dark); }
+        .clinic-card h4 { margin: 0 0 10px 0; font-size: 17px; }
         .stars { color: #f1c40f; font-size: 13px; margin-bottom: 15px; }
-        .stars span { color: #aaa; margin-left: 5px; }
 
         .tags { display: flex; gap: 8px; margin-bottom: 20px; }
         .tag { background: #e0f2f1; color: #00897b; padding: 4px 12px; border-radius: 15px; font-size: 11px; }
 
         .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; color: #666; }
-        .detail-item { display: flex; align-items: center; gap: 8px; }
-        .detail-item i { width: 16px; text-align: center; }
         .status-now { color: var(--teal-accent); font-weight: 700; }
 
         @media (max-width: 900px) {
             .filter-grid, .details-grid { grid-template-columns: 1fr; }
-            .navbar { flex-direction: column; gap: 15px; }
         }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <a href="#" class="logo">
+        <a href="index.html" class="logo">
             <i class="fa-solid fa-heart-pulse"></i> Zdrowie Psychiczne
         </a>
         <div class="nav-links">
-            <a href="#">Strona Główna</a>
-            <a href="#" class="active">Znajdź Poradnię</a>
+            <a href="index.html">Strona Główna</a>
+            <a href="poradnia.html" class="active">Znajdź Poradnię</a>
             <a href="#">O Nas</a>
             <a href="#">Kontakt</a>
         </div>
@@ -197,26 +183,34 @@
         <h2><i class="fa-solid fa-hand-holding-heart"></i> Na skróty — pomoc w kryzysie</h2>
         <p>Całodobowe, bezpłatne linie wsparcia. Nie czekaj — zadzwoń teraz.</p>
         <div class="crisis-buttons">
-            <button class="crisis-btn"><strong>116 123</strong> — Telefon Zaufania dla Dorosłych</button>
-            <button class="crisis-btn"><strong>116 111</strong> — Telefon Zaufania dla Dzieci i Młodzieży</button>
+            <button class="crisis-btn"><strong>116 123</strong> — Kryzysowy Telefon Zaufania</button>
+            <button class="crisis-btn"><strong>116 111</strong> — Dla Dzieci i Młodzieży</button>
             <button class="crisis-btn"><strong>112</strong> — Numer Alarmowy</button>
         </div>
     </div>
 
     <div class="filters-container">
-        <h3>Filtruj poradnie</h3>
         <div class="filter-grid">
             <div class="filter-group">
                 <label>Finansowanie</label>
-                <select><option>Wszystkie</option><option>Bezpłatne</option><option>Płatne</option></select>
+                <select id="filter-finans">
+                    <option value="wszystkie">Wszystkie</option>
+                    <option value="płatna">Płatne</option>
+                    <option value="bezpłatna">Bezpłatne</option>
+                </select>
             </div>
             <div class="filter-group">
                 <label>Forma kontaktu</label>
-                <select><option>Wszystkie</option><option>Online</option><option>Stacjonarnie</option></select>
+                <select id="filter-forma">
+                    <option value="wszystkie">Wszystkie</option>
+                    <option value="online">Online</option>
+                    <option value="stacjonarnie">Stacjonarnie</option>
+                    <option value="hybrydowo">Hybrydowo</option>
+                </select>
             </div>
             <div class="filter-group">
                 <label>Specjalizacja</label>
-                <select><option>Wszystkie</option><option>Depresja</option><option>Lęki</option></select>
+                <select><option>Wszystkie</option></select>
             </div>
             <div class="filter-group">
                 <label>Maks. czas oczekiwania (dni)</label>
@@ -226,56 +220,69 @@
     </div>
 
     <div class="results-header">
-        <span>Znaleziono <strong>12</strong> poradni</span>
-        <div class="sort-btns">
-            <button class="sort-btn active"><i class="fa-solid fa-arrow-up-wide-short"></i> Czas rosnąco</button>
-            <button class="sort-btn"><i class="fa-solid fa-arrow-down-wide-short"></i> Czas malejąco</button>
-        </div>
+        <span>Znaleziono <strong id="count">2</strong> poradni</span>
+        <button class="sort-btn">Czas rosnąco</button>
     </div>
 
-    <div class="results-list">
-        <div class="clinic-card">
+    <div class="results-list" id="clinic-list">
+        <div class="clinic-card" data-finans="płatna" data-forma="online">
             <span class="badge-type badge-platna">Płatna</span>
-            <i class="fa-solid fa-chevron-right arrow-link"></i>
             <h4>Klinika Psychoterapii MindHealth</h4>
-            <div class="stars">
-                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                <span>4.9 (523)</span>
-            </div>
-            <div class="tags">
-                <span class="tag">zaburzenia odżywiania</span>
-                <span class="tag">depresja</span>
-                <span class="tag">lęki</span>
-            </div>
+            <div class="stars"><i class="fa-solid fa-star"></i> 4.9 (523)</div>
+            <div class="tags"><span class="tag">depresja</span><span class="tag">lęki</span></div>
             <div class="details-grid">
-                <div class="detail-item"><i class="fa-solid fa-desktop"></i> Online</div>
-                <div class="detail-item"><i class="fa-solid fa-clock"></i> <span class="status-now">NATYCHMIAST</span></div>
-                <div class="detail-item"><i class="fa-solid fa-location-dot"></i> ul. Złota 59, 00-120 Warszawa</div>
-                <div class="detail-item"><i class="fa-solid fa-phone"></i> +48 22 100 20 30</div>
+                <div><i class="fa-solid fa-desktop"></i> Online</div>
+                <div class="status-now">NATYCHMIAST</div>
+                <div><i class="fa-solid fa-location-dot"></i> Warszawa</div>
+                <div><i class="fa-solid fa-phone"></i> +48 22 100 20 30</div>
             </div>
         </div>
 
-        <div class="clinic-card">
+        <div class="clinic-card" data-finans="bezpłatna" data-forma="hybrydowo">
             <span class="badge-type badge-bezplatna">Bezpłatna</span>
-            <i class="fa-solid fa-chevron-right arrow-link"></i>
-            <h4>Ośrodek Interwencji Kryzysowej w Łodzi</h4>
-            <div class="stars">
-                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
-                <span>4.3 (156)</span>
-            </div>
-            <div class="tags">
-                <span class="tag">trauma</span>
-                <span class="tag">depresja</span>
-                <span class="tag">lęki</span>
-            </div>
+            <h4>Ośrodek Interwencji Kryzysowej</h4>
+            <div class="stars"><i class="fa-solid fa-star"></i> 4.3 (156)</div>
+            <div class="tags"><span class="tag">trauma</span><span class="tag">kryzys</span></div>
             <div class="details-grid">
-                <div class="detail-item"><i class="fa-solid fa-arrows-rotate"></i> Hybrydowo</div>
-                <div class="detail-item"><i class="fa-solid fa-clock"></i> <span class="status-now">NATYCHMIAST</span></div>
-                <div class="detail-item"><i class="fa-solid fa-location-dot"></i> ul. 6 Sierpnia 1/3, 90-606 Łódź</div>
-                <div class="detail-item"><i class="fa-solid fa-phone"></i> +48 42 630 82 30</div>
+                <div><i class="fa-solid fa-arrows-rotate"></i> Hybrydowo</div>
+                <div class="status-now">NATYCHMIAST</div>
+                <div><i class="fa-solid fa-location-dot"></i> Łódź</div>
+                <div><i class="fa-solid fa-phone"></i> +48 42 630 82 30</div>
             </div>
         </div>
     </div>
+
+    <script>
+        const finansSelect = document.getElementById('filter-finans');
+        const formaSelect = document.getElementById('filter-forma');
+        const cards = document.querySelectorAll('.clinic-card');
+        const countSpan = document.getElementById('count');
+
+        function applyFilters() {
+            let visibleCount = 0;
+            const fVal = finansSelect.value;
+            const mVal = formaSelect.value;
+
+            cards.forEach(card => {
+                const cFinans = card.getAttribute('data-finans');
+                const cForma = card.getAttribute('data-forma');
+
+                const matchF = (fVal === 'wszystkie' || fVal === cFinans);
+                const matchM = (mVal === 'wszystkie' || mVal === cForma);
+
+                if (matchF && matchM) {
+                    card.style.display = "block";
+                    visibleCount++;
+                } else {
+                    card.style.display = "none";
+                }
+            });
+            countSpan.innerText = visibleCount;
+        }
+
+        finansSelect.addEventListener('change', applyFilters);
+        formaSelect.addEventListener('change', applyFilters);
+    </script>
 
 </body>
 </html>
