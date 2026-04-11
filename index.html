@@ -1,93 +1,337 @@
-<style>
-    /* ... reszta Twoich stylów bez zmian ... */
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zdrowie Psychiczne - Portal Wsparcia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --header-blue: #216694;
+            --vivid-red: #d62828; /* Intensywna czerwień */
+            --vivid-gradient: linear-gradient(135deg, #d62828 0%, #a81e1e 100%);
+            --bg-light: #f4f7f9;
+            --card-green: #6a9c89;
+            --card-blue: #5d93b1;
+            --card-purple: #8e6e96;
+            --container-width: 1100px; /* Stała szerokość dla banera i kart */
+        }
 
-    :root {
-        --header-blue: #216694;
-        /* Nowa, intensywna czerwień */
-        --vivid-red: #d62828; 
-        --vivid-red-gradient: linear-gradient(135deg, #d62828 0%, #b31919 100%);
-        --content-width: 80%;
-    }
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-light);
+            color: #333;
+            line-height: 1.6;
+        }
 
-    /* BANER HERO - INTENSYWNY I ZAOKRĄGLONY */
-    .hero-container {
-        width: var(--content-width);
-        margin: 40px auto;
-        /* Mocne zaokrąglenie rogów */
-        border-radius: 20px; 
-        overflow: hidden;
-        /* Subtelny cień dla głębi */
-        box-shadow: 0 10px 30px rgba(214, 40, 40, 0.2);
-    }
+        /* NAWIGACJA */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 10%;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
 
-    .hero {
-        background: var(--vivid-red-gradient);
-        padding: 60px 50px;
-        color: white;
-        text-align: center;
-        position: relative;
-    }
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--header-blue);
+            text-decoration: none;
+        }
 
-    .hero h1 {
-        font-size: 38px;
-        margin-bottom: 25px;
-        font-weight: 700;
-        letter-spacing: -0.5px;
-    }
+        .logo i { color: var(--vivid-red); margin-right: 12px; font-size: 28px; }
 
-    .phone-row {
-        font-size: 22px;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center; /* Wyśrodkowanie numerów */
-        gap: 15px;
-    }
+        .nav-links a {
+            text-decoration: none;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+            margin-left: 25px;
+            transition: 0.3s;
+        }
 
-    .phone-row strong {
-        font-size: 30px;
-        background: rgba(255,255,255,0.15);
-        padding: 2px 10px;
-        border-radius: 8px;
-    }
+        .nav-links a:hover, .nav-links a.active { color: var(--header-blue); }
 
-    .hero-btn {
-        background: white;
-        color: var(--vivid-red);
-        border: none;
-        padding: 14px 35px;
-        font-size: 16px;
-        font-weight: 700;
-        border-radius: 50px; /* Przycisk typu "pigułka" */
-        cursor: pointer;
-        margin-top: 20px;
-        transition: 0.3s;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
+        /* BANER HERO - INTENSYWNY I ZAOKRĄGLONY */
+        .hero-wrapper {
+            max-width: var(--container-width);
+            margin: 40px auto;
+            padding: 0 20px;
+        }
 
-    .hero-btn:hover {
-        transform: scale(1.05);
-        background: #f8f9fa;
-    }
+        .hero {
+            background: var(--vivid-gradient);
+            padding: 60px 40px;
+            color: white;
+            text-align: center;
+            border-radius: 20px; /* Mocne zaokrąglenie */
+            box-shadow: 0 15px 35px rgba(214, 40, 40, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
 
-    /* ... reszta Twoich stylów ... */
-</style>
+        .hero h1 {
+            font-size: 42px;
+            margin-bottom: 25px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
 
-<div class="hero-container">
-    <header class="hero">
-        <h1>Bezpłatne Telefony Zaufania</h1>
-        <div class="phones">
-            <div class="phone-row">
-                <i class="fa-solid fa-phone-flip"></i>
-                <strong>116 111</strong> <span>Telefon dla Dzieci i Młodzieży</span>
+        .phones-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 35px;
+        }
+
+        .phone-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 25px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: 0.3s;
+        }
+
+        .phone-box:hover { background: rgba(255, 255, 255, 0.2); }
+
+        .phone-box strong { font-size: 28px; }
+
+        .hero-btn {
+            background: #fff;
+            color: var(--vivid-red);
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .hero-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            background: #f8f9fa;
+        }
+
+        /* DEKORACJA W TLE BANERA */
+        .hero::after {
+            content: '\f479';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: -20px;
+            bottom: -20px;
+            font-size: 150px;
+            opacity: 0.07;
+            transform: rotate(-15px);
+        }
+
+        /* GRID KART */
+        .cards-section {
+            max-width: var(--container-width);
+            margin: 0 auto 60px;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            transition: 0.3s;
+        }
+
+        .card:hover { transform: translateY(-5px); }
+
+        .card-header {
+            padding: 20px;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .card-body {
+            padding: 25px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card-body p { font-size: 14px; color: #666; margin-bottom: 20px; }
+
+        .card-img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .card-btn {
+            text-decoration: none;
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .c-green { background: var(--card-green); }
+        .c-blue { background: var(--card-blue); }
+        .c-purple { background: var(--card-purple); }
+
+        /* STOPKA / INSTYTUCJE */
+        .institutions {
+            background: #fff;
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        .inst-grid {
+            max-width: var(--container-width);
+            margin: 40px auto 0;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 0 20px;
+        }
+
+        .inst-card {
+            padding: 30px 20px;
+            border: 1px solid #eee;
+            border-radius: 15px;
+            transition: 0.3s;
+        }
+
+        .inst-card:hover { border-color: var(--card-blue); background: #fcfcfc; }
+        .inst-card i { font-size: 40px; color: var(--card-blue); margin-bottom: 15px; }
+        .inst-card h4 { margin: 0 0 10px 0; font-size: 16px; color: var(--header-blue); }
+        .inst-card p { font-size: 12px; color: #888; margin: 0; }
+
+        @media (max-width: 900px) {
+            .cards-section, .inst-grid { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-heart-pulse"></i> Zdrowie Psychiczne
+        </a>
+        <div class="nav-links">
+            <a href="index.html" class="active">Strona Główna</a>
+            <a href="poradnia.html">Znajdź Poradnię</a>
+            <a href="terapia.html">Terapia</a>
+            <a href="#">Artykuły</a>
+            <a href="#">Kontakt</a>
+        </div>
+    </nav>
+
+    <div class="hero-wrapper">
+        <section class="hero">
+            <h1>Bezpłatne Telefony Zaufania</h1>
+            <div class="phones-container">
+                <div class="phone-box">
+                    <i class="fa-solid fa-child-reaching"></i>
+                    <strong>116 111</strong> <span>Dla Dzieci i Młodzieży</span>
+                </div>
+                <div class="phone-box">
+                    <i class="fa-solid fa-headset"></i>
+                    <strong>800 70 222</strong> <span>Linia Wsparcia dla Dorosłych</span>
+                </div>
             </div>
-            <div class="phone-row">
-                <i class="fa-solid fa-headset"></i>
-                <strong>800 70 222</strong> <span>Linia Wsparcia dla Dorosłych</span>
+            <button class="hero-btn">Więcej informacji o pomocy</button>
+        </section>
+    </div>
+
+    <main class="cards-section">
+        <div class="card">
+            <div class="card-header c-green">Higiena Psychiczna</div>
+            <div class="card-body">
+                <p>Dowiedz się, jak dbać o równowagę emocjonalną, redukować codzienny stres i budować odporność psychiczną.</p>
+                <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Relaks">
+                <a href="#" class="card-btn c-green">Czytaj porady</a>
             </div>
         </div>
-        <button class="hero-btn">
-            Więcej informacji <i class="fa-solid fa-arrow-right" style="margin-left:10px"></i>
-        </button>
-    </header>
-</div>
+
+        <div class="card">
+            <div class="card-header c-blue">Znajdź Poradnię</div>
+            <div class="card-body">
+                <p>Skorzystaj z naszej wyszukiwarki, aby znaleźć najbliższą placówkę wsparcia psychologicznego w Twojej okolicy.</p>
+                <img src="https://images.unsplash.com/photo-1454165833767-027eeea15c3e?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Biuro">
+                <a href="poradnia.html" class="card-btn c-blue">Uruchom wyszukiwarkę</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header c-purple">Nurty Terapii</div>
+            <div class="card-body">
+                <p>Nie wiesz, jaki rodzaj terapii wybrać? Sprawdź opisy najpopularniejszych nurtów i znajdź pomoc dla siebie.</p>
+                <img src="https://images.unsplash.com/photo-1573497620053-ea5310f94f17?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Rozmowa">
+                <a href="terapia.html" class="card-btn c-purple">Sprawdź nurty</a>
+            </div>
+        </div>
+    </main>
+
+    <section class="institutions">
+        <h2 style="color: var(--header-blue);">System Wsparcia w Polsce</h2>
+        <p style="color: #888;">Poznaj miejsca, w których otrzymasz profesjonalną pomoc</p>
+        
+        <div class="inst-grid">
+            <div class="inst-card">
+                <i class="fa-solid fa-hospital-user"></i>
+                <h4>Szpitale</h4>
+                <p>Całodobowa opieka w stanach ostrych.</p>
+            </div>
+            <div class="inst-card">
+                <i class="fa-solid fa-user-doctor"></i>
+                <h4>PZP</h4>
+                <p>Poradnie Zdrowia Psychicznego.</p>
+            </div>
+            <div class="inst-card">
+                <i class="fa-solid fa-house-chimney-medical"></i>
+                <h4>Centra CZŚ</h4>
+                <p>Wsparcie blisko miejsca zamieszkania.</p>
+            </div>
+            <div class="inst-card">
+                <i class="fa-solid fa-shield-heart"></i>
+                <h4>OIK</h4>
+                <p>Ośrodki Interwencji Kryzysowej.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer style="background: #222; color: #777; padding: 30px; text-align: center; font-size: 13px;">
+        &copy; 2026 Portal Zdrowie Psychiczne. Materiał ma charakter informacyjny. W sytuacji zagrożenia życia dzwoń na 112.
+    </footer>
+
+</body>
+</html>
