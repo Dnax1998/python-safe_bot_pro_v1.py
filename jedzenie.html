@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitGenerator Pro - Twój Plan Diety</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #76a310;
+            --secondary: #1b4f72;
+            --accent: #e67e22;
+            --text: #333;
+            --white: #ffffff;
+            --bg: #f4f7f6;
+        }
+
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bg); margin: 0; padding: 0; color: var(--text); }
+
+        /* HEADER */
+        .header { background: var(--secondary); color: white; padding: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 700; }
+        .header span { color: var(--primary); }
+
+        .main-container {
+            max-width: 1400px; margin: 20px auto;
+            display: grid; grid-template-columns: 320px 1fr; gap: 25px; padding: 0 20px;
+        }
+
+        /* SIDEBAR */
+        .sidebar { background: var(--white); border-radius: 15px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); height: fit-content; position: sticky; top: 20px; }
+        .sidebar h3 { font-size: 18px; margin-top: 0; border-bottom: 2px solid var(--bg); padding-bottom: 10px; color: var(--secondary); }
+        .sidebar label { display: block; margin: 20px 0 8px; font-size: 14px; font-weight: 600; color: #666; }
+        
+        select, .btn-gen { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-family: inherit; font-size: 14px; }
+        
+        .btn-gen { 
+            background: var(--primary); color: white; border: none; font-weight: bold; 
+            margin-top: 25px; cursor: pointer; transition: all 0.3s ease; 
+            box-shadow: 0 4px 12px rgba(118, 163, 16, 0.3);
+        }
+        .btn-gen:hover { background: #5d820d; transform: translateY(-2px); }
+
+        /* MEALS GRID */
+        .meals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+        .meal-card { background: white; border-radius: 18px; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.04); display: flex; flex-direction: column; transition: 0.3s; }
+        .meal-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        .meal-info { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
+        .meal-type-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--primary); letter-spacing: 1px; margin-bottom: 5px; }
+        .meal-title { font-size: 19px; margin: 5px 0 15px; color: var(--secondary); min-height: 56px; line-height: 1.4; }
+        .meal-kcal-val { font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 20px; }
+
+        .card-btns { display: flex; gap: 12px; }
+        .btn-c { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-change { background: #f0f4f7; color: var(--secondary); }
+        .btn-recipe { background: var(--secondary); color: white; }
+        .btn-change:hover { background: #e2e8ed; }
+
+        /* MODALS */
+        .modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(8px); 
+        }
+        .modal-content { 
+            background: white; width: 95%; max-width: 750px; border-radius: 25px; 
+            max-height: 85vh; overflow-y: auto; padding: 40px; position: relative; animation: modalFade 0.3s ease;
+        }
+        @keyframes modalFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .close-btn { position: absolute; top: 25px; right: 25px; font-size: 28px; cursor: pointer; color: #ccc; }
+        .close-btn:hover { color: #333; }
+
+        /* SELECTION LIST */
+        .selection-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 25px; }
+        .sel-item { 
+            padding: 18px; border: 1px solid #eee; border-radius: 12px; cursor: pointer; 
+            display: flex; justify-content: space-between; align-items: center; transition: 0.2s; 
+        }
+        .sel-item:hover { border-color: var(--primary); background: #f9fdf4; transform: scale(1.01); }
+        .sel-item span { font-weight: 600; color: var(--secondary); }
+
+        /* RECIPE STYLES */
+        .recipe-box h2 { color: var(--secondary); margin-top: 0; }
+        .recipe-section { margin-top: 25px; }
+        .recipe-section h4 { border-left: 4px solid var(--primary); padding-left: 10px; color: var(--primary); margin-bottom: 10px; }
+        .step-list { padding-left: 20px; line-height: 1.8; }
+
+        /* SUMMARY BAR */
+        .summary-bar { 
+            background: var(--secondary); color: white; padding: 35px; border-radius: 20px; 
+            margin-top: 30px; display: grid; grid-template-columns: repeat(4, 1fr); text-align: center;
+            box-shadow: 0 10px 30px rgba(27, 79, 114, 0.2);
+        }
+        .summary-item b { font-size: 28px; display: block; color: var(--primary); margin-bottom: 5px; }
+        .summary-item span { font-size: 13px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+
+        @media (max-width: 950px) { 
+            .main-container { grid-template-columns: 1fr; } 
+            .summary-bar { grid-template-columns: 1fr 1fr; gap: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Fit<span>Generator</span> Pro</h1>
+</div>
+
+<div class="main-container">
+    <aside class="sidebar">
+        <h3>Twoje Cele</h3>
+        
+        <label>Dzienny limit kalorii:</label>
+        <select id="targetKcal">
+            <option value="1500">1500 kcal (Redukcja)</option>
+            <option value="1800">1800 kcal (Lekka redukcja)</option>
+            <option value="2000" selected>2000 kcal (Utrzymanie)</option>
+            <option value="2200">2200 kcal (Lekka masa)</option>
+            <option value="2500">2500 kcal (Budowa masy)</option>
+            <option value="3000">3000 kcal (Sportowiec)</option>
+        </select>
+
+        <label style="display: flex; align-items: center; cursor: pointer; margin-top: 25px;">
+            <input type="checkbox" id="noFish" style="margin-right: 10px; width: 18px; height: 18px;"> 
+            Wyklucz ryby i seafood
+        </label>
+
+        <button class="btn-gen" onclick="generateRandomPlan()">LOSUJ NOWY PLAN</button>
+        <p style="font-size: 11px; color: #999; margin-top: 20px; line-height: 1.4;">
+            * Wszystkie posiłki są skalowane dynamicznie do wybranego celu.
+        </p>
+    </aside>
+
+    <main>
+        <div id="mealsGrid" class="meals-grid">
+            </div>
+
+        <div id="summaryBar" class="summary-bar">
+            </div>
+    </main>
+</div>
+
+<div id="selectionModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('selectionModal')">&times;</span>
+        <h2 id="selectionTitle" style="color: var(--secondary);">Wybierz posiłek</h2>
+        <div id="selectionList" class="selection-grid"></div>
+    </div>
+</div>
+
+<div id="recipeModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('recipeModal')">&times;</span>
+        <div id="recipeContent" class="recipe-box"></div>
+        <button class="btn-gen" onclick="closeModal('recipeModal')" style="width: auto; padding: 12px 40px; float: right;">Zrozumiałem</button>
+    </div>
+</div>
+
+<script>
+    /** * KONFIGURACJA GITHUB 
+     * Podmień poniższy link na swój link RAW z GitHub (posilki.json)
+     */
+    const GITHUB_JSON_URL = 'https://raw.githubusercontent.com/TWOJA_NAZWA/TWOJE_REPO/main/posilki.json';
+
+    let db = {}; 
+    let currentPlan = [];
+    const mealTypes = ["Śniadanie", "Drugie Śniadanie", "Obiad", "Podwieczorek", "Kolacja"];
+
+    // 1. POBIERANIE DANYCH
+    async function init() {
+        try {
+            const response = await fetch(GITHUB_JSON_URL);
+            if (!response.ok) throw new Error("Nie znaleziono pliku JSON");
+            db = await response.json();
+            generateRandomPlan();
+        } catch (err) {
+            console.error("Błąd ładowania bazy:", err);
+            // Wyświetl alert lub załaduj lokalną bazę testową, jeśli GitHub nie odpowiada
+            alert("Nie udało się pobrać bazy posiłków z GitHub. Sprawdź link w kodzie.");
+        }
+    }
+
+    // 2. GENEROWANIE PLANU
+    function generateRandomPlan() {
+        const noFish = document.getElementById('noFish').checked;
+        
+        currentPlan = mealTypes.map(type => {
+            let options = db[type].filter(m => !noFish || !m.fish);
+            if (options.length === 0) options = db[type]; // Fallback
+            const randomMeal = options[Math.floor(Math.random() * options.length)];
+            return { ...randomMeal, originalType: type };
+        });
+
+        render();
+    }
+
+    // 3. RENDEROWANIE WIDOKU
+    function render() {
+        const grid = document.getElementById('mealsGrid');
+        const targetKcal = parseInt(document.getElementById('targetKcal').value);
+        grid.innerHTML = '';
+
+        // Obliczamy współczynnik skalowania (Target / Suma kalorii z bazy)
+        const currentTotal = currentPlan.reduce((sum, m) => sum + m.kcal, 0);
+        const ratio = targetKcal / currentTotal;
+
+        let totals = { kcal: 0, p: 0, f: 0, w: 0 };
+
+        currentPlan.forEach((meal, i) => {
+            const sKcal = Math.round(meal.kcal * ratio);
+            const sP = Math.round(meal.p * ratio);
+            const sF = Math.round(meal.f * ratio);
+            const sW = Math.round(meal.w * ratio);
+
+            totals.kcal += sKcal; totals.p += sP; totals.f += sF; totals.w += sW;
+
+            grid.innerHTML += `
+                <div class="meal-card">
+                    <div class="meal-info">
+                        <span class="meal-type-tag">${meal.originalType}</span>
+                        <h3 class="meal-title">${meal.name}</h3>
+                        <div class="meal-kcal-val">${sKcal} <span style="font-size: 14px; font-weight: 400;">kcal</span></div>
+                        <div class="card-btns">
+                            <button class="btn-c btn-change" onclick="openSelection(${i})">ZAMIEŃ</button>
+                            <button class="btn-c btn-recipe" onclick="openRecipe(${i}, ${sKcal}, ${sP}, ${sF}, ${sW})">PRZEPIS</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        document.getElementById('summaryBar').innerHTML = `
+            <div class="summary-item"><b>${totals.kcal}</b><span>Kalorie</span></div>
+            <div class="summary-item"><b>${totals.p}g</b><span>Białko</span></div>
+            <div class="summary-item"><b>${totals.f}g</b><span>Tłuszcze</span></div>
+            <div class="summary-item"><b>${totals.w}g</b><span>Węgle</span></div>
+        `;
+    }
+
+    // 4. WYBÓR Z LISTY (MODAL)
+    function openSelection(index) {
+        const type = mealTypes[index];
+        const noFish = document.getElementById('noFish').checked;
+        const list = document.getElementById('selectionList');
+        
+        document.getElementById('selectionTitle').innerText = `Wybierz ${type}:`;
+        list.innerHTML = '';
+
+        let options = db[type].filter(m => !noFish || !m.fish);
+        
+        options.forEach(meal => {
+            const item = document.createElement('div');
+            item.className = 'sel-item';
+            item.innerHTML = `<span>${meal.name}</span> <b>${meal.kcal} kcal</b>`;
+            item.onclick = () => {
+                currentPlan[index] = { ...meal, originalType: type };
+                closeModal('selectionModal');
+                render();
+            };
+            list.appendChild(item);
+        });
+
+        document.getElementById('selectionModal').style.display = 'flex';
+    }
+
+    // 5. PRZEPIS (MODAL)
+    function openRecipe(index, kcal, p, f, w) {
+        const meal = currentPlan[index];
+        const content = `
+            <h2>${meal.name}</h2>
+            <p style="color: #666;">Porcja przeliczona pod Twój cel: <b>${kcal} kcal</b> (B:${p}g, T:${f}g, W:${w}g)</p>
+            
+            <div class="recipe-section">
+                <h4>Składniki:</h4>
+                <ul class="step-list">
+                    ${meal.ing.map(item => `<li>${item}</li>`).join('')}
+                </ul>
+            </div>
+
+            <div class="recipe-section">
+                <h4>Przygotowanie:</h4>
+                <ol class="step-list">
+                    ${meal.steps.map(step => `<li>${step}</li>`).join('')}
+                </ol>
+            </div>
+        `;
+        document.getElementById('recipeContent').innerHTML = content;
+        document.getElementById('recipeModal').style.display = 'flex';
+    }
+
+    // FUNKCJE POMOCNICZE
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    
+    // Zamykanie modali po kliknięciu poza treść
+    window.onclick = function(event) {
+        if (event.target.className === 'modal') {
+            event.target.style.display = 'none';
+        }
+    }
+
+    // START
+    init();
+</script>
+
+</body>
+</html>
