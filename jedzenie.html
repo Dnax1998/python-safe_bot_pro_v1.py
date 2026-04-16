@@ -3,141 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twoja Darmowa Dieta</title>
+    <title>FitGenerator - Twój Darmowy Planer Diety</title>
     <style>
         :root {
-            --primary: #4CAF50;
-            --dark: #2e7d32;
-            --light: #f4f4f4;
+            --primary: #27ae60;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --info: #3498db;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
         }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--light); margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: var(--dark); }
-        
-        .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; padding: 15px; background: #e8f5e9; border-radius: 10px; }
-        select, button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; cursor: pointer; }
-        button { background: var(--primary); color: white; border: none; font-weight: bold; }
-        button:hover { background: var(--dark); }
 
-        .meal-card { border-bottom: 1px solid #eee; padding: 15px 0; }
-        .meal-header { display: flex; justify-content: space-between; align-items: center; }
-        .recipe { display: none; margin-top: 10px; padding: 10px; background: #fafafa; font-size: 0.9em; border-left: 3px solid var(--primary); }
-        
-        .summary { margin-top: 20px; padding: 20px; background: var(--dark); color: white; border-radius: 10px; text-align: center; }
-        .badge { background: #ff9800; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; color: white; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: #f0f2f5;
+            color: var(--dark);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .app-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 20px;
+        }
+
+        h1 { color: var(--primary); margin: 0; font-size: 2.5rem; }
+        p.subtitle { color: #7f8c8d; margin-top: 5px; }
+
+        /* Panel Sterowania */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background: var(--light);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 5px; }
+        label { font-weight: bold; font-size: 0.9rem; }
+
+        select, input[type="checkbox"] {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #bdc3c7;
+        }
+
+        .btn-main {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            grid-column: 1 / -1;
+        }
+
+        .btn-main:hover { background: var(--secondary); transform: translateY(-2px); }
+
+        /* Posiłki */
+        .meal-list { display: flex; flex-direction: column; gap: 15px; }
+
+        .meal-card {
+            border: 1px solid #eee;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .meal-card:hover { border-color: var(--secondary); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+
+        .meal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #fff;
+        }
+
+        .meal-info h3 { margin: 0; font-size: 1.1rem; color: var(--primary); }
+        .meal-info span { font-size: 0.9rem; color: #7f8c8d; }
+
+        .meal-actions { display: flex; gap: 10px; }
+
+        .btn-action {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-details { background: var(--info); color: white; }
+        .btn-swap { background: var(--danger); color: white; }
+
+        .recipe-box {
+            display: none;
+            padding: 20px;
+            background: #fdfdfd;
+            border-top: 1px solid #eee;
+        }
+
+        .macro-grid {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--dark);
+        }
+
+        .macro-item { background: #eee; padding: 2px 8px; border-radius: 4px; }
+
+        /* Podsumowanie */
+        .dashboard {
+            margin-top: 40px;
+            padding: 25px;
+            background: var(--dark);
+            color: white;
+            border-radius: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            text-align: center;
+        }
+
+        .stat-box h4 { margin: 0; font-size: 0.8rem; opacity: 0.8; text-transform: uppercase; }
+        .stat-box p { margin: 5px 0 0; font-size: 1.4rem; font-weight: bold; }
+
+        @media (max-width: 600px) {
+            .meal-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .meal-actions { width: 100%; justify-content: space-between; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Planer Diety 2.0</h1>
-    
-    <div class="filters">
-        <label>Kalorie: 
+<div class="app-container">
+    <header>
+        <h1>🥗 FitGenerator</h1>
+        <p class="subtitle">Darmowe diety dostosowane do Ciebie</p>
+    </header>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>Cel kaloryczny:</label>
             <select id="calLimit">
-                <option value="1500">1500 kcal</option>
-                <option value="2000" selected>2000 kcal</option>
-                <option value="2500">2500 kcal</option>
+                <option value="1500">1500 kcal (Redukcja)</option>
+                <option value="2000" selected>2000 kcal (Utrzymanie)</option>
+                <option value="2500">2500 kcal (Masa)</option>
+                <option value="3000">3000 kcal (Ciężki trening)</option>
             </select>
-        </label>
-        <label>Wyklucz: 
-            <input type="checkbox" id="noFish"> Ryby
-        </label>
-        <button onclick="generatePlan()">Generuj nowy plan</button>
+        </div>
+        <div class="control-group">
+            <label>Preferencje:</label>
+            <div style="display: flex; gap: 15px; align-items: center; height: 100%;">
+                <span><input type="checkbox" id="noFish"> Bez ryb</span>
+            </div>
+        </div>
+        <button class="btn-main" onclick="generatePlan()">WYGENERUJ NOWY JADŁOSPIS</button>
     </div>
 
-    <div id="mealPlan">
+    <div id="mealList" class="meal-list">
         </div>
 
-    <div class="summary" id="summary">
-        Podsumowanie: 0 kcal | B: 0g | T: 0g | W: 0g
+    <div class="dashboard">
+        <div class="stat-box">
+            <h4>Kalorie</h4>
+            <p id="totalKcal">0</p>
+        </div>
+        <div class="stat-box">
+            <h4>Białko</h4>
+            <p id="totalP">0g</p>
+        </div>
+        <div class="stat-box">
+            <h4>Tłuszcze</h4>
+            <p id="totalF">0g</p>
+        </div>
+        <div class="stat-box">
+            <h4>Węgle</h4>
+            <p id="totalC">0g</p>
+        </div>
     </div>
 </div>
 
 <script>
-    // Przykładowa baza danych (możesz ją rozbudować!)
     const database = [
-        { id: 1, type: "Śniadanie", name: "Owsianka z borówkami", kcal: 400, protein: 15, fat: 10, carbs: 60, recipe: "Zalej płatki mlekiem, gotuj 5 min, dodaj owoce.", fish: false },
-        { id: 2, type: "Śniadanie", name: "Jajecznica na maśle", kcal: 450, protein: 20, fat: 35, carbs: 5, recipe: "Smaż 3 jajka na 10g masła. Podawaj z chlebem.", fish: false },
-        { id: 3, type: "Obiad", name: "Kurczak z ryżem", kcal: 600, protein: 40, fat: 10, carbs: 80, recipe: "Ugotuj ryż. Podduś pierś z kurczaka z przyprawami.", fish: false },
-        { id: 4, type: "Obiad", name: "Łosoś pieczony", kcal: 600, protein: 35, fat: 30, carbs: 40, recipe: "Piecz łososia 15 min w 180st. Podawaj z ziemniakami.", fish: true },
-        { id: 5, type: "Kolacja", name: "Sałatka z tuńczykiem", kcal: 350, protein: 25, fat: 15, carbs: 20, recipe: "Wymieszaj sałatę, tuńczyka z puszki i oliwę.", fish: true },
-        { id: 6, type: "Kolacja", name: "Twarożek na słono", kcal: 300, protein: 30, fat: 5, carbs: 10, recipe: "Chudy twaróg wymieszaj z rzodkiewką i jogurtem.", fish: false },
-        { id: 7, type: "Podwieczorek", name: "Jabłko i orzechy", kcal: 200, protein: 5, fat: 12, carbs: 25, recipe: "Zjedz świeże jabłko i garść orzechów włoskich.", fish: false }
+        // ŚNIADANIA
+        { type: "Śniadanie", name: "Owsianka Królewska", kcal: 450, p: 15, f: 12, w: 65, fish: false, desc: "Płatki owsiane gotowane na mleku roślinnym z bananem i masłem orzechowym." },
+        { type: "Śniadanie", name: "Jajecznica z 3 jaj", kcal: 420, p: 24, f: 32, w: 4, fish: false, desc: "Jajka smażone na odrobinie masła z pomidorkami koktajlowymi i szczypiorkiem." },
+        { type: "Śniadanie", name: "Kanapki z Hummusem", kcal: 400, p: 12, f: 15, w: 50, fish: false, desc: "Chleb żytni, gruby hummus, ogórek kiszony i papryka." },
+        
+        // II ŚNIADANIA
+        { type: "II Śniadanie", name: "Skyr z owocami", kcal: 250, p: 25, f: 2, w: 30, fish: false, desc: "Jogurt typu skyr, garść borówek i kilka migdałów." },
+        { type: "II Śniadanie", name: "Serek wiejski z rzodkiewką", kcal: 220, p: 22, f: 10, w: 8, fish: false, desc: "Serek wiejski lekki, posiekana rzodkiewka i szczypiorek." },
+        
+        // OBIADY
+        { type: "Obiad", name: "Kurczak w kurkumie", kcal: 650, p: 45, f: 15, w: 80, fish: false, desc: "Pierś z kurczaka duszona, ryż brązowy, brokuły na parze." },
+        { type: "Obiad", name: "Łosoś z pieca", kcal: 680, p: 35, f: 38, w: 45, fish: true, desc: "Dzwonko łososia pieczone w ziołach, pieczone bataty, szparagi." },
+        { type: "Obiad", name: "Makaron Pełnoziarnisty z Pesto", kcal: 600, p: 18, f: 25, w: 75, fish: false, desc: "Makaron rurki, zielone pesto, parmezan i garść rukoli." },
+        
+        // PODWIECZORKI
+        { type: "Podwieczorek", name: "Smoothie zielone", kcal: 200, p: 5, f: 2, w: 40, fish: false, desc: "Szpinak, jabłko, sok z cytryny i banan zblendowane z wodą." },
+        { type: "Podwieczorek", name: "Garść Orzechów", kcal: 280, p: 7, f: 25, w: 6, fish: false, desc: "Mieszanka orzechów nerkowca i włoskich (ok. 40g)." },
+        
+        // KOLACJE
+        { type: "Kolacja", name: "Lekka Sałatka z Cezarem", kcal: 350, p: 28, f: 18, w: 15, fish: false, desc: "Mix sałat, grillowany kurczak, sos na bazie jogurtu, kilka grzanek." },
+        { type: "Kolacja", name: "Sałatka z Tuńczykiem", kcal: 380, p: 30, f: 12, w: 20, fish: true, desc: "Tuńczyk w sosie własnym, kukurydza, jajko gotowane, czerwona cebula." },
+        { type: "Kolacja", name: "Twaróg z oliwkami", kcal: 320, p: 35, f: 15, w: 10, fish: false, desc: "Chudy twaróg, kilka oliwek, pomidor i szczypta czarnuszki." }
     ];
 
     let currentPlan = [];
 
     function generatePlan() {
-        const limit = parseInt(document.getElementById('calLimit').value);
         const excludeFish = document.getElementById('noFish').checked;
-        const types = ["Śniadanie", "Obiad", "Podwieczorek", "Kolacja"];
+        const types = ["Śniadanie", "II Śniadanie", "Obiad", "Podwieczorek", "Kolacja"];
         
-        currentPlan = [];
-        
-        types.forEach(type => {
+        currentPlan = types.map(type => {
             const options = database.filter(m => m.type === type && (!excludeFish || !m.fish));
-            const randomMeal = options[Math.floor(Math.random() * options.length)];
-            if(randomMeal) currentPlan.push({...randomMeal});
+            return {...options[Math.floor(Math.random() * options.length)]};
         });
 
         render();
     }
 
-    function toggleRecipe(id) {
-        const el = document.getElementById(`recipe-${id}`);
-        el.style.display = el.style.display === 'block' ? 'none' : 'block';
-    }
-
     function swapMeal(index) {
-        const meal = currentPlan[index];
         const excludeFish = document.getElementById('noFish').checked;
-        const options = database.filter(m => m.type === meal.type && m.id !== meal.id && (!excludeFish || !m.fish));
+        const currentMeal = currentPlan[index];
+        const options = database.filter(m => m.type === currentMeal.type && m.name !== currentMeal.name && (!excludeFish || !m.fish));
         
         if(options.length > 0) {
             currentPlan[index] = {...options[Math.floor(Math.random() * options.length)]};
             render();
-        } else {
-            alert("Brak innych posiłków tego typu w bazie!");
         }
     }
 
+    function toggleRecipe(index) {
+        const el = document.getElementById(`recipe-${index}`);
+        el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    }
+
     function render() {
-        const container = document.getElementById('mealPlan');
-        container.innerHTML = "";
-        let totalKcal = 0, totalP = 0, totalF = 0, totalC = 0;
+        const listEl = document.getElementById('mealList');
+        listEl.innerHTML = '';
+        
+        let totals = { kcal: 0, p: 0, f: 0, w: 0 };
 
-        currentPlan.forEach((meal, index) => {
-            totalKcal += meal.kcal;
-            totalP += meal.protein;
-            totalF += meal.fat;
-            totalC += meal.carbs;
+        currentPlan.forEach((meal, i) => {
+            totals.kcal += meal.kcal;
+            totals.p += meal.p;
+            totals.f += meal.f;
+            totals.w += meal.w;
 
-            container.innerHTML += `
+            listEl.innerHTML += `
                 <div class="meal-card">
                     <div class="meal-header">
-                        <div>
-                            <strong>${meal.type}:</strong> ${meal.name} 
-                            <span class="badge">${meal.kcal} kcal</span>
+                        <div class="meal-info">
+                            <span>${meal.type}</span>
+                            <h3>${meal.name}</h3>
                         </div>
-                        <div>
-                            <button onclick="toggleRecipe(${index})" style="background:#2196F3">Rozwiń</button>
-                            <button onclick="swapMeal(${index})" style="background:#f44336">Zmień</button>
+                        <div class="meal-actions">
+                            <button class="btn-action btn-details" onclick="toggleRecipe(${i})">📖 Przepis</button>
+                            <button class="btn-action btn-swap" onclick="swapMeal(${i})">🔄 Zmień</button>
                         </div>
                     </div>
-                    <div class="recipe" id="recipe-${index}">
-                        <strong>Jak przygotować:</strong><br>${meal.recipe}<br>
-                        <small>Makro: B:${meal.protein}g | T:${meal.fat}g | W:${meal.carbs}g</small>
+                    <div id="recipe-${i}" class="recipe-box">
+                        <p><strong>Przygotowanie:</strong> ${meal.desc}</p>
+                        <div class="macro-grid">
+                            <span class="macro-item">Kalorie: ${meal.kcal}</span>
+                            <span class="macro-item">B: ${meal.p}g</span>
+                            <span class="macro-item">T: ${meal.f}g</span>
+                            <span class="macro-item) W: ${meal.w}g</span>
+                        </div>
                     </div>
                 </div>
             `;
         });
 
-        document.getElementById('summary').innerHTML = 
-            `SUMA DNIA: ${totalKcal} kcal | Białko: ${totalP}g | Tłuszcze: ${totalF}g | Węglowodany: ${totalC}g`;
+        document.getElementById('totalKcal').innerText = totals.kcal;
+        document.getElementById('totalP').innerText = totals.p + 'g';
+        document.getElementById('totalF').innerText = totals.f + 'g';
+        document.getElementById('totalC').innerText = totals.w + 'g';
     }
 
-    // Pierwsze uruchomienie
+    // Inicjalizacja
     generatePlan();
 </script>
 
