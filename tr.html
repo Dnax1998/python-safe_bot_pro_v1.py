@@ -3,68 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Konspektów Piłkarskich</title>
+    <title>Klubowy System Konspektów</title>
     <style>
-        body { font-family: sans-serif; background: #f4f4f4; margin: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; text-align: center; }
+        :root { --primary: #2c3e50; --accent: #27ae60; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #ececec; margin: 0; }
         
-        /* Styl formularza */
-        form { display: flex; flex-direction: column; gap: 15px; border-bottom: 2px solid #eee; padding-bottom: 30px; }
-        input, textarea, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        button { background: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; }
-        button:hover { background: #219150; }
+        /* Nawigacja (Zakładki) */
+        nav { background: var(--primary); display: flex; justify-content: center; }
+        nav button { background: none; border: none; color: white; padding: 15px 30px; cursor: pointer; font-size: 16px; }
+        nav button.active { background: var(--accent); }
 
-        /* Styl listy konspektów */
-        .konspekt-card { background: #fff; border: 1px solid #ddd; padding: 15px; margin-top: 20px; border-radius: 6px; }
-        .konspekt-card img { max-width: 100%; height: auto; border-radius: 4px; margin-top: 10px; }
-        .konspekt-card h3 { margin-top: 0; color: #2980b9; }
+        .container { max-width: 900px; margin: 20px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* Edytor Grafiki */
+        #canvas-container { position: relative; border: 2px solid #333; width: 600px; height: 400px; margin: 10px auto; background: #2e7d32; /* Kolor boiska */ }
+        canvas { cursor: crosshair; }
+        .toolbar { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
+        
+        /* Formularz i Listy */
+        form { display: flex; flex-direction: column; gap: 15px; }
+        input, textarea, select { padding: 12px; border: 1px solid #ccc; border-radius: 5px; }
+        .btn-save { background: var(--accent); color: white; border: none; padding: 15px; cursor: pointer; font-weight: bold; border-radius: 5px; }
+        
+        .konspekt-card { border-left: 5px solid var(--accent); background: #f9f9f9; padding: 20px; margin-top: 20px; border-radius: 4px; }
+        .konspekt-card img { max-width: 100%; border: 1px solid #ddd; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Dodaj Konspekt Treningowy</h1>
-    
-    <form id="trainerForm">
-        <input type="text" id="title" placeholder="Temat treningu (np. Budowanie akcji 4v4)" required>
-        <textarea id="description" rows="4" placeholder="Opis ćwiczenia i wskazówki..." required></textarea>
-        <input type="text" id="imageUrl" placeholder="Link do zdjęcia/grafiki (URL)">
-        <button type="submit">Opublikuj konspekt</button>
-    </form>
+<nav>
+    <button onclick="showPage('lista')" id="btn-lista" class="active">Baza Treningów</button>
+    <button onclick="showPage('dodaj')">Dodaj Konspekt</button>
+    <button onclick="showPage('generator')">Generator Grafiki</button>
+</nav>
 
-    <div id="konspektyList">
-        <h2>Baza treningów</h2>
+<div class="container">
+    
+    <div id="lista" class="page active">
+        <h2>Ostatnie konspekty</h2>
+        <div id="konspektyList"></div>
+    </div>
+
+    <div id="dodaj" class="page">
+        <h2>Nowy Konspekt</h2>
+        <form id="trainerForm">
+            <input type="text" id="title" placeholder="Temat treningu..." required>
+            <textarea id="description" rows="5" placeholder="Opis ćwiczenia, przebieg, ograniczenia..." required></textarea>
+            <input type="text" id="finalImageUrl" placeholder="Link do grafiki (możesz wkleić link z generatora)">
+            <button type="submit" class="btn-save">ZAPISZ W BAZIE</button>
+        </form>
+    </div>
+
+    <div id="generator" class="page">
+        <h2>Tablica Taktyczna</h2>
+        <div class="toolbar">
+            <input type="color" id="colorPicker" value="#ffffff">
+            <button onclick="clearCanvas()">Wyczyść boisko</button>
+            <button onclick="downloadCanvas()" style="background: #2980b9; color: white; border: none; padding: 5px 10px; cursor: pointer;">Pobierz grafikę</button>
         </div>
+        <p style="text-align:center; font-size: 12px;">Narysuj schemat (pachołki, podania, ruch zawodnika), pobierz go i wklej link/użyj w opisie.</p>
+        <div id="canvas-container">
+            <canvas id="tacticalBoard" width="600" height="400"></canvas>
+        </div>
+    </div>
+
 </div>
 
 <script>
+    // --- NAWIGACJA ---
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    // --- GENERATOR GRAFIKI (CANVAS) ---
+    const canvas = document.getElementById('tacticalBoard');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    // Rysowanie boiska (tło)
+    function drawPitch() {
+        ctx.strokeStyle = "rgba(255,255,255,0.5)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(10, 10, 580, 380); // Linie boczne
+        ctx.beginPath();
+        ctx.moveTo(300, 10); ctx.lineTo(300, 390); // Linia środkowa
+        ctx.stroke();
+    }
+    drawPitch();
+
+    canvas.addEventListener('mousedown', () => drawing = true);
+    canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
+    canvas.addEventListener('mousemove', draw);
+
+    function draw(e) {
+        if (!drawing) return;
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = document.getElementById('colorPicker').value;
+
+        const rect = canvas.getBoundingClientRect();
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawPitch();
+    }
+
+    function downloadCanvas() {
+        const link = document.createElement('a');
+        link.download = 'schemat-treningu.png';
+        link.href = canvas.toDataURL();
+        link.click();
+        alert("Grafika została pobrana! Możesz ją teraz dodać do konspektu.");
+    }
+
+    // --- OBSŁUGA FORMULARZA ---
     const form = document.getElementById('trainerForm');
     const list = document.getElementById('konspektyList');
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-
-        // Pobieranie danych z pól
         const title = document.getElementById('title').value;
         const desc = document.getElementById('description').value;
-        const img = document.getElementById('imageUrl').value;
+        const img = document.getElementById('finalImageUrl').value;
 
-        // Tworzenie elementu konspektu
         const card = document.createElement('div');
         card.className = 'konspekt-card';
         card.innerHTML = `
             <h3>${title}</h3>
-            <p>${desc}</p>
-            ${img ? `<img src="${img}" alt="Schemat">` : ''}
-            <hr>
+            <p style="white-space: pre-wrap;">${desc}</p>
+            ${img ? `<img src="${img}" alt="Grafika treningowa">` : '<p><i>Brak załączonej grafiki</i></p>'}
         `;
 
-        // Dodawanie do listy
         list.prepend(card);
-
-        // Czyszczenie formularza
         form.reset();
+        showPage('lista');
     });
 </script>
 
