@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Kalkulator Hipoteczny</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-body: #f0f2f5;
+            --bg-card: #ffffff;
+            --text-main: #1a202c;
+            --primary: #3b82f6;
+            --accent: #10b981;
+            --border: #e2e8f0;
+        }
+
+        .dark-mode {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f1f5f9;
+            --primary: #60a5fa;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            transition: all 0.3s ease;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } }
+
+        /* Inputy i Suwaki */
+        .input-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; opacity: 0.8; }
+        input[type="range"] { width: 100%; height: 6px; cursor: pointer; accent-color: var(--primary); }
+        .val-display { float: right; font-weight: bold; color: var(--primary); }
+
+        /* Tabela Harmonogramu */
+        .table-wrapper {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th { position: sticky; top: 0; background: var(--primary); color: white; padding: 10px; }
+        td { padding: 8px; border-bottom: 1px solid var(--border); text-align: center; }
+
+        /* Przycisk trybu nocnego */
+        .theme-toggle {
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-main);
+            font-weight: bold;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .badge-save { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+
+        .big-price { font-size: 2rem; font-weight: 800; margin: 10px 0; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Kalkulator 2.0 🚀</h1>
+        <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')">🌓 Tryb</button>
+    </header>
+
+    <div class="grid">
+        <div class="card">
+            <div class="input-group">
+                <label>Kwota Kredytu: <span id="val-amount" class="val-display">300 000</span></label>
+                <input type="range" id="amount" min="50000" max="2000000" step="10000" value="300000" oninput="update()">
+            </div>
+
+            <div class="input-group">
+                <label>Okres (Lata): <span id="val-years" class="val-display">25</span></label>
+                <input type="range" id="years" min="5" max="35" step="1" value="25" oninput="update()">
+            </div>
+
+            <div class="input-group">
+                <label>Oprocentowanie / RRSO: <span id="val-rate" class="val-display">7.0</span>%</label>
+                <input type="range" id="rate" min="1" max="15" step="0.1" value="7.0" oninput="update()">
+            </div>
+
+            <hr style="border:0; border-top:1px solid var(--border); margin: 25px 0;">
+
+            <div class="input-group">
+                <label>Miesięczna Nadpłata: <span id="val-extra" class="val-display">0</span></label>
+                <input type="range" id="extra" min="0" max="10000" step="100" value="0" oninput="update()">
+                <small style="opacity:0.6">Przesuń, aby zobaczyć magię oszczędności ✨</small>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="text-align: center;">
+                <label>Twoja Miesięczna Rata:</label>
+                <div class="big-price" id="res-installment">0.00 PLN</div>
+                <div id="savings-info"></div>
+            </div>
+
+            <div style="height: 300px; margin-top: 20px;">
+                <canvas id="loanChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Harmonogram Spłat (Pierwsze 12 miesięcy)</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Miesiąc</th>
+                        <th>Rata</th>
+                        <th>Kapitał</th>
+                        <th>Odsetki</th>
+                        <th>Pozostało</th>
+                    </tr>
+                </thead>
+                <tbody id="schedule-body"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let myChart = null;
+
+    function format(num) {
+        return num.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
+    }
+
+    function update() {
+        const P = parseFloat(document.getElementById('amount').value);
+        const Y = parseInt(document.getElementById('years').value);
+        const R = parseFloat(document.getElementById('rate').value) / 100 / 12;
+        const E = parseFloat(document.getElementById('extra').value);
+        const N = Y * 12;
+
+        // Aktualizacja labeli
+        document.getElementById('val-amount').innerText = P.toLocaleString();
+        document.getElementById('val-years').innerText = Y;
+        document.getElementById('val-rate').innerText = (R*12*100).toFixed(1);
+        document.getElementById('val-extra').innerText = E.toLocaleString();
+
+        // Rata bazowa
+        const x = Math.pow(1 + R, N);
+        const installment = (P * x * R) / (x - 1);
+        document.getElementById('res-installment').innerText = format(installment);
+
+        // Symulacja
+        let balance = P;
+        let dataNormal = [P];
+        let dataExtra = [P];
+        let scheduleHtml = '';
+        let totalInterestNormal = 0;
+        let totalInterestExtra = 0;
+        let monthsExtra = 0;
+
+        // Scenariusz z nadpłatą
+        let tempBalance = P;
+        for(let i=1; i<=N; i++) {
+            let intPart = tempBalance * R;
+            let prinPart = (installment - intPart) + E;
+            
+            totalInterestExtra += intPart;
+            tempBalance -= prinPart;
+            dataExtra.push(tempBalance > 0 ? tempBalance : 0);
+            
+            if(tempBalance <= 0 && monthsExtra === 0) monthsExtra = i;
+            if(tempBalance <= 0) tempBalance = 0;
+        }
+
+        // Harmonogram (dla tabeli - pierwsze 12 msc)
+        let tableBalance = P;
+        for(let i=1; i<=12; i++) {
+            let intPart = tableBalance * R;
+            let prinPart = (installment - intPart) + E;
+            tableBalance -= prinPart;
+            scheduleHtml += `<tr>
+                <td>${i}</td>
+                <td>${format(installment + E)}</td>
+                <td>${format(prinPart)}</td>
+                <td>${format(intPart)}</td>
+                <td>${format(tableBalance > 0 ? tableBalance : 0)}</td>
+            </tr>`;
+        }
+        document.getElementById('schedule-body').innerHTML = scheduleHtml;
+
+        // Info o oszczędnościach
+        if(E > 0 && monthsExtra > 0) {
+            const savedMonths = N - monthsExtra;
+            const savedYears = (savedMonths / 12).toFixed(1);
+            document.getElementById('savings-info').innerHTML = 
+                `<span class="badge badge-save">Kredyt krótszy o ${savedMonths} mies. (~${savedYears} lat!)</span>`;
+        } else {
+            document.getElementById('savings-info').innerHTML = '';
+        }
+
+        renderChart(dataExtra, N);
+    }
+
+    function renderChart(data, totalMonths) {
+        const ctx = document.getElementById('loanChart').getContext('2d');
+        const labels = Array.from({length: data.length}, (_, i) => i);
+
+        if (myChart) myChart.destroy();
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Pozostały kapitał',
+                    data: data,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    pointRadius: 0,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { callback: v => v/1000 + 'k' } },
+                    x: { ticks: { callback: v => v % 12 === 0 ? 'R' + v/12 : '' } }
+                }
+            }
+        });
+    }
+
+    update();
+</script>
+
+</body>
+</html>
