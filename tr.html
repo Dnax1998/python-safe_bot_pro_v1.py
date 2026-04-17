@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klubowy System Konspektów</title>
+    <style>
+        :root {
+            --primary: #1a2a3a;
+            --accent: #27ae60;
+            --bg: #f0f2f5;
+            --text: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding-bottom: 50px;
+        }
+
+        /* Nawigacja */
+        nav {
+            background: var(--primary);
+            display: flex;
+            justify-content: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        nav button {
+            background: none;
+            border: none;
+            color: white;
+            padding: 15px 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        nav button:hover { background: rgba(255,255,255,0.1); }
+        nav button.active { background: var(--accent); }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .page { display: none; animation: fadeIn 0.3s; }
+        .page.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Formularz */
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; }
+        input, textarea {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .btn-main {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-main:hover { background: #219150; }
+
+        /* Generator Grafiki */
+        #canvas-wrapper {
+            text-align: center;
+            background: #ddd;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        canvas {
+            background: #2e7d32;
+            border: 3px solid #1a2a3a;
+            border-radius: 4px;
+            cursor: crosshair;
+            touch-action: none; /* Ważne dla urządzeń mobilnych */
+        }
+
+        .toolbar {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+
+        /* Karty Konspektów */
+        .konspekt-card {
+            border: 1px solid #eee;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            background: #fff;
+            position: relative;
+        }
+
+        .konspekt-card h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 5px; }
+        .konspekt-card img { max-width: 100%; border-radius: 5px; margin-top: 15px; display: block; }
+        .date { font-size: 12px; color: #888; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <button onclick="showPage('lista', this)" class="active">BAZA TRENINGÓW</button>
+    <button onclick="showPage('dodaj', this)">NOWY KONSPEKT</button>
+    <button onclick="showPage('generator', this)">GENERATOR GRAFIKI</button>
+</nav>
+
+<div class="container">
+    
+    <div id="lista" class="page active">
+        <h2>Biblioteka Konspektów</h2>
+        <div id="konspektyList">
+            <p style="color: #999;">Brak zapisanych treningów. Dodaj swój pierwszy konspekt!</p>
+        </div>
+    </div>
+
+    <div id="dodaj" class="page">
+        <h2>Stwórz nowy konspekt</h2>
+        <form id="trainerForm">
+            <div class="form-group">
+                <label>Temat jednostki:</label>
+                <input type="text" id="title" placeholder="np. Doskonalenie uderzenia po zwodzie" required>
+            </div>
+            <div class="form-group">
+                <label>Opis i wskazówki (Coaching Points):</label>
+                <textarea id="description" rows="6" placeholder="Opisz przebieg ćwiczenia..." required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Link do zdjęcia (URL):</label>
+                <input type="text" id="imageUrl" placeholder="Wklej link do grafiki z internetu lub Imgur">
+            </div>
+            <button type="submit" class="btn-main">DODAJ DO BAZY</button>
+        </form>
+    </div>
+
+    <div id="generator" class="page">
+        <h2>Tablica Taktyczna</h2>
+        <div class="toolbar">
+            <input type="color" id="colorPicker" value="#ffffff" title="Wybierz kolor">
+            <button class="tool-btn" onclick="clearCanvas()">Wyczyść</button>
+            <button class="tool-btn" onclick="downloadCanvas()" style="background: #3498db; color: white; border: none;">Pobierz PNG</button>
+        </div>
+        
+        <div id="canvas-wrapper">
+            <canvas id="tacticalBoard" width="600" height="400"></canvas>
+        </div>
+        <p style="font-size: 13px; color: #666; margin-top: 10px;">
+            <b>Instrukcja:</b> Narysuj schemat, kliknij "Pobierz PNG", a następnie użyj zdjęcia w swoim konspekcie.
+        </p>
+    </div>
+
+</div>
+
+<script>
+    // --- NAWIGACJA ---
+    function showPage(pageId, btn) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(pageId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    // --- GENERATOR GRAFIKI ---
+    const canvas = document.getElementById('tacticalBoard');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    function drawPitch() {
+        // Trawa
+        ctx.fillStyle = "#2e7d32";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Linie
+        ctx.strokeStyle = "rgba(255,255,255,0.8)";
+        ctx.lineWidth = 2;
+        
+        // Auty
+        ctx.strokeRect(20, 20, 560, 360);
+        // Linia środkowa
+        ctx.beginPath();
+        ctx.moveTo(300, 20); ctx.lineTo(300, 380);
+        ctx.stroke();
+        // Koło środkowe
+        ctx.beginPath();
+        ctx.arc(300, 200, 45, 0, Math.PI * 2);
+        ctx.stroke();
+        // Pola karne
+        ctx.strokeRect(20, 100, 80, 200);
+        ctx.strokeRect(500, 100, 80, 200);
+    }
+
+    drawPitch();
+
+    // Eventy myszy
+    canvas.addEventListener('mousedown', (e) => { drawing = true; draw(e); });
+    canvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
+
+    function draw(e) {
+        if (!drawing) return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = document.getElementById('colorPicker').value;
+
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawPitch();
+    }
+
+    function downloadCanvas() {
+        const link = document.createElement('a');
+        link.download = 'schemat.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+
+    // --- LOGIKA KONSPEKTÓW ---
+    const form = document.getElementById('trainerForm');
+    const list = document.getElementById('konspektyList');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const title = document.getElementById('title').value;
+        const desc = document.getElementById('description').value;
+        const img = document.getElementById('imageUrl').value;
+        const date = new Date().toLocaleDateString('pl-PL');
+
+        // Jeśli to pierwszy konspekt, wyczyść informację o braku wpisów
+        if (list.querySelector('p')) { list.innerHTML = ''; }
+
+        const card = document.createElement('div');
+        card.className = 'konspekt-card';
+        card.innerHTML = `
+            <div class="date">${date}</div>
+            <h3>${title}</h3>
+            <p style="white-space: pre-wrap;">${desc}</p>
+            ${img ? `<img src="${img}" alt="Schemat treningu">` : ''}
+        `;
+
+        list.prepend(card);
+        form.reset();
+        showPage('lista', document.querySelector('nav button:first-child'));
+    });
+</script>
+
+</body>
+</html>
