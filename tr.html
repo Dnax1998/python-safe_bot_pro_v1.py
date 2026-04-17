@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Konspektów Piłkarskich</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f4; margin: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; }
+        
+        /* Styl formularza */
+        form { display: flex; flex-direction: column; gap: 15px; border-bottom: 2px solid #eee; padding-bottom: 30px; }
+        input, textarea, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #219150; }
+
+        /* Styl listy konspektów */
+        .konspekt-card { background: #fff; border: 1px solid #ddd; padding: 15px; margin-top: 20px; border-radius: 6px; }
+        .konspekt-card img { max-width: 100%; height: auto; border-radius: 4px; margin-top: 10px; }
+        .konspekt-card h3 { margin-top: 0; color: #2980b9; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Dodaj Konspekt Treningowy</h1>
+    
+    <form id="trainerForm">
+        <input type="text" id="title" placeholder="Temat treningu (np. Budowanie akcji 4v4)" required>
+        <textarea id="description" rows="4" placeholder="Opis ćwiczenia i wskazówki..." required></textarea>
+        <input type="text" id="imageUrl" placeholder="Link do zdjęcia/grafiki (URL)">
+        <button type="submit">Opublikuj konspekt</button>
+    </form>
+
+    <div id="konspektyList">
+        <h2>Baza treningów</h2>
+        </div>
+</div>
+
+<script>
+    const form = document.getElementById('trainerForm');
+    const list = document.getElementById('konspektyList');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Pobieranie danych z pól
+        const title = document.getElementById('title').value;
+        const desc = document.getElementById('description').value;
+        const img = document.getElementById('imageUrl').value;
+
+        // Tworzenie elementu konspektu
+        const card = document.createElement('div');
+        card.className = 'konspekt-card';
+        card.innerHTML = `
+            <h3>${title}</h3>
+            <p>${desc}</p>
+            ${img ? `<img src="${img}" alt="Schemat">` : ''}
+            <hr>
+        `;
+
+        // Dodawanie do listy
+        list.prepend(card);
+
+        // Czyszczenie formularza
+        form.reset();
+    });
+</script>
+
+</body>
+</html>
