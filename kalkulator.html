@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Kredytu i Nadpłat</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f3f4f6;
+            --panel-bg: #ffffff;
+            --text: #1f2937;
+            --border: #e5e7eb;
+            --success: #16a34a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 30px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box; /* Ważne dla paddingu */
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .results-summary {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .result-value {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .overpayment-section {
+            display: none; /* Ukryte domyślnie */
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border);
+        }
+
+        .overpayment-section.active {
+            display: block;
+        }
+
+        .saving {
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        /* Stylizacja przełącznika (checkbox) */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            background: #f9fafb;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            margin-right: 10px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--success);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Wizualizacja Kredytu Hipotecznego</h1>
+
+    <div class="grid">
+        <div class="panel">
+            <h2>Parametry Kredytu</h2>
+            
+            <div class="form-group">
+                <label for="amount">Kwota kredytu (PLN)</label>
+                <input type="number" id="amount" placeholder="np. 300000" value="300000">
+            </div>
+
+            <div class="form-group">
+                <label for="years">Okres kredytowania (Lata)</label>
+                <input type="number" id="years" placeholder="np. 20" value="20">
+            </div>
+
+            <div class="form-group">
+                <label for="rate">Oprocentowanie / RRSO (%)</label>
+                <input type="number" id="rate" placeholder="np. 7.5" step="0.01" value="7.5">
+            </div>
+
+            <div class="switch-container">
+                <label class="switch">
+                    <input type="checkbox" id="enableOverpayment">
+                    <span class="slider"></span>
+                </label>
+                <span style="font-weight:600">Chcę symulować nadpłaty</span>
+            </div>
+
+            <div id="overpaymentInputs" class="overpayment-section">
+                <div class="form-group">
+                    <label for="overpaymentAmount">Kwota comiesięcznej nadpłaty (PLN)</label>
+                    <input type="number" id="overpaymentAmount" placeholder="np. 500" value="500">
+                </div>
+                <div class="form-group">
+                    <label for="overpaymentStartMonth">Start nadpłaty (miesiąc nr)</label>
+                    <input type="number" id="overpaymentStartMonth" placeholder="np. 1" value="1" min="1">
+                </div>
+            </div>
+
+            <button onclick="calculateAndRender()">Oblicz i Zwizualizuj</button>
+
+            <div class="results-summary" id="resultsSummary" style="display:none;">
+                <h3>Podsumowanie:</h3>
+                <div class="result-item">
+                    <span>Rata bazowa:</span>
+                    <span class="result-value" id="baseInstallment">0.00 PLN</span>
+                </div>
+                <div class="result-item">
+                    <span>Koszt (bez nadpłat):</span>
+                    <span class="result-value" id="totalInterestBase">0.00 PLN</span>
+                </div>
+                
+                <div id="summaryWithOverpayment" style="display:none; border-top: 1px dashed #ccc; margin-top:10px; padding-top:10px;">
+                    <div class="result-item">
+                        <span>Nowy okres kredytu:</span>
+                        <span class="result-value" id="newTime">0 mies.</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Zaoszczędzony czas:</span>
+                        <span class="result-value saving" id="timeSaved">0 mies.</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Zaoszczędzone odsetki:</span>
+                        <span class="result-value saving" id="interestSaved">0.00 PLN</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Wizualizacja Spłaty Kapitału</h2>
+            <div class="chart-container">
+                <canvas id="loanChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let myChart = null; // Zmienna przechowująca instancję wykresu
+
+    // Obsługa pokazania/ukrycia sekcji nadpłaty
+    document.getElementById('enableOverpayment').addEventListener('change', function() {
+        const inputs = document.getElementById('overpaymentInputs');
+        if(this.checked) {
+            inputs.classList.add('active');
+        } else {
+            inputs.classList.remove('active');
+        }
+    });
+
+    function formatPLN(amount) {
+        return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$& ') + ' PLN';
+    }
+
+    function calculateAndRender() {
+        // 1. Pobranie danych
+        const P = parseFloat(document.getElementById('amount').value);
+        const years = parseFloat(document.getElementById('years').value);
+        const annualRate = parseFloat(document.getElementById('rate').value) / 100;
+        const overpaymentActive = document.getElementById('enableOverpayment').checked;
+        const overpaymentMonthly = parseFloat(document.getElementById('overpaymentAmount').value) || 0;
+        const overpaymentStartMonth = parseInt(document.getElementById('overpaymentStartMonth').value) || 1;
+
+        if (!P || !years || !annualRate || P <= 0 || years <= 0) {
+            alert("Proszę wpisać poprawne dane podstawowe kredytu.");
+            return;
+        }
+
+        const N = years * 12; // Liczba miesięcy
+        const r = annualRate / 12; // Oprocentowanie miesięczne
+
+        // 2. Obliczenie raty standardowej (wzór na raty równe)
+        // PMT = P * r * (1+r)^N / ((1+r)^N - 1)
+        const x = Math.pow(1 + r, N);
+        const standardInstallment = (P * x * r) / (x - 1);
+
+        // --- Symulacja HARMONOGRAMU ---
+
+        // Scenariusz A: Bez nadpłat
+        let balanceA = P;
+        let totalInterestA = 0;
+        let chartDataA = [P]; // Dane do wykresu (saldo na początek)
+
+        for (let i = 1; i <= N; i++) {
+            let interestPayment = balanceA * r;
+            let principalPayment = standardInstallment - interestPayment;
+            
+            totalInterestA += interestPayment;
+            balanceA -= principalPayment;
+            
+            // Zabezpieczenie przed ujemnym saldem pod koniec
+            if (balanceA < 0) balanceA = 0;
+            chartDataA.push(balanceA);
+        }
+
+        // Scenariusz B: Z nadpłatami (jeśli aktywne)
+        let chartDataB = [];
+        let totalInterestB = 0;
+        let endMonthB = N;
+        let overpaymentPossible = false;
+
+        if (overpaymentActive) {
+            overpaymentPossible = true;
+            let balanceB = P;
+            chartDataB.push(P);
+            let month = 1;
+
+            while (balanceB > 0 && month <= N * 2) { // Zabezpieczenie pętli
+                let interestPayment = balanceB * r;
+                let standardPrincipal = standardInstallment - interestPayment;
+                
+                let currentOverpayment = (month >= overpaymentStartMonth) ? overpaymentMonthly : 0;
+                
+                let totalPrincipalThisMonth = standardPrincipal + currentOverpayment;
+                
+                totalInterestB += interestPayment;
+
+                if (totalPrincipalThisMonth >= balanceB) {
+                    // Ostatnia rata
+                    // Uwaga: w rzeczywistości ostatnia rata jest mniejsza, 
+                    // ale dla uproszczenia wykresu zerujemy saldo.
+                    balanceB = 0;
+                    chartDataB.push(0);
+                    endMonthB = month;
+                    break;
+                } else {
+                    balanceB -= totalPrincipalThisMonth;
+                    chartDataB.push(balanceB);
+                }
+                month++;
+            }
+        }
+
+        // --- AKTUALIZACJA UI ---
+
+        document.getElementById('resultsSummary').style.display = 'block';
+        document.getElementById('baseInstallment').innerText = formatPLN(standardInstallment);
+        document.getElementById('totalInterestBase').innerText = formatPLN(totalInterestA);
+
+        const summaryOp = document.getElementById('summaryWithOverpayment');
+        if (overpaymentPossible) {
+            summaryOp.style.display = 'block';
+            document.getElementById('newTime').innerText = `${endMonthB} mies. (${(endMonthB/12).toFixed(1)} lat)`;
+            
+            const monthsSaved = N - endMonthB;
+            document.getElementById('timeSaved').innerText = monthsSaved > 0 ? `${monthsSaved} mies.` : "0 mies.";
+            
+            const interestSaved = totalInterestA - totalInterestB;
+            document.getElementById('interestSaved').innerText = formatPLN(interestSaved > 0 ? interestSaved : 0);
+        } else {
+            summaryOp.style.display = 'none';
+        }
+
+        // --- RENDEROWANIE WYKRESU (Chart.js) ---
+        
+        const ctx = document.getElementById('loanChart').getContext('2d');
+        
+        // Wygenerowanie etykiet X (miesiące lub lata)
+        const labels = Array.from({length: Math.max(N, chartDataB.length)}, (_, i) => i);
+
+        // Destrukcja poprzedniego wykresu, aby narysować nowy
+        if (myChart) {
+            myChart.destroy();
+        }
+
+        let datasets = [{
+            label: 'Saldo bez nadpłat',
+            data: chartDataA,
+            borderColor: '#2563eb', // Blue
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            pointRadius: 0, // Ukrywa kropki dla czytelności
+            tension: 0.1 // Lekkie zaokrąglenie linii
+        }];
+
+        if (overpaymentActive) {
+            datasets.push({
+                label: 'Saldo z NADPŁATAMI',
+                data: chartDataB,
+                borderColor: '#16a34a', // Green
+                backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                pointRadius: 0,
+                tension: 0.1
+            });
+        }
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Miesiąc spłaty'
+                        },
+                        ticks: {
+                            callback: function(value, index, ticks) {
+                                // Pokazuj etykietę co rok (12 miesięcy)
+                                if (value % 12 === 0) return 'Rok ' + (value/12);
+                            }
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Pozostały Kapitał (PLN)'
+                        },
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString() + ' zł';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += formatPLN(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    }
+
+    // Uruchomienie obliczeń na starcie z domyślnymi danymi
+    calculateAndRender();
+
+</script>
+
+</body>
+</html>
