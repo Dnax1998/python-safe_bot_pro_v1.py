@@ -3,284 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trener Mocy - Interaktywna Mapa Mięśni</title>
+    <title>Trener Mocy</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #111;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
+        body { background: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
+        
+        /* Kontener na zdjęcie */
+        .image-container { position: relative; width: fit-content; }
+        
+        /* Twoje zdjęcie */
+        img { display: block; border-radius: 10px; max-width: 500px; }
 
-        .main-container {
-            display: flex;
-            gap: 30px;
-            max-width: 1100px;
-            width: 100%;
-        }
-
-        /* Styl dla panelu z ludzikiem (Lewa strona) */
-        .avatar-panel {
-            background: #222;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            flex: 1;
-            text-align: center;
-            position: relative;
-        }
-
-        .avatar-panel h2 {
-            margin-top: 0;
-            color: #ccc;
-        }
-
-        /* SVG LUDZIKA - Tu dzieje się magia */
-        #muscle-map {
-            width: 100%;
-            height: auto;
-            max-width: 350px; /* Maksymalna szerokość ludzika */
-        }
-
-        /* Styl dla "path" czyli pojedynczych mięśni */
-        #muscle-map path {
-            fill: #444; /* Domyślny, ciemny kolor mięśnia */
-            stroke: #666; /* Kolor obramowania */
-            stroke-width: 1;
-            transition: all 0.3s ease;
+        /* Niewidzialne strefy (musisz dostosować ich pozycję w CSS!) */
+        .muscle-zone {
+            position: absolute;
+            background: rgba(255, 69, 0, 0); /* Przezroczyste */
             cursor: pointer;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        .muscle-zone:hover {
+            background: rgba(255, 69, 0, 0.4); /* Podświetlenie przy najechaniu */
+            box-shadow: 0 0 15px #ff4500;
         }
 
-        /* Efekt po najechaniu myszką na mięsień */
-        #muscle-map path:hover {
-            fill: #ff6f00; /* Jasny pomarańczowy */
-            filter: drop-shadow(0 0 8px #ff6f00);
-        }
-
-        /* Styl dla panelu bocznego (Prawa strona) */
-        .side-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .panel-box {
-            background: #222;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .panel-box h3 {
-            margin-top: 0;
-            border-bottom: 2px solid #ff6f00;
-            padding-bottom: 10px;
-            color: white;
-        }
-
-        .profile-data p, .ranks-data p {
-            margin: 10px 0;
-            color: #bbb;
-        }
-
-        .profile-data span, .ranks-data span {
-            font-weight: bold;
-            color: white;
-        }
-
-        /* Modal - Okno do wpisywania wyniku */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #333;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
-            z-index: 1000;
-            width: 300px;
-            text-align: center;
-        }
-
-        .modal h4 { margin-top: 0; color: #ff6f00; font-size: 1.4em; }
-        .modal input {
-            width: 80%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border: 1px solid #555;
-            background: #111;
-            color: white;
-            font-size: 1em;
-        }
-        .modal button {
-            background: #ff6f00;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            margin-top: 15px;
-            width: 100%;
-        }
-
-        /* Ciemne tło pod modalem */
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 999;
-        }
-
-        .rank-badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.9em;
-            font-weight: bold;
-            margin-left: 10px;
-        }
-        .rank-low { background: #555; color: #ccc; }
-        .rank-mid { background: #ff6f00; color: white; }
-        .rank-high { background: #00e676; color: black; filter: drop-shadow(0 0 5px #00e676); }
-
+        /* Modal */
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #333; padding: 20px; border-radius: 10px; z-index: 10; text-align: center; }
+        input, button { padding: 10px; margin: 5px; border-radius: 5px; border: none; }
+        button { background: #ff4500; color: white; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="main-container">
+<div class="image-container">
+    <img src="zdjecie.jpg" alt="Mapa mięśni">
 
-    <div class="avatar-panel">
-        <h2>TWÓJ AWATAR</h2>
-        
-        <svg id="muscle-map" viewBox="0 0 350 600" xmlns="http://www.w3.org/2000/svg">
-            <path id="back" d="M 120,120 L 230,120 L 220,280 L 130,280 Z" />
-            
-            <path id="chest" d="M 130,140 L 220,140 L 220,210 L 130,210 Z" />
-            
-            <path id="biceps_l" d="M 90,140 C 60,160 60,210 90,230 L 110,210 L 110,160 Z" />
-            
-            <path id="biceps_r" d="M 260,140 C 290,160 290,210 260,230 L 240,210 L 240,160 Z" />
-            
-            <path id="thigh_l" d="M 130,300 L 170,300 L 170,450 L 130,430 Z" />
-            
-            <path id="thigh_r" d="M 180,300 L 220,300 L 220,430 L 180,450 Z" />
-        </svg>
-        
-        <p style="color: #888; font-size: 0.9em; margin-top: 15px;">Kliknij w mięsień, aby dodać wynik.</p>
-    </div>
-
-    <div class="side-panel">
-        
-        <div class="panel-box profile-data">
-            <h3>PROFIL GRACZA</h3>
-            <p>Płeć: <span id="display-gender">MĘŻCZYZNA</span></p>
-            <p>Wiek: <span id="display-age">28</span></p>
-            <p>Waga: <span id="display-weight">75 kg</span></p>
-            <p>Wzrost: <span id="display-height">180 cm</span></p>
-        </div>
-
-        <div class="panel-box ranks-data">
-            <h3>TWOJE RANGI</h3>
-            <p>Uda (Przód): <span id="rank-thigh_l">POCZĄTKUJĄCY</span><span id="badge-thigh_l" class="rank-badge rank-low">Lv. 1</span></p>
-            <p>Klatka Piersiowa: <span id="rank-chest">POCZĄTKUJĄCY</span><span id="badge-chest" class="rank-badge rank-low">Lv. 1</span></p>
-            <p>Plecy: <span id="rank-back">POCZĄTKUJĄCY</span><span id="badge-back" class="rank-badge rank-low">Lv. 1</span></p>
-            <p>Bicepsy: <span id="rank-biceps_l">POCZĄTKUJĄCY</span><span id="badge-biceps_l" class="rank-badge rank-low">Lv. 1</span></p>
-        </div>
-
-    </div>
-
+    <div class="muscle-zone" style="top: 20%; left: 40%; width: 50px; height: 50px;" onclick="openModal('Klatka')"></div>
+    <div class="muscle-zone" style="top: 50%; left: 35%; width: 60px; height: 80px;" onclick="openModal('Uda')"></div>
 </div>
 
-<div class="overlay" id="overlay"></div>
-<div class="modal" id="modal">
-    <h4 id="modal-muscle-name">Udo</h4>
-    <p style="color: #bbb; margin-bottom: 20px;">Wpisz swój najlepszy wynik</p>
-    <input type="number" id="lift-weight" placeholder="Ciężar (kg)">
-    <input type="number" id="lift-reps" placeholder="Powtórzenia (1-12)">
-    <button onclick="submitScore()">DODAJ I OBLICZ</button>
+<div id="modal" class="modal">
+    <h3 id="m-name">Mięsień</h3>
+    <input type="number" id="weight" placeholder="Ciężar (kg)">
+    <button onclick="saveResult()">Zapisz</button>
 </div>
 
 <script>
-    // DANE UŻYTKOWNIKA (To byłoby z logowania)
-    const user = { age: 28, weight: 75, height: 180, gender: 'male' };
-
-    // BAZA NAZW MIĘŚNI
-    const muscleNames = {
-        'thigh_l': 'Uda (Przód)', 'thigh_r': 'Uda (Przód)',
-        'chest': 'Klatka Piersiowa',
-        'back': 'Plecy',
-        'biceps_l': 'Bicepsy', 'biceps_r': 'Bicepsy'
-    };
-
-    // ZMIENNE POMOCNICZE
-    let currentMuscleId = '';
-    const modal = document.getElementById('modal');
-    const overlay = document.getElementById('overlay');
-
-    // 1. DODANIE REAKCJI NA KLIKNIĘCIE DLA KAŻDEGO MIĘŚNIA
-    document.querySelectorAll('#muscle-map path').forEach(muscle => {
-        muscle.addEventListener('click', () => {
-            currentMuscleId = muscle.id;
-            document.getElementById('modal-muscle-name').innerText = muscleNames[currentMuscleId];
-            openModal();
-        });
-    });
-
-    // 2. FUNKCJE MODALA (OTWIERANIE/ZAMYKANIE)
-    function openModal() {
-        modal.style.display = 'block';
-        overlay.style.display = 'block';
-        document.getElementById('lift-weight').value = '';
-    }
-
-    function closeModal() {
-        modal.style.display = 'none';
-        overlay.style.display = 'none';
-    }
-    overlay.addEventListener('click', closeModal);
-
-    // 3. FUNKCJA WYSYŁANIA I OBLICZANIA WYNIKU (LOGIKA GAMIFIKACJI)
-    function submitScore() {
-        const weight = parseFloat(document.getElementById('lift-weight').value);
-        if (!weight || weight <= 0) { alert("Wpisz poprawny ciężar!"); return; }
-
-        // --- Logika obliczania siły względnej ---
-        // Wynik = Ciężar / Waga ciała * 10
-        // (W prawdziwej aplikacji wzór byłby bardziej skomplikowany, np. Wilks)
-        const strengthRatio = (weight / user.weight) * 10;
-        
-        let levelName = "";
-        let levelLv = 0;
-        let badgeClass = "rank-low";
-
-        // Drabinka rang
-        if (strengthRatio < 5) { levelName = "POCZĄTKUJĄCY"; levelLv = 1; badgeClass = "rank-low"; }
-        else if (strengthRatio < 10) { levelName = "WOJOWNIK"; levelLv = 2; badgeClass = "rank-mid"; }
-        else { levelName = "LEGENDA"; levelLv = 3; badgeClass = "rank-high"; }
-
-        // --- Aktualizacja UI (Paneli) ---
-        // Aktualizujemy główny ID mięśnia (np. thigh_l), a także id "brata" (np. thigh_r)
-        const coreId = currentMuscleId.replace('_l', '').replace('_r', '');
-
-        // Aktualizacja tekstu rangi
-        document.getElementById(`rank-${coreId}`).innerText = levelName;
-        // Aktualizacja numeru i koloru odznaki
-        const badge = document.getElementById(`badge-${coreId}`);
-        badge.innerText = `Lv. ${levelLv}`;
-        badge.className = `rank-badge ${badgeClass}`;
-
-        closeModal();
+    let activeMuscle = "";
+    function openModal(name) { activeMuscle = name; document.getElementById('modal').style.display = 'block'; document.getElementById('m-name').innerText = name; }
+    function saveResult() { 
+        alert("Zapisano wynik dla: " + activeMuscle); 
+        document.getElementById('modal').style.display = 'none'; 
     }
 </script>
 
