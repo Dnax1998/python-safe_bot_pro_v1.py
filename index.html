@@ -3,58 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trener Mocy</title>
+    <title>Gym Motivation Tracker</title>
     <style>
-        body { background: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
-        
-        /* Kontener na zdjęcie */
-        .image-container { position: relative; width: fit-content; }
-        
-        /* Twoje zdjęcie */
-        img { display: block; border-radius: 10px; max-width: 500px; }
-
-        /* Niewidzialne strefy (musisz dostosować ich pozycję w CSS!) */
-        .muscle-zone {
-            position: absolute;
-            background: rgba(255, 69, 0, 0); /* Przezroczyste */
-            cursor: pointer;
-            transition: 0.3s;
-            border-radius: 50%;
+        body { 
+            background: #1a1a1a; 
+            color: white; 
+            font-family: 'Arial', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin: 0; 
+            padding: 20px; 
         }
-        .muscle-zone:hover {
-            background: rgba(255, 69, 0, 0.4); /* Podświetlenie przy najechaniu */
-            box-shadow: 0 0 15px #ff4500;
+
+        /* Kontener na zdjęcie i punkty */
+        .muscle-wrapper {
+            position: relative;
+            max-width: 500px; /* Szerokość twojego zdjęcia */
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .muscle-wrapper img {
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+            display: block;
+        }
+
+        /* Interaktywne punkty */
+        .hotspot {
+            position: absolute;
+            width: 8%; /* Wielkość punktu */
+            height: 8%;
+            background: rgba(255, 69, 0, 0.4);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: 0.3s;
+        }
+
+        .hotspot:hover {
+            background: rgba(255, 69, 0, 0.8);
+            transform: scale(1.2);
         }
 
         /* Modal */
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #333; padding: 20px; border-radius: 10px; z-index: 10; text-align: center; }
-        input, button { padding: 10px; margin: 5px; border-radius: 5px; border: none; }
-        button { background: #ff4500; color: white; cursor: pointer; }
+        #modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #222;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #444;
+            z-index: 100;
+        }
+
+        input { padding: 10px; width: 100%; margin: 10px 0; border-radius: 5px; border: none; }
+        button { background: #ff4500; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="image-container">
-    <img src="zdjecie.jpg" alt="Mapa mięśni">
+    <h1>Twój Trening</h1>
+    <p>Kliknij w mięsień, aby dodać wynik:</p>
 
-    <div class="muscle-zone" style="top: 20%; left: 40%; width: 50px; height: 50px;" onclick="openModal('Klatka')"></div>
-    <div class="muscle-zone" style="top: 50%; left: 35%; width: 60px; height: 80px;" onclick="openModal('Uda')"></div>
-</div>
+    <div class="muscle-wrapper">
+        <img src="zdjecie.jpg" alt="Mapa mięśni">
 
-<div id="modal" class="modal">
-    <h3 id="m-name">Mięsień</h3>
-    <input type="number" id="weight" placeholder="Ciężar (kg)">
-    <button onclick="saveResult()">Zapisz</button>
-</div>
+        <div class="hotspot" style="top: 20%; left: 40%;" onclick="openModal('Klatka')"></div>
+        <div class="hotspot" style="top: 50%; left: 30%;" onclick="openModal('Uda')"></div>
+    </div>
 
-<script>
-    let activeMuscle = "";
-    function openModal(name) { activeMuscle = name; document.getElementById('modal').style.display = 'block'; document.getElementById('m-name').innerText = name; }
-    function saveResult() { 
-        alert("Zapisano wynik dla: " + activeMuscle); 
-        document.getElementById('modal').style.display = 'none'; 
-    }
-</script>
+    <div id="modal">
+        <h3 id="modal-title">Mięsień</h3>
+        <input type="number" id="weight" placeholder="Wpisz ciężar (kg)">
+        <button onclick="saveData()">Zapisz wynik</button>
+        <button style="background:#555" onclick="closeModal()">Anuluj</button>
+    </div>
 
+    <script>
+        function openModal(name) {
+            document.getElementById('modal-title').innerText = name;
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function saveData() {
+            const w = document.getElementById('weight').value;
+            alert("Zapisano wynik: " + w + " kg dla " + document.getElementById('modal-title').innerText);
+            closeModal();
+        }
+    </script>
 </body>
 </html>
