@@ -2,311 +2,70 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zdrowie Psychiczne - Portal Wsparcia</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <title>Gym Level Tracker</title>
     <style>
-        :root {
-            --header-blue: #216694;
-            --vivid-red: #d62828; 
-            --vivid-gradient: linear-gradient(135deg, #d62828 0%, #a81e1e 100%);
-            --bg-light: #f4f7f9;
-            --card-green: #6a9c89;
-            --card-blue: #5d93b1;
-            --card-purple: #8e6e96;
-            --container-width: 1100px; 
-        }
-
-        body {
-            margin: 0;
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--bg-light);
-            color: #333;
-            line-height: 1.6;
-        }
-
-        /* NAWIGACJA */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 10%;
-            background: #fff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--header-blue);
-            text-decoration: none;
-        }
-
-        .logo i { color: var(--vivid-red); margin-right: 12px; font-size: 28px; }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #555;
-            font-size: 14px;
-            font-weight: 500;
-            margin-left: 25px;
-        }
-
-        .nav-links a.active { color: var(--header-blue); font-weight: 700; }
-
-        /* BANER HERO - NIŻSZY PROSTOKĄT */
-        .hero-wrapper {
-            max-width: var(--container-width);
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .hero {
-            background: var(--vivid-gradient);
-            padding: 35px 40px; /* Zmniejszony padding dla efektu niższego prostokąta */
-            color: white;
-            text-align: center;
-            border-radius: 15px; 
-            box-shadow: 0 10px 25px rgba(214, 40, 40, 0.2);
-            position: relative;
-        }
-
-        .hero h1 {
-            font-size: 34px;
-            margin: 0 0 20px 0;
-            font-weight: 700;
-        }
-
-        .phones-container {
-            display: flex;
-            justify-content: center;
-            gap: 30px; /* Numery obok siebie dla oszczędności miejsca */
-            margin-bottom: 25px;
-        }
-
-        .phone-box {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 18px;
-            background: rgba(255, 255, 255, 0.15);
-            padding: 8px 20px;
-            border-radius: 10px;
-        }
-
-        .phone-box strong { font-size: 24px; }
-
-        .hero-btn {
-            background: #fff;
-            color: var(--vivid-red);
-            border: none;
-            padding: 10px 30px;
-            font-size: 15px;
-            font-weight: 700;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .hero-btn:hover { transform: scale(1.05); }
-
-        /* GRID KART */
-        .cards-section {
-            max-width: var(--container-width);
-            margin: 0 auto 50px;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-header {
-            padding: 15px;
-            color: white;
-            font-weight: 700;
-            text-align: center;
-        }
-
-        .card-body {
-            padding: 20px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-body p { font-size: 14px; color: #555; margin-bottom: 15px; }
-
-        .card-img {
-            width: 100%;
-            height: 140px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-top: auto;
-            margin-bottom: 15px;
-        }
-
-        .card-btn {
-            text-decoration: none;
-            text-align: center;
-            padding: 10px;
-            border-radius: 6px;
-            color: white;
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .c-green { background: var(--card-green); }
-        .c-blue { background: var(--card-blue); }
-        .c-purple { background: var(--card-purple); }
-
-        /* SEKCJA INSTYTUCJI */
-        .institutions {
-            background: #fff;
-            padding: 50px 0;
-            text-align: center;
-            border-top: 1px solid #eee;
-        }
-
-        .inst-grid {
-            max-width: var(--container-width);
-            margin: 30px auto 0;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            padding: 0 20px;
-        }
-
-        .inst-card {
-            padding: 25px 15px;
-            border: 1px solid #eee;
-            border-radius: 12px;
-            transition: 0.2s;
-        }
-
-        .inst-card:hover { border-color: var(--card-blue); }
-        .inst-card i { font-size: 35px; color: var(--card-blue); margin-bottom: 10px; }
-        .inst-card h4 { margin: 0 0 5px 0; font-size: 15px; color: var(--header-blue); }
-        .inst-card p { font-size: 12px; color: #999; margin: 0; }
-
-        footer {
-            background: #1a1a1a;
-            color: #888;
-            padding: 30px;
-            text-align: center;
-            font-size: 12px;
-        }
-
-        @media (max-width: 900px) {
-            .cards-section, .inst-grid, .phones-container { grid-template-columns: 1fr; flex-direction: column; align-items: center; }
-        }
+        body { font-family: sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background: #333; padding: 20px; border-radius: 15px; width: 300px; }
+        .body-map { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .muscle { background: #444; padding: 20px; text-align: center; cursor: pointer; border-radius: 10px; border: 2px solid transparent; }
+        .muscle:hover { border-color: #ff4500; }
+        input { width: 90%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; }
+        button { background: #ff4500; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; }
+        #result { margin-top: 20px; font-weight: bold; color: #ff4500; }
     </style>
 </head>
 <body>
 
-    <nav class="navbar">
-        <a href="index.html" class="logo">
-            <i class="fa-solid fa-heart-pulse"></i> Zdrowie Psychiczne
-        </a>
-        <div class="nav-links">
-            <a href="index.html" class="active">Strona Główna</a>
-            <a href="poradnia.html">Znajdź Poradnię</a>
-            <a href="terapia.html">Terapia</a>
-            <a href="#">Artykuły</a>
-             <a href="kontakt.html">Kontakt</a>
+    <div class="container">
+        <h2>Twój Profil</h2>
+        <input type="number" id="weight" placeholder="Twoja waga (kg)">
+        
+        <h3>Wybierz partię:</h3>
+        <div class="body-map">
+            <div class="muscle" onclick="selectMuscle('Klatka', 1.2)">Klatka</div>
+            <div class="muscle" onclick="selectMuscle('Plecy', 1.3)">Plecy</div>
+            <div class="muscle" onclick="selectMuscle('Nogi', 1.5)">Nogi</div>
+            <div class="muscle" onclick="selectMuscle('Biceps', 0.8)">Biceps</div>
         </div>
-    </nav>
 
-    <div class="hero-wrapper">
-        <section class="hero">
-            <h1>Bezpłatne Telefony Zaufania</h1>
-            <div class="phones-container">
-                <div class="phone-box">
-                    <i class="fa-solid fa-child"></i>
-                    <strong>116 111</strong> <span>Dla Dzieci</span>
-                </div>
-                <div class="phone-box">
-                    <i class="fa-solid fa-user-shield"></i>
-                    <strong>800 70 222</strong> <span>Dla Dorosłych</span>
-                </div>
-            </div>
-            <button class="hero-btn">Więcej informacji</button>
-        </section>
+        <div id="input-section" style="display:none;">
+            <h3 id="muscle-name">Partia</h3>
+            <input type="number" id="lift-weight" placeholder="Ciężar w kg">
+            <button onclick="calculateLevel()">Oblicz Rangę</button>
+        </div>
+
+        <div id="result"></div>
     </div>
 
-    <main class="cards-section">
-        <div class="card">
-            <div class="card-header c-green">Higiena Psychiczna</div>
-            <div class="card-body">
-                <p>Odkryj skuteczne metody dbania o balans emocjonalny i redukcję stresu w codziennym życiu.</p>
-                <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Relaks">
-                <a href="#" class="card-btn c-green">Zobacz więcej</a>
-            </div>
-        </div>
+<script>
+    let selectedMuscle = '';
+    let multiplier = 0;
 
-        <div class="card">
-            <div class="card-header c-blue">Poradnie P-P</div>
-            <div class="card-body">
-                <p>Znajdź profesjonalną pomoc w Twojej okolicy. Przejrzyj listę sprawdzonych placówek i specjalistów.</p>
-                <img src="https://images.unsplash.com/photo-1454165833767-027eeea15c3e?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Wizyta">
-                <a href="poradnia.html" class="card-btn c-blue">Szukaj placówki</a>
-            </div>
-        </div>
+    function selectMuscle(name, mult) {
+        selectedMuscle = name;
+        multiplier = mult;
+        document.getElementById('input-section').style.display = 'block';
+        document.getElementById('muscle-name').innerText = name;
+    }
 
-        <div class="card">
-            <div class="card-header c-purple">Wsparcie Fundacji</div>
-            <div class="card-body">
-                <p>Skorzystaj z darmowych programów wsparcia oferowanych przez organizacje pozarządowe.</p>
-                <img src="https://images.unsplash.com/photo-1573497620053-ea5310f94f17?auto=format&fit=crop&w=500&q=80" class="card-img" alt="Pomoc">
-                <a href="terapia.html" class="card-btn c-purple">Lista fundacji</a>
-            </div>
-        </div>
-    </main>
+    function calculateLevel() {
+        const userWeight = document.getElementById('weight').value;
+        const liftWeight = document.getElementById('lift-weight').value;
+        
+        if (!userWeight || !liftWeight) return alert("Wpisz obie wartości!");
 
-    <section class="institutions">
-        <h2 style="color: var(--header-blue); margin-top:0;">System Wsparcia</h2>
-        <div class="inst-grid">
-            <div class="inst-card">
-                <i class="fa-solid fa-hospital"></i>
-                <h4>Szpitale</h4>
-                <p>Opieka całodobowa.</p>
-            </div>
-            <div class="inst-card">
-                <i class="fa-solid fa-stethoscope"></i>
-                <h4>Poradnie PZP</h4>
-                <p>Terapia bezpłatna.</p>
-            </div>
-            <div class="inst-card">
-                <i class="fa-solid fa-house-medical"></i>
-                <h4>Centra CZŚ</h4>
-                <p>Pomoc blisko domu.</p>
-            </div>
-            <div class="inst-card">
-                <i class="fa-solid fa-life-ring"></i>
-                <h4>Ośrodki OIK</h4>
-                <p>Interwencja w kryzysie.</p>
-            </div>
-        </div>
-    </section>
+        // Logika obliczeń: (Ciężar / Waga ciała) * Mnożnik partii
+        const score = (liftWeight / userWeight) * multiplier * 10;
+        let rank = "";
 
-    <footer>
-        <p>&copy; 2026 Portal Zdrowie Psychiczne. W nagłych wypadkach dzwoń pod 112.</p>
-    </footer>
+        if (score < 5) rank = "Nowicjusz (Level 1)";
+        else if (score < 10) rank = "Amator (Level 2)";
+        else if (score < 15) rank = "Wojownik (Level 3)";
+        else rank = "Legenda (Level 4)";
+
+        document.getElementById('result').innerText = `Wynik: ${score.toFixed(1)} pkt. Ranga: ${rank}`;
+    }
+</script>
 
 </body>
 </html>
