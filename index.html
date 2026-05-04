@@ -2,93 +2,211 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Gym Motivation Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Motivation Tracker Pro (SVG)</title>
     <style>
-        /* Reset i tło */
-        body, html { margin: 0; padding: 0; height: 100%; background: #0a0a0a; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        /* 1. STYLIZACJA TŁA (GENEROWANEGO PRZEZ CSS) */
+        body, html { 
+            margin: 0; padding: 0; height: 100%; 
+            font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif; 
+            overflow: hidden; color: white;
+            /* Głęboki radialny gradient tła */
+            background: radial-gradient(circle at 50% 50%, #151515 0%, #000 100%);
+        }
 
-        /* Kontener główny - tutaj wstawiamy Twoje zdjęcie */
-        .app-container {
-            width: 100vw;
-            height: 100vh;
-            background-image: url('background.jpg');
-            background-size: contain;
+        /* Subtelny glowing sześciokątny w tle */
+        body::before {
+            content: "";
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M86.603 25L50 5 L13.397 25 L13.397 75 L50 95 L86.603 75 Z' stroke='%23333' fill='none'/%3E%3C/svg%3E");
+            background-size: 80px 80px; /* Rozmiar wzoru heksagonalnego */
             background-position: center;
-            background-repeat: no-repeat;
+            opacity: 0.1; /* Subtelność */
+            z-index: -1;
+        }
+
+        /* 2. UKŁAD GŁÓWNY (Centrowanie modelu) */
+        .wrapper {
+            display: flex; justify-content: center; align-items: center;
+            width: 100vw; height: 100vh;
             position: relative;
         }
 
-        /* Strefy klikalne (Hotspoty) */
-        .muscle-zone {
-            position: absolute;
-            cursor: pointer;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            z-index: 5;
-            background: rgba(255, 255, 255, 0); /* Niewidoczne standardowo */
-        }
+        /* TYTUŁ NA GÓRZE */
+        .header { position: absolute; top: 40px; text-align: center; }
+        .header h1 { margin: 0; color: #ff4500; font-size: 2.2em; text-transform: uppercase; letter-spacing: 2px; }
+        .header p { margin: 5px 0; color: #aaa; }
 
-        /* Efekt najechania myszką (Glow) */
-        .muscle-zone:hover {
-            background: rgba(255, 100, 0, 0.2);
-            box-shadow: 0 0 20px #ff4500;
-        }
-
-        /* Stan "trenowany" */
-        .muscle-zone.trained {
-            background: rgba(255, 215, 0, 0.2);
-            box-shadow: 0 0 15px gold;
-        }
-
-        /* MODAL (Panel zapisu) */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(20, 20, 25, 0.9);
-            padding: 30px;
+        /* PANELE BOCZNE */
+        .panel {
+            position: absolute; width: 220px;
+            background: rgba(20, 20, 25, 0.85); /* Ciemny, półprzezroczysty */
+            padding: 20px; border-radius: 10px;
             border: 1px solid #ff4500;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(255, 69, 0, 0.3);
+            backdrop-filter: blur(8px);
             text-align: center;
-            z-index: 100;
-            min-width: 300px;
         }
-        input { width: 100%; padding: 10px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; }
-        button { background: #ff4500; border: none; padding: 10px 20px; color: white; cursor: pointer; border-radius: 5px; font-weight: bold; width: 100%; }
+        .panel h3 { margin-top: 0; color: white; border-bottom: 2px solid #ff4500; padding-bottom: 8px; }
+        .panel p { margin: 8px 0; color: #bbb; }
+        .panel span { font-weight: bold; color: white; }
+
+        .panel-ranks { top: 120px; left: 40px; }
+        .panel-profile { top: 120px; right: 40px; }
+
+        .rank-icon { display: block; width: 60px; height: 60px; margin: 10px auto; filter: drop-shadow(0 0 5px gold); }
+
+        /* 3. STYLIZACJA MODELU LUDZIKA SVG */
+        #muscle-map {
+            height: 100%; max-height: 80vh; max-width: 90vw;
+            filter: drop-shadow(0 0 15px rgba(255, 69, 0, 0.2));
+        }
+
+        /* Klasa dla każdego mięśnia (path w SVG) */
+        .muscle {
+            fill: #333; /* Domyślny, ciemny fill */
+            stroke: #555; /* Domyślny, szary kontur */
+            stroke-width: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease; /* Gładkie przejście koloru i poświaty */
+        }
+
+        /* Efekt po najechaniu myszką */
+        .muscle:hover {
+            fill: #ff4500; /* Jasny pomarańczowy */
+            filter: drop-shadow(0 0 10px #ff4500); /* Mocna poświata */
+        }
+
+        /* Styl dla mięśnia "trenowanego" - np. po zapisaniu wyniku */
+        .muscle.trained {
+            fill: rgba(255, 215, 0, 0.7); /* Złoty fill */
+            stroke: gold; /* Złoty kontur */
+            filter: drop-shadow(0 0 15px gold); /* Złota poświata */
+        }
+
+        /* 4. MODAL (Panel zapisu) */
+        #modal {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); background: rgba(20, 20, 20, 0.95);
+            padding: 30px; border-radius: 12px; text-align: center;
+            border: 2px solid #ff4500; z-index: 100;
+            box-shadow: 0 0 40px rgba(255, 69, 0, 0.4);
+        }
+        #modal h3 { margin-top: 0; color: #ff4500; font-size: 1.4em; }
+        input { padding: 12px; width: 80%; margin: 10px 0; border-radius: 6px; border: 1px solid #444; background: #000; color: white; text-align: center;}
+        button { background: #ff4500; color: white; padding: 12px 24px; border: none; cursor: pointer; border-radius: 6px; font-weight: bold; text-transform: uppercase; margin-top: 15px;}
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <div class="muscle-zone" style="top: 25%; left: 45%; width: 8%; height: 10%;" onclick="openModal('Barki')"></div>
-        <div class="muscle-zone" style="top: 35%; left: 40%; width: 10%; height: 15%;" onclick="openModal('Klatka')"></div>
-        <div class="muscle-zone" style="top: 60%; left: 40%; width: 10%; height: 20%;" onclick="openModal('Uda')"></div>
+    <div class="wrapper">
+        <div class="header">
+            <h1>Twój Trening</h1>
+            <p>Kliknij w mięsień, aby dodać wynik i podnieść rangę</p>
+        </div>
+
+        <div class="panel panel-ranks">
+            <h3>TWOJE RANGI</h3>
+            <p>GÓRA CIAŁA</p>
+            <svg class="rank-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs><radialGradient id="silver-grad" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#888"/></radialGradient></defs>
+                <path d="M50 5 L90 25 L90 75 L50 95 L10 75 L10 25 Z" fill="url(#silver-grad)" stroke="#555" stroke-width="2"/>
+                <path d="M50 30 L60 45 L75 45 L65 55 L70 70 L50 60 L30 70 L35 55 L25 45 L40 45 Z" fill="#888"/>
+            </svg>
+            <p>Ranga: <span>NOWICJUSZ</span></p>
+            <p style="margin-top: 15px;">DÓŁ CIAŁA</p>
+            <svg class="rank-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs><radialGradient id="bronze-grad" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#f88"/><stop offset="100%" stop-color="#a52"/></radialGradient></defs>
+                <path d="M50 5 L90 25 L90 75 L50 95 L10 75 L10 25 Z" fill="url(#bronze-grad)" stroke="#532" stroke-width="2"/>
+            </svg>
+            <p>Ranga: <span>POCZĄTKUJĄCY</span></p>
+        </div>
+
+        <svg id="muscle-map" viewBox="0 0 400 800" xmlns="http://www.w3.org/2000/svg">
+            
+            <path d="M200,50 L250,80 L250,150 L300,180 L280,350 L220,400 L250,600 L200,750 L150,600 L180,400 L120,350 L100,180 L150,150 L150,80 Z" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+            
+            <path id="bark_l" class="muscle" d="M110,180 C100,200 100,230 110,250 L140,230 L140,200 Z" onclick="openModal('Bark Lewy', 'bark_l')"/>
+            <path id="bark_p" class="muscle" d="M290,180 C300,200 300,230 290,250 L260,230 L260,200 Z" onclick="openModal('Bark Prawy', 'bark_p')"/>
+            
+            <path id="chest" class="muscle" d="M150,190 L250,190 L240,280 L160,280 Z" onclick="openModal('Klatka Piersiowa', 'chest')"/>
+            
+            <path id="biceps_l" class="muscle" d="M90,260 C80,280 80,310 90,330 L110,320 L110,270 Z" onclick="openModal('Biceps Lewy', 'biceps_l')"/>
+            <path id="biceps_p" class="muscle" d="M310,260 C320,280 320,310 310,330 L290,320 L290,270 Z" onclick="openModal('Biceps Prawy', 'biceps_p')"/>
+
+            <path id="abs" class="muscle" d="M170,290 L230,290 L220,380 L180,380 Z" onclick="openModal('Mięśnie Brzucha', 'abs')"/>
+
+            <path id="thigh_l" class="muscle" d="M160,420 L200,420 L190,580 L150,560 Z" onclick="openModal('Udo Lewe', 'thigh_l')"/>
+            <path id="thigh_p" class="muscle" d="M240,420 L200,420 L210,580 L250,560 Z" onclick="openModal('Udo Prawe', 'thigh_p')"/>
+        </svg>
+
+        <div class="panel panel-profile">
+            <h3>PROFIL GRACZA</h3>
+            <p>Płeć: <span>MĘŻCZYZNA</span></p>
+            <p>Wiek: <span>28</span></p>
+            <p>Waga: <span>75 kg</span></p>
+            <p>Wzrost: <span>180 cm</span></p>
+        </div>
     </div>
 
-    <div id="modal" class="modal">
-        <h2 id="modal-title" style="color: #ff4500; margin-top: 0;">Mięsień</h2>
+    <div id="modal">
+        <h3 id="modal-title">Mięsień</h3>
         <input type="number" id="weight" placeholder="Ciężar (kg)">
-        <input type="number" id="reps" placeholder="Powtórzenia">
+        <br>
         <button onclick="saveData()">ZAPISZ I PODNIEŚ RANGĘ</button>
+        <button style="background:transparent; border:1px solid #555; margin-left: 10px;" onclick="closeModal()">Anuluj</button>
     </div>
 
     <script>
-        let currentMuscle = "";
+        let currentMuscleId = ""; // Unikalne ID <path> w SVG
+        let currentMuscleName = "";
 
-        function openModal(name) {
-            currentMuscle = name;
+        // Funkcja wczytująca zapisane wyniki przy starcie strony
+        window.onload = function() {
+            // Przejdź przez wszystkie mięśnie na mapie
+            document.querySelectorAll('.muscle').forEach(musclePath => {
+                // Sprawdź, czy w pamięci przeglądarki jest zapisany ciężar dla tego mięśnia
+                const savedWeight = localStorage.getItem(musclePath.id);
+                if (savedWeight) {
+                    // Jeśli tak, dodaj klasę .trained, która podświetli mięsień na złoto
+                    musclePath.classList.add('trained');
+                }
+            });
+        }
+
+        function openModal(name, id) {
+            currentMuscleName = name;
+            currentMuscleId = id; // Zapamiętaj unikalne ID <path>
+
             document.getElementById('modal-title').innerText = name;
             document.getElementById('modal').style.display = 'block';
+            
+            // Wczytaj poprzedni ciężar (jeśli był zapisany)
+            const previousWeight = localStorage.getItem(id) || "";
+            document.getElementById('weight').value = previousWeight;
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
         }
 
         function saveData() {
-            const w = document.getElementById('weight').value;
-            if(w) {
-                localStorage.setItem(currentMuscle, w);
-                alert("Wynik dla " + currentMuscle + " zapisany!");
-                document.getElementById('modal').style.display = 'none';
+            const weight = document.getElementById('weight').value;
+            
+            if(weight) {
+                // Zapisz do pamięci przeglądarki używając unikalnego ID mięśnia jako klucza
+                localStorage.setItem(currentMuscleId, weight);
+                
+                // Zmień kolor bezpośrednio na elemencie SVG, dodając klasę CSS
+                const musclePath = document.getElementById(currentMuscleId);
+                if (musclePath) {
+                    musclePath.classList.add('trained'); // Podświetlenie na złoto
+                }
+                
+                alert("Zapisano wynik dla " + currentMuscleName + ": " + weight + " kg!");
+                closeModal();
+            } else {
+                alert("Wpisz ciężar!");
             }
         }
     </script>
