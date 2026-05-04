@@ -3,47 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Motivation Tracker</title>
+    <title>Gym Motivation Fullscreen</title>
     <style>
-        body { 
-            background: #111; color: white; font-family: sans-serif; 
-            display: flex; flex-direction: column; align-items: center; 
-            margin: 0; padding: 20px; 
+        /* Usuwamy wszelkie marginesy i ustawiamy tło na pełny ekran */
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            background: #111; 
+            overflow: hidden; /* Wyłącza paski przewijania */
         }
 
-        h1 { margin-bottom: 5px; color: #ff4500; }
-        p { margin-bottom: 20px; color: #ccc; }
+        /* Kontener zajmuje całe okno */
+        .muscle-wrapper {
+            position: relative;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-        .muscle-wrapper { position: relative; max-width: 800px; width: 100%; }
-        .muscle-wrapper img { width: 100%; height: auto; border-radius: 15px; display: block; }
+        /* Zdjęcie dopasowuje się do wysokości okna */
+        .muscle-wrapper img {
+            max-height: 100vh;
+            max-width: 100vw;
+            object-fit: contain; /* Dzięki temu zdjęcie nie będzie rozciągnięte */
+            display: block;
+        }
 
-        /* Hotspoty */
+        /* Hotspoty - pozycjonowane absolutnie względem kontenera */
         .hotspot {
-            position: absolute; width: 6%; height: 8%;
-            background: rgba(255, 69, 0, 0.3); border-radius: 50%;
-            cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.5);
+            position: absolute;
+            width: 5%; 
+            height: 5%;
+            background: rgba(255, 69, 0, 0.3);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.5);
             transition: 0.3s;
+            z-index: 10;
         }
         .hotspot:hover { background: rgba(255, 69, 0, 0.7); transform: scale(1.2); }
-        
-        /* Styl dla trenowanego mięśnia (złoty) */
-        .hotspot.trained { background: rgba(255, 215, 0, 0.6); border-color: gold; box-shadow: 0 0 15px gold; }
+        .hotspot.trained { background: rgba(255, 215, 0, 0.5); border-color: gold; box-shadow: 0 0 15px gold; }
 
         /* Modal */
         #modal {
             display: none; position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%); background: #222;
             padding: 30px; border-radius: 15px; text-align: center;
-            border: 2px solid #ff4500; z-index: 100;
+            border: 2px solid #ff4500; z-index: 100; color: white;
         }
         input { padding: 12px; width: 80%; margin: 10px 0; border-radius: 5px; border: 1px solid #444; background: #333; color: white; }
         button { background: #ff4500; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-
-    <h1>Twój Trening</h1>
-    <p>Kliknij w mięsień, aby dodać/zaktualizować wynik:</p>
 
     <div class="muscle-wrapper">
         <img src="zdjecie.jpg" alt="Mapa mięśni">
@@ -64,7 +79,6 @@
     <script>
         let currentMuscle = "";
 
-        // Przy ładowaniu strony - sprawdź zapisane dane
         window.onload = function() {
             const muscles = ['Barki', 'Klatka', 'Uda'];
             muscles.forEach(m => {
@@ -88,13 +102,9 @@
         function saveData() {
             const w = document.getElementById('weight').value;
             if(w) {
-                // Zapisz do przeglądarki
                 localStorage.setItem(currentMuscle, w);
-                
-                // Zmień kolor na złoty
                 document.getElementById(currentMuscle + '-hotspot').classList.add('trained');
-                
-                alert("Wynik dla " + currentMuscle + " zapisany: " + w + " kg!");
+                alert("Wynik zapisany!");
                 closeModal();
             }
         }
