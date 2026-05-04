@@ -2,65 +2,76 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Tracker Pro</title>
+    <title>Gym Motivation Pro</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; }
+        /* Reset i tło */
+        body, html { margin: 0; padding: 0; height: 100%; background: #0a0a0a; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
 
-        /* KONTENER GŁÓWNY: Twoja grafika jako tło */
-        .gym-container {
+        /* Kontener główny - tutaj wstawiamy Twoje zdjęcie */
+        .app-container {
             width: 100vw;
             height: 100vh;
-            background-image: url('zdjecie.jpg'); /* Upewnij się, że plik nazywa się zdjecie.jpg */
-            background-size: contain;   /* Zdjęcie zachowuje proporcje i mieści się na ekranie */
+            background-image: url('background.jpg');
+            background-size: contain;
             background-position: center;
             background-repeat: no-repeat;
             position: relative;
         }
 
-        /* Niewidoczne punkty klikalne */
+        /* Strefy klikalne (Hotspoty) */
         .muscle-zone {
             position: absolute;
             cursor: pointer;
-            transition: all 0.3s ease;
-            /* Zmień te wartości, aby dopasować do swoich mięśni */
             border-radius: 50%;
+            transition: all 0.3s ease;
+            z-index: 5;
+            background: rgba(255, 255, 255, 0); /* Niewidoczne standardowo */
         }
 
-        /* Efekt po najechaniu - lekka poświata */
+        /* Efekt najechania myszką (Glow) */
         .muscle-zone:hover {
-            background: rgba(255, 69, 0, 0.2);
-            box-shadow: 0 0 15px #ff4500;
+            background: rgba(255, 100, 0, 0.2);
+            box-shadow: 0 0 20px #ff4500;
         }
 
-        /* Styl dla odblokowanego mięśnia */
+        /* Stan "trenowany" */
         .muscle-zone.trained {
             background: rgba(255, 215, 0, 0.2);
-            border: 1px solid gold;
+            box-shadow: 0 0 15px gold;
         }
 
-        /* MODAL */
-        #modal {
-            display: none; position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); background: #1a1a1a;
-            padding: 30px; border-radius: 12px; border: 1px solid #ff4500;
-            color: white; z-index: 100; text-align: center;
+        /* MODAL (Panel zapisu) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 20, 25, 0.9);
+            padding: 30px;
+            border: 1px solid #ff4500;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            z-index: 100;
+            min-width: 300px;
         }
-        input { padding: 10px; width: 200px; display: block; margin: 10px auto; background: #333; border: 1px solid #555; color: white; }
-        button { background: #ff4500; border: none; padding: 10px 20px; color: white; cursor: pointer; border-radius: 5px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; }
+        button { background: #ff4500; border: none; padding: 10px 20px; color: white; cursor: pointer; border-radius: 5px; font-weight: bold; width: 100%; }
     </style>
 </head>
 <body>
 
-    <div class="gym-container">
-        <div class="muscle-zone" style="top: 65%; left: 42%; width: 10%; height: 15%;" onclick="openModal('Uda')"></div>
-        <div class="muscle-zone" style="top: 25%; left: 45%; width: 10%; height: 10%;" onclick="openModal('Barki')"></div>
+    <div class="app-container">
+        <div class="muscle-zone" style="top: 25%; left: 45%; width: 8%; height: 10%;" onclick="openModal('Barki')"></div>
+        <div class="muscle-zone" style="top: 35%; left: 40%; width: 10%; height: 15%;" onclick="openModal('Klatka')"></div>
+        <div class="muscle-zone" style="top: 60%; left: 40%; width: 10%; height: 20%;" onclick="openModal('Uda')"></div>
     </div>
 
-    <div id="modal">
-        <h3 id="modal-title">Mięsień</h3>
-        <input type="number" id="weight" placeholder="Waga (kg)">
-        <button onclick="saveData()">ZAPISZ WYNIK</button>
+    <div id="modal" class="modal">
+        <h2 id="modal-title" style="color: #ff4500; margin-top: 0;">Mięsień</h2>
+        <input type="number" id="weight" placeholder="Ciężar (kg)">
+        <input type="number" id="reps" placeholder="Powtórzenia">
+        <button onclick="saveData()">ZAPISZ I PODNIEŚ RANGĘ</button>
     </div>
 
     <script>
@@ -76,7 +87,7 @@
             const w = document.getElementById('weight').value;
             if(w) {
                 localStorage.setItem(currentMuscle, w);
-                alert("Zapisano: " + w + "kg");
+                alert("Wynik dla " + currentMuscle + " zapisany!");
                 document.getElementById('modal').style.display = 'none';
             }
         }
