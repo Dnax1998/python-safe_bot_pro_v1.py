@@ -2,81 +2,50 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Tracker Pro</title>
+    <title>Gym Tracker - NAPRAWIONY</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; background: #0a0a0a; overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; background: #1a1a1a; /* Kolor zastępczy */ overflow: hidden; }
 
-        /* KONTENER GŁÓWNY - Twoja grafika jako tło */
         .app-container {
-            width: 100vw;
-            height: 100vh;
-            /* ZMIEŃ NAZWĘ PLIKU NA TĘ, KTÓRĄ MASZ: */
-            background-image: url('zdjecie.jpg'); 
-            background-size: contain;   /* Dopasowuje zdjęcie do ekranu bez ucinania */
+            width: 100vw; height: 100vh;
+            /* TUTAJ WKLEJ DOKŁADNĄ NAZWĘ SWOJEGO PLIKU */
+            background-image: url('background.jpg'); 
+            background-size: contain;
             background-position: center;
             background-repeat: no-repeat;
             position: relative;
+            background-color: #0a0a0a; /* To widać, jeśli zdjęcie nie zadziała */
         }
 
-        /* Niewidoczne strefy klikalne */
         .muscle-hotspot {
             position: absolute;
             cursor: pointer;
             z-index: 10;
             border-radius: 50%;
-            /* Dodaj background: rgba(255, 0, 0, 0.3); jeśli chcesz widzieć, gdzie są strefy podczas ustawiania */
+            /* WIDOCZNOŚĆ: Zostawiłem lekkie czerwone tło, żebyś widział, gdzie klikasz */
+            background: rgba(255, 0, 0, 0.3); 
             transition: 0.3s;
         }
 
-        /* Efekt hover - miękkie podświetlenie */
-        .muscle-hotspot:hover {
-            background: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 20px #fff;
-        }
+        .muscle-hotspot:hover { background: rgba(255, 255, 255, 0.4); }
 
-        /* MODAL */
         #modal {
             display: none; position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); background: rgba(20, 20, 25, 0.95);
-            padding: 30px; border-radius: 15px; border: 1px solid #ff4500;
+            transform: translate(-50%, -50%); background: #222;
+            padding: 20px; border-radius: 10px; border: 1px solid #ff4500;
             color: white; z-index: 100; text-align: center;
         }
-        input { padding: 10px; width: 200px; display: block; margin: 10px auto; background: #333; border: 1px solid #555; color: white; border-radius: 5px; }
-        button { background: #ff4500; border: none; padding: 10px 20px; color: white; cursor: pointer; border-radius: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        <div id="klatka" class="muscle-hotspot" style="top: 35%; left: 45%; width: 10%; height: 10%;" onclick="openModal('Klatka')"></div>
-        <div id="barki" class="muscle-hotspot" style="top: 25%; left: 42%; width: 15%; height: 8%;" onclick="openModal('Barki')"></div>
-        <div id="uda" class="muscle-hotspot" style="top: 60%; left: 40%; width: 15%; height: 20%;" onclick="openModal('Uda')"></div>
+        <div class="muscle-hotspot" style="top: 30%; left: 45%; width: 10%; height: 10%;" onclick="alert('Działa!')"></div>
     </div>
 
     <div id="modal">
-        <h3 id="modal-title">Mięsień</h3>
-        <input type="number" id="weight" placeholder="Waga (kg)">
-        <button onclick="saveData()">ZAPISZ WYNIK</button>
+        <h3>Wynik</h3>
+        <button onclick="document.getElementById('modal').style.display='none'">Zamknij</button>
     </div>
-
-    <script>
-        let currentMuscle = "";
-
-        function openModal(name) {
-            currentMuscle = name;
-            document.getElementById('modal-title').innerText = name;
-            document.getElementById('modal').style.display = 'block';
-        }
-
-        function saveData() {
-            const val = document.getElementById('weight').value;
-            if(val) {
-                localStorage.setItem(currentMuscle, val);
-                alert("Zapisano dla " + currentMuscle + ": " + val + " kg");
-                document.getElementById('modal').style.display = 'none';
-            }
-        }
-    </script>
 </body>
 </html>
