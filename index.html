@@ -3,94 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Tracker</title>
+    <title>Gym Tracker SVG Model</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+        body, html { margin: 0; padding: 0; height: 100%; background: #0a0a0a; font-family: sans-serif; overflow: hidden; color: white; }
 
-        /* Ustawiamy zdjęcie jako TŁO kontenera */
-        .full-screen-container {
-            width: 100vw;
-            height: 100vh;
-            background-image: url('zdjecie.jpg'); /* Tutaj jest zdjęcie */
-            background-size: cover;               /* Rozciąga na cały ekran */
-            background-position: center;          /* Centruje */
-            background-repeat: no-repeat;
-            position: relative;                   /* Wymagane dla pozycjonowania punktów */
+        /* Kontener główny - centrowanie ludzika */
+        .wrapper {
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            width: 100vw; height: 100vh;
+            background: radial-gradient(circle, #1a1a1a 0%, #000 100%); /* Efekt głębi */
         }
 
-        /* Hotspoty - teraz będą zawsze na wierzchu */
-        .hotspot {
-            position: absolute;
-            width: 8%; 
-            height: 8%;
-            border-radius: 50%;
+        /* NAGŁÓWEK NA GÓRZE */
+        .header { position: absolute; top: 30px; text-align: center; }
+        .header h1 { margin: 0; color: #ff4500; font-size: 2.5em; text-transform: uppercase; letter-spacing: 2px; }
+        .header p { margin: 5px 0; color: #aaa; }
+
+        /* STYLIZACJA LUDZIKA SVG */
+        svg {
+            max-height: 80vh; max-width: 90vw;
+            filter: drop-shadow(0 0 15px rgba(255, 69, 0, 0.2)); /* Delikatna poświata całego ludzika */
+        }
+
+        /* Klasa dla każdego mięśnia (path w SVG) */
+        .muscle {
+            fill: #333; /* Domyślny, ciemny kolor mięśnia */
+            stroke: #555; /* Kolor obramowania */
+            stroke-width: 1px;
             cursor: pointer;
-            z-index: 10; /* Zapewnia, że są nad tłem */
-            background: rgba(255, 69, 0, 0); /* Niewidoczne */
-            transition: 0.3s;
+            transition: 0.3s; /* Gładkie przejście koloru */
         }
 
-        .hotspot:hover {
-            background: rgba(255, 69, 0, 0.3); /* Pojawia się po najechaniu */
-            box-shadow: 0 0 20px #ff4500;
+        /* Efekt po najechaniu myszką */
+        .muscle:hover {
+            fill: #ff4500; /* Jasny pomarańczowy */
+            filter: drop-shadow(0 0 10px #ff4500); /* Mocna poświata */
         }
 
-        .hotspot.trained {
-            background: rgba(255, 215, 0, 0.3);
-            border: 2px solid gold;
-            box-shadow: 0 0 10px gold;
+        /* Styl dla mięśnia "trenowanego" - np. po zapisaniu wyniku */
+        .muscle.trained {
+            fill: rgba(255, 215, 0, 0.7); /* Złoty */
+            stroke: gold;
+            filter: drop-shadow(0 0 15px gold);
         }
 
         /* Modal */
         #modal {
             display: none; position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); background: #222;
-            padding: 30px; border-radius: 15px; text-align: center;
-            border: 2px solid #ff4500; z-index: 100; color: white;
+            transform: translate(-50%, -50%); background: rgba(20, 20, 20, 0.95);
+            padding: 30px; border-radius: 12px; text-align: center;
+            border: 2px solid #ff4500; z-index: 100;
+            box-shadow: 0 0 40px rgba(255, 69, 0, 0.4);
         }
-        input { padding: 12px; width: 80%; margin: 10px 0; border-radius: 5px; border: none; background: #333; color: white; text-align: center;}
-        button { background: #ff4500; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        input { padding: 12px; width: 80%; margin: 10px 0; border-radius: 6px; border: 1px solid #444; background: #000; color: white; text-align: center;}
+        button { background: #ff4500; color: white; padding: 12px 24px; border: none; cursor: pointer; border-radius: 6px; font-weight: bold; text-transform: uppercase;}
     </style>
 </head>
 <body>
 
-    <div class="full-screen-container">
-        <div id="Barki-hotspot" class="hotspot" style="top: 25%; left: 45%;" onclick="openModal('Barki')"></div>
-        <div id="Klatka-hotspot" class="hotspot" style="top: 35%; left: 40%;" onclick="openModal('Klatka')"></div>
-        <div id="Uda-hotspot" class="hotspot" style="top: 60%; left: 40%;" onclick="openModal('Uda')"></div>
+    <div class="wrapper">
+        <div class="header">
+            <h1>Twój Trening</h1>
+            <p>Kliknij w mięsień, aby dodać wynik</p>
+        </div>
+
+        <svg viewBox="0 0 400 800" xmlns="http://www.w3.org/2000/svg">
+            <path d="M200,50 L250,80 L250,150 L300,180 L280,350 L220,400 L250,600 L200,750 L150,600 L180,400 L120,350 L100,180 L150,150 L150,80 Z" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+            
+            <path id="Bark-L" class="muscle" d="M110,180 C100,200 100,230 110,250 L140,230 L140,200 Z" onclick="openModal('Bark Lewy')"/>
+            <path id="Bark-P" class="muscle" d="M290,180 C300,200 300,230 290,250 L260,230 L260,200 Z" onclick="openModal('Bark Prawy')"/>
+            
+            <path id="Klatka" class="muscle" d="M150,190 L250,190 L240,280 L160,280 Z" onclick="openModal('Klatka Piersiowa')"/>
+            
+            <path id="Biceps-L" class="muscle" d="M90,260 C80,280 80,310 90,330 L110,320 L110,270 Z" onclick="openModal('Biceps Lewy')"/>
+            <path id="Biceps-P" class="muscle" d="M310,260 C320,280 320,310 310,330 L290,320 L290,270 Z" onclick="openModal('Biceps Prawy')"/>
+
+            <path id="Brzuch" class="muscle" d="M170,290 L230,290 L220,380 L180,380 Z" onclick="openModal('Mięśnie Brzucha')"/>
+
+            <path id="Udo-L" class="muscle" d="M160,420 L200,420 L190,580 L150,560 Z" onclick="openModal('Udo Lewe')"/>
+            <path id="Udo-P" class="muscle" d="M240,420 L200,420 L210,580 L250,560 Z" onclick="openModal('Udo Prawe')"/>
+        </svg>
     </div>
 
     <div id="modal">
         <h3 id="modal-title">Mięsień</h3>
-        <input type="number" id="weight" placeholder="Wpisz ciężar (kg)">
+        <input type="number" id="weight" placeholder="Waga (kg)">
         <br>
         <button onclick="saveData()">Zapisz</button>
+        <button style="background:transparent; border:1px solid #555; margin-left:10px" onclick="closeModal()">Anuluj</button>
     </div>
 
     <script>
-        let currentMuscle = "";
+        let currentMuscleId = ""; // Przechowujemy ID <path>, a nie nazwę
+        let currentMuscleName = "";
 
+        // Wczytaj dane przy starcie
         window.onload = function() {
-            ['Barki', 'Klatka', 'Uda'].forEach(m => {
-                if (localStorage.getItem(m)) {
-                    document.getElementById(m + '-hotspot').classList.add('trained');
+            document.querySelectorAll('.muscle').forEach(path => {
+                if (localStorage.getItem(path.id)) {
+                    path.classList.add('trained');
                 }
             });
         }
 
         function openModal(name) {
-            currentMuscle = name;
+            // Znajdź ID elementu SVG, który wywołał tę nazwę
+            // (W pełnym modelu zrobilibyśmy to mapą, tu upraszczam)
+            currentMuscleName = name;
+            // Szukamy po ID w SVG - muszę ręcznie dopasować w tym uproszczeniu
+            if(name === 'Klatka Piersiowa') currentMuscleId = 'Klatka';
+            if(name.includes('Bark')) currentMuscleId = name.includes('Lewy') ? 'Bark-L' : 'Bark-P';
+            if(name.includes('Biceps')) currentMuscleId = name.includes('Lewy') ? 'Biceps-L' : 'Biceps-P';
+            if(name === 'Mięśnie Brzucha') currentMuscleId = 'Brzuch';
+            if(name.includes('Udo')) currentMuscleId = name.includes('Lewy') ? 'Udo-L' : 'Udo-P';
+
             document.getElementById('modal-title').innerText = name;
             document.getElementById('modal').style.display = 'block';
-            document.getElementById('weight').value = localStorage.getItem(name) || "";
+            document.getElementById('weight').value = localStorage.getItem(currentMuscleId) || "";
         }
+
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
         function saveData() {
             const w = document.getElementById('weight').value;
             if(w) {
-                localStorage.setItem(currentMuscle, w);
-                document.getElementById(currentMuscle + '-hotspot').classList.add('trained');
-                document.getElementById('modal').style.display = 'none';
+                // Zapisz do pamięci przeglądarki używając unikalnego ID
+                localStorage.setItem(currentMuscleId, w);
+                
+                // Zmień kolor bezpośrednio na elemencie SVG
+                const musclePath = document.getElementById(currentMuscleId);
+                if (musclePath) {
+                    musclePath.classList.add('trained');
+                }
+                
+                closeModal();
             }
         }
     </script>
