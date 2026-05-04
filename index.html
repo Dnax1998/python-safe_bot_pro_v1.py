@@ -6,65 +6,36 @@
     <title>Gym Motivation Tracker</title>
     <style>
         body { 
-            background: #111; 
-            color: white; 
-            font-family: sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            margin: 0; 
-            padding: 20px; 
+            background: #111; color: white; font-family: sans-serif; 
+            display: flex; flex-direction: column; align-items: center; 
+            margin: 0; padding: 20px; 
         }
 
-        h1 { margin-bottom: 10px; color: #ff4500; }
+        h1 { margin-bottom: 5px; color: #ff4500; }
+        p { margin-bottom: 20px; color: #ccc; }
 
-        /* Kontener na zdjęcie */
-        .muscle-wrapper {
-            position: relative;
-            max-width: 800px; 
-            width: 100%;
-            margin-top: 20px;
-        }
+        .muscle-wrapper { position: relative; max-width: 800px; width: 100%; }
+        .muscle-wrapper img { width: 100%; height: auto; border-radius: 15px; display: block; }
 
-        .muscle-wrapper img {
-            width: 100%;
-            height: auto;
-            border-radius: 15px;
-            display: block;
-        }
-
-        /* Interaktywne punkty (hotspoty) */
+        /* Hotspoty */
         .hotspot {
-            position: absolute;
-            width: 6%;  /* Wielkość punktu */
-            height: 8%;
-            background: rgba(255, 69, 0, 0.3); /* Lekko przezroczysty */
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid rgba(255, 255, 255, 0.5);
+            position: absolute; width: 6%; height: 8%;
+            background: rgba(255, 69, 0, 0.3); border-radius: 50%;
+            cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.5);
             transition: 0.3s;
         }
+        .hotspot:hover { background: rgba(255, 69, 0, 0.7); transform: scale(1.2); }
+        
+        /* Styl dla trenowanego mięśnia (złoty) */
+        .hotspot.trained { background: rgba(255, 215, 0, 0.6); border-color: gold; box-shadow: 0 0 15px gold; }
 
-        .hotspot:hover {
-            background: rgba(255, 69, 0, 0.7);
-            transform: scale(1.2);
-            box-shadow: 0 0 15px #ff4500;
-        }
-
-        /* Okno Modalne */
+        /* Modal */
         #modal {
-            display: none;
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: #222;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            border: 2px solid #ff4500;
-            z-index: 100;
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); background: #222;
+            padding: 30px; border-radius: 15px; text-align: center;
+            border: 2px solid #ff4500; z-index: 100;
         }
-
         input { padding: 12px; width: 80%; margin: 10px 0; border-radius: 5px; border: 1px solid #444; background: #333; color: white; }
         button { background: #ff4500; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
     </style>
@@ -72,14 +43,14 @@
 <body>
 
     <h1>Twój Trening</h1>
-    <p>Kliknij w mięsień na obrazku, aby dodać swój wynik:</p>
+    <p>Kliknij w mięsień, aby dodać/zaktualizować wynik:</p>
 
     <div class="muscle-wrapper">
         <img src="zdjecie.jpg" alt="Mapa mięśni">
 
-        <div class="hotspot" style="top: 25%; left: 45%;" onclick="openModal('Barki')"></div>
-        <div class="hotspot" style="top: 35%; left: 40%;" onclick="openModal('Klatka Piersiowa')"></div>
-        <div class="hotspot" style="top: 60%; left: 40%;" onclick="openModal('Uda')"></div>
+        <div id="Barki-hotspot" class="hotspot" style="top: 25%; left: 45%;" onclick="openModal('Barki')"></div>
+        <div id="Klatka-hotspot" class="hotspot" style="top: 35%; left: 40%;" onclick="openModal('Klatka')"></div>
+        <div id="Uda-hotspot" class="hotspot" style="top: 60%; left: 40%;" onclick="openModal('Uda')"></div>
     </div>
 
     <div id="modal">
@@ -91,9 +62,23 @@
     </div>
 
     <script>
+        let currentMuscle = "";
+
+        // Przy ładowaniu strony - sprawdź zapisane dane
+        window.onload = function() {
+            const muscles = ['Barki', 'Klatka', 'Uda'];
+            muscles.forEach(m => {
+                if (localStorage.getItem(m)) {
+                    document.getElementById(m + '-hotspot').classList.add('trained');
+                }
+            });
+        }
+
         function openModal(name) {
+            currentMuscle = name;
             document.getElementById('modal-title').innerText = name;
             document.getElementById('modal').style.display = 'block';
+            document.getElementById('weight').value = localStorage.getItem(name) || "";
         }
 
         function closeModal() {
@@ -103,10 +88,14 @@
         function saveData() {
             const w = document.getElementById('weight').value;
             if(w) {
-                alert("Zapisano wynik: " + w + " kg dla " + document.getElementById('modal-title').innerText);
+                // Zapisz do przeglądarki
+                localStorage.setItem(currentMuscle, w);
+                
+                // Zmień kolor na złoty
+                document.getElementById(currentMuscle + '-hotspot').classList.add('trained');
+                
+                alert("Wynik dla " + currentMuscle + " zapisany: " + w + " kg!");
                 closeModal();
-            } else {
-                alert("Wpisz wagę!");
             }
         }
     </script>
