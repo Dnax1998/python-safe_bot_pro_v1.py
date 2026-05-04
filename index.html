@@ -2,26 +2,25 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gym Motivation Tracker Pro (SVG)</title>
     <style>
-        /* 1. STYLIZACJA TŁA (GENEROWANEGO PRZEZ CSS) */
+        /* 1. STYLIZACJA TŁA (GENEROWANEGO PRZEZ KOD CSS) */
         body, html { 
             margin: 0; padding: 0; height: 100%; 
             font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif; 
             overflow: hidden; color: white;
-            /* Głęboki radialny gradient tła */
+            /* Głęboki radialny gradient tła (od ciemnego do bardzo ciemnego) */
             background: radial-gradient(circle at 50% 50%, #151515 0%, #000 100%);
         }
 
-        /* Subtelny glowing sześciokątny w tle */
+        /* Subtelny glowing w tle z heksagonalnym wzorem */
         body::before {
             content: "";
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M86.603 25L50 5 L13.397 25 L13.397 75 L50 95 L86.603 75 Z' stroke='%23333' fill='none'/%3E%3C/svg%3E");
-            background-size: 80px 80px; /* Rozmiar wzoru heksagonalnego */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M86.603 25L50 5 L13.397 25 L13.397 75 L50 95 L86.603 75 Z' stroke='%23222' fill='none'/%3E%3C/svg%3E");
+            background-size: 80px 80px;
             background-position: center;
-            opacity: 0.1; /* Subtelność */
+            opacity: 0.15;
             z-index: -1;
         }
 
@@ -37,7 +36,7 @@
         .header h1 { margin: 0; color: #ff4500; font-size: 2.2em; text-transform: uppercase; letter-spacing: 2px; }
         .header p { margin: 5px 0; color: #aaa; }
 
-        /* PANELE BOCZNE */
+        /* PANELE BOCZNE - Zintegrowane z image_4.png */
         .panel {
             position: absolute; width: 220px;
             background: rgba(20, 20, 25, 0.85); /* Ciemny, półprzezroczysty */
@@ -54,6 +53,7 @@
         .panel-ranks { top: 120px; left: 40px; }
         .panel-profile { top: 120px; right: 40px; }
 
+        /* Ikonki Rangi (SVG z image_4.png) */
         .rank-icon { display: block; width: 60px; height: 60px; margin: 10px auto; filter: drop-shadow(0 0 5px gold); }
 
         /* 3. STYLIZACJA MODELU LUDZIKA SVG */
@@ -151,7 +151,7 @@
 
     <div id="modal">
         <h3 id="modal-title">Mięsień</h3>
-        <input type="number" id="weight" placeholder="Ciężar (kg)">
+        <input type="number" id="weight" placeholder="Wpisz ciężar (kg)">
         <br>
         <button onclick="saveData()">ZAPISZ I PODNIEŚ RANGĘ</button>
         <button style="background:transparent; border:1px solid #555; margin-left: 10px;" onclick="closeModal()">Anuluj</button>
@@ -161,15 +161,15 @@
         let currentMuscleId = ""; // Unikalne ID <path> w SVG
         let currentMuscleName = "";
 
-        // Funkcja wczytująca zapisane wyniki przy starcie strony
+        // Wczytaj dane przy starcie
         window.onload = function() {
             // Przejdź przez wszystkie mięśnie na mapie
-            document.querySelectorAll('.muscle').forEach(musclePath => {
-                // Sprawdź, czy w pamięci przeglądarki jest zapisany ciężar dla tego mięśnia
-                const savedWeight = localStorage.getItem(musclePath.id);
+            document.querySelectorAll('.muscle').forEach(path => {
+                // Sprawdź, czy w pamięci przeglądarki jest zapisany wynik dla tego mięśnia
+                const savedWeight = localStorage.getItem(path.id);
                 if (savedWeight) {
                     // Jeśli tak, dodaj klasę .trained, która podświetli mięsień na złoto
-                    musclePath.classList.add('trained');
+                    path.classList.add('trained');
                 }
             });
         }
@@ -180,19 +180,13 @@
 
             document.getElementById('modal-title').innerText = name;
             document.getElementById('modal').style.display = 'block';
-            
-            // Wczytaj poprzedni ciężar (jeśli był zapisany)
-            const previousWeight = localStorage.getItem(id) || "";
-            document.getElementById('weight').value = previousWeight;
+            document.getElementById('weight').value = localStorage.getItem(id) || "";
         }
 
-        function closeModal() {
-            document.getElementById('modal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
         function saveData() {
             const weight = document.getElementById('weight').value;
-            
             if(weight) {
                 // Zapisz do pamięci przeglądarki używając unikalnego ID mięśnia jako klucza
                 localStorage.setItem(currentMuscleId, weight);
@@ -206,7 +200,7 @@
                 alert("Zapisano wynik dla " + currentMuscleName + ": " + weight + " kg!");
                 closeModal();
             } else {
-                alert("Wpisz ciężar!");
+                alert("Wpisz waga!");
             }
         }
     </script>
