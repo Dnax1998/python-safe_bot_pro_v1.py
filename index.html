@@ -2,50 +2,68 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Gym Tracker - NAPRAWIONY</title>
+    <title>Gym Tracker Cybernetic</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; background: #1a1a1a; /* Kolor zastępczy */ overflow: hidden; }
+        /* Stylistyka "Cyber/Gaming" */
+        body { margin: 0; background: #0a0b10; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        
+        /* Tło gradientowe */
+        .app-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1a1a2e 0%, #0a0b10 100%); z-index: -1; }
 
-        .app-container {
-            width: 100vw; height: 100vh;
-            /* TUTAJ WKLEJ DOKŁADNĄ NAZWĘ SWOJEGO PLIKU */
-            background-image: url('background.jpg'); 
-            background-size: contain;
-            background-position: center;
-            background-repeat: no-repeat;
-            position: relative;
-            background-color: #0a0a0a; /* To widać, jeśli zdjęcie nie zadziała */
-        }
+        /* Panele */
+        .panel { position: absolute; background: rgba(20, 25, 35, 0.8); border: 1px solid #00f2ff; padding: 20px; border-radius: 10px; width: 250px; backdrop-filter: blur(5px); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
+        .left { left: 50px; top: 50px; }
+        .right { right: 50px; top: 50px; }
+        h2 { color: #00f2ff; font-size: 1.2em; border-bottom: 1px solid #444; padding-bottom: 10px; }
 
-        .muscle-hotspot {
-            position: absolute;
-            cursor: pointer;
-            z-index: 10;
-            border-radius: 50%;
-            /* WIDOCZNOŚĆ: Zostawiłem lekkie czerwone tło, żebyś widział, gdzie klikasz */
-            background: rgba(255, 0, 0, 0.3); 
-            transition: 0.3s;
-        }
+        /* SVG Ludzik */
+        #body-svg { width: 400px; height: 600px; filter: drop-shadow(0 0 10px #00f2ff); }
+        .muscle { fill: rgba(0, 242, 255, 0.1); stroke: #00f2ff; stroke-width: 2; cursor: pointer; transition: 0.3s; }
+        .muscle:hover { fill: rgba(255, 69, 0, 0.5); stroke: #ff4500; }
 
-        .muscle-hotspot:hover { background: rgba(255, 255, 255, 0.4); }
-
-        #modal {
-            display: none; position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); background: #222;
-            padding: 20px; border-radius: 10px; border: 1px solid #ff4500;
-            color: white; z-index: 100; text-align: center;
-        }
+        /* Modal */
+        #modal { display: none; position: fixed; background: #161b22; padding: 30px; border: 2px solid #00f2ff; border-radius: 15px; text-align: center; }
+        input { width: 100%; padding: 10px; margin: 10px 0; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 5px; }
+        button { background: #00f2ff; color: #000; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
+    <div class="app-bg"></div>
 
-    <div class="app-container">
-        <div class="muscle-hotspot" style="top: 30%; left: 45%; width: 10%; height: 10%;" onclick="alert('Działa!')"></div>
+    <div class="panel left">
+        <h2>TWOJE RANGI</h2>
+        <p>GÓRA CIAŁA: <span style="color:#00f2ff">NOWICJUSZ</span></p>
+        <p>DÓŁ CIAŁA: <span style="color:#00f2ff">POCZĄTKUJĄCY</span></p>
     </div>
+
+    <div class="panel right">
+        <h2>PROFIL GRACZA</h2>
+        <p>Płeć: MĘŻCZYZNA</p>
+        <p>Wiek: 28</p>
+        <p>Waga: 75 kg</p>
+    </div>
+
+    <svg id="body-svg" viewBox="0 0 200 400">
+        <path d="M100 20 L130 50 L120 150 L150 180 L140 300 L110 380 L90 380 L60 300 L50 180 L80 150 L70 50 Z" fill="none" stroke="#333" stroke-width="2"/>
+        <path class="muscle" onclick="showModal('Klatka')" d="M70 70 L130 70 L120 130 L80 130 Z" /> <path class="muscle" onclick="showModal('Biceps Prawy')" d="M130 80 L150 130 L130 140 L120 90 Z" /> <path class="muscle" onclick="showModal('Uda')" d="M70 200 L130 200 L120 300 L80 300 Z" /> </svg>
 
     <div id="modal">
-        <h3>Wynik</h3>
-        <button onclick="document.getElementById('modal').style.display='none'">Zamknij</button>
+        <h2 id="modal-title">Mięsień</h2>
+        <input type="number" id="val" placeholder="Wpisz kg">
+        <button onclick="save()">ZAPISZ</button>
     </div>
+
+    <script>
+        let activeMuscle = "";
+        function showModal(name) {
+            activeMuscle = name;
+            document.getElementById('modal-title').innerText = name;
+            document.getElementById('modal').style.display = 'block';
+        }
+        function save() {
+            alert(activeMuscle + " zapisano: " + document.getElementById('val').value + " kg");
+            document.getElementById('modal').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
