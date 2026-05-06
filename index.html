@@ -3,46 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS2 Amateur League</title>
+    <title>CS2 Amateur League | Sezon 1</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>AMATOR LEAGUE CS2</h1>
+        <div class="logo">CS2 AMATOR <span>LEAGUE</span></div>
         <nav>
-            <button onclick="showTab('table')">Tabela</button>
-            <button onclick="showTab('matches')">Terminarz</button>
+            <button class="nav-btn" onclick="showTab('home')">Start</button>
+            <button class="nav-btn" onclick="showTab('table')">Tabela/Dywizje</button>
+            <button class="nav-btn" onclick="showTab('matches')">Mecze & Veto</button>
+            <button class="nav-btn" onclick="showTab('register')">Zapisy</button>
+            <button class="nav-btn" onclick="showTab('rules')">Regulamin</button>
         </nav>
     </header>
 
     <main>
-        <section id="table" class="tab-content">
-            <h2>Tabela Ligowa</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Poz.</th>
-                        <th>Drużyna</th>
-                        <th>Mecze</th>
-                        <th>Pkt</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td>1</td><td>GamerZone</td><td>5</td><td>15</td></tr>
-                    <tr><td>2</td><td>FragMasters</td><td>5</td><td>12</td></tr>
-                    <tr><td>3</td><td>NoobSquad</td><td>5</td><td>9</td></tr>
-                </tbody>
-            </table>
+        <!-- START -->
+        <section id="home" class="tab-content">
+            <div class="hero">
+                <h2>Witaj w amatorskich rozgrywkach CS2</h2>
+                <p>10 zespołów w lidze | System awans/spadek | Pula nagród: Sława i Chwała</p>
+                <div class="stats-grid">
+                    <div class="stat-box"><h3>2</h3><p>Dywizje</p></div>
+                    <div class="stat-box"><h3>20</h3><p>Drużyn</p></div>
+                    <div class="stat-box"><h3>LIVE</h3><p>Status Sezonu</p></div>
+                </div>
+            </div>
         </section>
 
+        <!-- TABELA -->
+        <section id="table" class="tab-content" style="display:none;">
+            <h2>Tabela: Dywizja A</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Poz.</th>
+                            <th>Drużyna</th>
+                            <th>M</th>
+                            <th>W</th>
+                            <th>P</th>
+                            <th>+/-</th>
+                            <th>Pkt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="promotion"><td>1</td><td><strong>GamerZone</strong></td><td>5</td><td>5</td><td>0</td><td>+45</td><td>15</td></tr>
+                        <tr class="promotion"><td>2</td><td><strong>FragMasters</strong></td><td>5</td><td>4</td><td>1</td><td>+20</td><td>12</td></tr>
+                        <tr><td>3</td><td>NoobSquad</td><td>5</td><td>3</td><td>2</td><td>+5</td><td>9</td></tr>
+                        <tr><td>4</td><td>Headshot Killers</td><td>5</td><td>2</td><td>3</td><td>-10</td><td>6</td></tr>
+                        <tr class="relegation"><td>9</td><td>Eco Warriors</td><td>5</td><td>0</td><td>5</td><td>-30</td><td>0</td></tr>
+                        <tr class="relegation"><td>10</td><td>Silver Surfers</td><td>5</td><td>0</td><td>5</td><td>-50</td><td>0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><small>* Zielony: Awans | Czerwony: Spadek</small></p>
+        </section>
+
+        <!-- MECZE I VETO -->
         <section id="matches" class="tab-content" style="display:none;">
-            <h2>Najbliższe Mecze</h2>
+            <h2>Nadchodzące Spotkania</h2>
             <div class="match-card">
-                <span>GamerZone vs FragMasters</span>
-                <small>Piątek, 20:00</small>
+                <div class="match-info">
+                    <span class="team-name">GamerZone</span>
+                    <span class="vs">VS</span>
+                    <span class="team-name">FragMasters</span>
+                </div>
+                <div class="match-details">Data: 15.10 | Godzina: 20:00 | Mapa: Decider</div>
+            </div>
+
+            <div class="veto-tool">
+                <h3>Symulator Veto (BO1)</h3>
+                <p id="veto-status">Kolejka: Drużyna A (Banuje)</p>
+                <div class="map-grid">
+                    <button class="map-btn" onclick="banMap(this)">Mirage</button>
+                    <button class="map-btn" onclick="banMap(this)">Inferno</button>
+                    <button class="map-btn" onclick="banMap(this)">Nuke</button>
+                    <button class="map-btn" onclick="banMap(this)">Ancient</button>
+                    <button class="map-btn" onclick="banMap(this)">Anubis</button>
+                    <button class="map-btn" onclick="banMap(this)">Vertigo</button>
+                    <button class="map-btn" onclick="banMap(this)">Dust 2</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- REJESTRACJA -->
+        <section id="register" class="tab-content" style="display:none;">
+            <h2>Zgłoś Drużynę</h2>
+            <form id="regForm" class="cool-form">
+                <input type="text" placeholder="Nazwa Drużyny" required>
+                <input type="url" placeholder="Link do profilu Kapitana (Steam)" required>
+                <textarea placeholder="Tagi graczy (np. Player1, Player2...)" rows="5"></textarea>
+                <button type="submit" class="submit-btn">Wyślij Zgłoszenie</button>
+            </form>
+        </section>
+
+        <!-- REGULAMIN -->
+        <section id="rules" class="tab-content" style="display:none;">
+            <h2>Zasady Ligi</h2>
+            <div class="rules-text">
+                <ol>
+                    <li>Mecze rozgrywane są w formacie MR12.</li>
+                    <li>Każda liga liczy 10 zespołów.</li>
+                    <li>Dwie najlepsze drużyny awansują wyżej, dwie najgorsze spadają.</li>
+                    <li>Zakaz używania cheatów i skryptów (natychmiastowy ban).</li>
+                    <li>Spóźnienie powyżej 15 minut oznacza walkower.</li>
+                </ol>
             </div>
         </section>
     </main>
+
+    <footer>
+        &copy; 2026 Amatorska Liga CS2. Wszystkie prawa zastrzeżone.
+    </footer>
 
     <script src="script.js"></script>
 </body>
