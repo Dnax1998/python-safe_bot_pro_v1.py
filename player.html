@@ -3,101 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Muzyka - NeoRun</title>
+    <title>Moja Muzyka - NeoRun</title>
     <style>
         :root { --neon: #00ff88; --dark: #000; --card: #1a1a1a; }
-        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; text-align: center; }
-        .btn-back { background: #333; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; display: inline-block; margin-bottom: 30px; }
-        .player-card { background: var(--card); padding: 40px 20px; border-radius: 30px; border: 1px solid #333; box-shadow: 0 0 20px rgba(0,255,136,0.1); }
+        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; text-align: center; margin: 0; }
+        .btn-back { background: #333; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; display: inline-block; margin-bottom: 20px; }
         
-        .disc { 
-            width: 150px; height: 150px; background: #222; border-radius: 50%; 
-            margin: 0 auto 30px; border: 5px solid var(--neon); 
-            display: flex; justify-content: center; align-items: center; font-size: 50px;
-            box-shadow: 0 0 15px var(--neon);
-            animation: rotate 5s linear infinite; animation-play-state: paused;
-        }
-        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .setup-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
+        input { width: 80%; background: #111; border: 1px solid #333; padding: 10px; border-radius: 8px; color: white; margin-bottom: 10px; }
+        .btn-save { background: var(--neon); color: black; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         
-        .controls { display: flex; justify-content: center; gap: 20px; align-items: center; }
-        .btn-ctrl { background: #333; border: none; color: white; width: 50px; height: 50px; border-radius: 50%; font-size: 20px; cursor: pointer; }
-        .btn-main { background: var(--neon); color: black; width: 70px; height: 70px; font-size: 24px; }
-        
-        .status-badge { background: #222; padding: 5px 15px; border-radius: 20px; font-size: 12px; color: var(--neon); margin-bottom: 20px; display: inline-block; }
+        .player-container { width: 100%; border-radius: 12px; overflow: hidden; background: #282828; min-height: 352px; box-shadow: 0 0 20px rgba(0,255,136,0.2); }
+        iframe { border-radius: 12px; }
     </style>
 </head>
 <body>
     <a href="index.html" class="btn-back">← POWRÓT</a>
 
-    <div class="player-card">
-        <div class="status-badge" id="status">GOTOWY DO POŁĄCZENIA</div>
-        <div class="disc" id="disc">🎵</div>
-        
-        <div class="controls">
-            <button class="btn-ctrl" onclick="mediaAction('previoustrack')">⏮</button>
-            <button class="btn-ctrl btn-main" id="playBtn" onclick="togglePlay()">▶</button>
-            <button class="btn-ctrl" onclick="mediaAction('nexttrack')">⏭</button>
-        </div>
-        
-        <p style="margin-top: 30px; font-size: 13px; color: #888;">
-            1. Odpal Spotify lub YouTube w tle.<br>
-            2. Kliknij START w NeoRun.<br>
-            3. Możesz teraz zmieniać piosenki bez wychodzenia z apki!
-        </p>
+    <div class="setup-box" id="setup">
+        <small style="color: #888;">WKLEJ LINK DO PLAYLISTY SPOTIFY:</small><br><br>
+        <input type="text" id="playlistLink" placeholder="https://open.spotify.com/playlist/...">
+        <button class="btn-save" onclick="updatePlaylist()">USTAW</button>
     </div>
 
-    <audio id="silentAudio" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" style="display:none;"></audio>
+    <div class="player-container" id="player-wrapper">
+        <p style="padding: 50px; color: #555;">Wklej link powyżej, aby załadować swoją muzykę.</p>
+    </div>
 
     <script>
-        const playBtn = document.getElementById('playBtn');
-        const disc = document.getElementById('disc');
-        const status = document.getElementById('status');
-        const silentAudio = document.getElementById('silentAudio');
-        let isPlaying = false;
+        // Ładowanie zapisanej playlisty
+        window.onload = () => {
+            const saved = localStorage.getItem('neoPlaylist');
+            if(saved) {
+                loadIframe(saved);
+                document.getElementById('setup').style.display = 'none'; // Ukryj ustawienia, jeśli już ustawione
+            }
+        };
 
-        async function togglePlay() {
-            if (!isPlaying) {
-                // Trik: odtwarzamy "coś", żeby przejąć sesję audio
-                try {
-                    await silentAudio.play();
-                    isPlaying = true;
-                    playBtn.innerText = '⏸';
-                    disc.style.animationPlayState = 'running';
-                    status.innerText = 'POŁĄCZONO Z SYSTEMEM';
-                    setupMediaSession();
-                } catch (err) {
-                    alert("Kliknij jeszcze raz, aby potwierdzić dostęp do mediów.");
-                }
+        function updatePlaylist() {
+            let link = document.getElementById('playlistLink').value;
+            if(link.includes('spotify.com')) {
+                // Zamiana linku na wersję embed
+                let embedLink = link.replace('spotify.com/', 'spotify.com/embed/');
+                localStorage.setItem('neoPlaylist', embedLink);
+                loadIframe(embedLink);
+                document.getElementById('setup').style.display = 'none';
             } else {
-                silentAudio.pause();
-                isPlaying = false;
-                playBtn.innerText = '▶';
-                disc.style.animationPlayState = 'paused';
-                status.innerText = 'WSTRZYMANO';
+                alert("To nie jest poprawny link do Spotify!");
             }
         }
 
-        function setupMediaSession() {
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: 'NeoRun Music Control',
-                    artist: 'Twoja aplikacja biegowa',
-                    album: 'Tryb Treningu',
-                    artwork: [{ src: 'https://cdn-icons-png.flaticon.com/512/3112/3112933.png', sizes: '512x512', type: 'image/png' }]
-                });
-
-                navigator.mediaSession.setActionHandler('play', () => togglePlay());
-                navigator.mediaSession.setActionHandler('pause', () => togglePlay());
-                navigator.mediaSession.setActionHandler('previoustrack', () => console.log('Poprzedni'));
-                navigator.mediaSession.setActionHandler('nexttrack', () => console.log('Następny'));
-            }
+        function loadIframe(url) {
+            document.getElementById('player-wrapper').innerHTML = `
+                <iframe src="${url}" 
+                    width="100%" height="352" 
+                    frameborder="0" allowfullscreen="" 
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                    loading="lazy">
+                </iframe>
+                <button onclick="showSetup()" style="background:none; border:none; color:#444; font-size:10px; margin-top:10px; cursor:pointer;">Zmień playlistę</button>
+            `;
         }
 
-        function mediaAction(action) {
-            // W wersji przeglądarkowej symulujemy kliknięcie przycisków multimedialnych
-            console.log("Akcja: " + action);
-            // Uwaga: Prawdziwe sterowanie Spotify wymaga API Spotify, 
-            // ale MediaSession pozwala na sterowanie tym, co aktualnie gra telefon.
+        function showSetup() {
+            document.getElementById('setup').style.display = 'block';
         }
     </script>
 </body>
