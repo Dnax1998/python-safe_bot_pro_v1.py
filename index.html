@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS2 Amateur League | Sezon 1</title>
+    <title>CS2 AMATOR LEAGUE | Sezon 1</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
+
     <header>
         <div class="logo">CS2 AMATOR <span>LEAGUE</span></div>
         <nav>
@@ -52,7 +53,93 @@
             </div>
         </section>
 
-        </main>
+        <section id="table" class="tab-content" style="display:none;">
+            <h2 class="section-title">Ranking Dywizji A</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Poz.</th>
+                            <th>Drużyna</th>
+                            <th>Mecze</th>
+                            <th>W - P</th>
+                            <th>+/-</th>
+                            <th>Pkt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="promotion"><td>1</td><td><strong>GamerZone</strong></td><td>5</td><td>5 - 0</td><td>+45</td><td>15</td></tr>
+                        <tr class="promotion"><td>2</td><td><strong>FragMasters</strong></td><td>5</td><td>4 - 1</td><td>+20</td><td>12</td></tr>
+                        <tr><td>3</td><td>NoobSquad</td><td>5</td><td>3 - 2</td><td>+5</td><td>9</td></tr>
+                        <tr><td>4</td><td>Headshot Killers</td><td>5</td><td>2 - 3</td><td>-10</td><td>6</td></tr>
+                        <tr class="relegation"><td>9</td><td>Eco Warriors</td><td>5</td><td>0 - 5</td><td>-30</td><td>0</td></tr>
+                        <tr class="relegation"><td>10</td><td>Silver Surfers</td><td>5</td><td>0 - 5</td><td>-50</td><td>0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="matches" class="tab-content" style="display:none;">
+            <h2 class="section-title">Najbliższe mecze</h2>
+            <div class="match-card">
+                <div class="match-teams">
+                    <span class="t-name">GamerZone</span>
+                    <span class="vs-label">VS</span>
+                    <span class="t-name">FragMasters</span>
+                </div>
+                <div class="match-meta">Dzisiaj, 21:00 | Serwer: PL #1</div>
+            </div>
+
+            <div class="veto-container">
+                <h3>System Veto (Mapy)</h3>
+                <p id="veto-status">Zaczyna Drużyna A (Banuje)</p>
+                <div class="map-grid">
+                    <button class="map-btn" onclick="banMap(this)">Mirage</button>
+                    <button class="map-btn" onclick="banMap(this)">Inferno</button>
+                    <button class="map-btn" onclick="banMap(this)">Nuke</button>
+                    <button class="map-btn" onclick="banMap(this)">Ancient</button>
+                    <button class="map-btn" onclick="banMap(this)">Anubis</button>
+                    <button class="map-btn" onclick="banMap(this)">Vertigo</button>
+                    <button class="map-btn" onclick="banMap(this)">Dust 2</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="register" class="tab-content" style="display:none;">
+            <h2 class="section-title">Zapisz swoją drużynę</h2>
+            <form class="glass-form">
+                <div class="input-group">
+                    <label>Nazwa Drużyny</label>
+                    <input type="text" placeholder="np. Virtus.Pro" required>
+                </div>
+                <div class="input-group">
+                    <label>Link do Steam (Kapitan)</label>
+                    <input type="url" placeholder="https://steamcommunity.com/id/..." required>
+                </div>
+                <div class="input-group">
+                    <label>Skład (Oddzieleni przecinkami)</label>
+                    <textarea rows="4" placeholder="Gracz1, Gracz2, Gracz3..."></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Wyślij zgłoszenie</button>
+            </form>
+        </section>
+
+        <section id="rules" class="tab-content" style="display:none;">
+            <h2 class="section-title">Zasady Rozgrywek</h2>
+            <div class="rules-card">
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Format meczów: MR12 (BO1/BO3).</li>
+                    <li><i class="fas fa-check-circle"></i> Wymagany Anticheat oraz czyste konto Steam.</li>
+                    <li><i class="fas fa-check-circle"></i> Top 2 awansuje do wyższej ligi.</li>
+                    <li><i class="fas fa-check-circle"></i> Bottom 2 spada do niższej ligi.</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 CS2 AMATOR LEAGUE. Design by Gemini AI.</p>
+    </footer>
 
     <script src="script.js"></script>
 </body>
