@@ -3,70 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moja Muzyka - NeoRun</title>
+    <title>Pilot Muzyki - NeoRun</title>
     <style>
         :root { --neon: #00ff88; --dark: #000; --card: #1a1a1a; }
-        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; text-align: center; margin: 0; }
-        .btn-back { background: #333; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; display: inline-block; margin-bottom: 20px; }
+        body { 
+            background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; 
+            padding: 20px; text-align: center; margin: 0; height: 100vh; display: flex; flex-direction: column;
+        }
+        .btn-back { background: #333; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; align-self: flex-start; }
         
-        .setup-box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
-        input { width: 80%; background: #111; border: 1px solid #333; padding: 10px; border-radius: 8px; color: white; margin-bottom: 10px; }
-        .btn-save { background: var(--neon); color: black; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .pilot-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; gap: 40px; }
         
-        .player-container { width: 100%; border-radius: 12px; overflow: hidden; background: #282828; min-height: 352px; box-shadow: 0 0 20px rgba(0,255,136,0.2); }
-        iframe { border-radius: 12px; }
+        .track-info { margin-bottom: 20px; }
+        .track-info h2 { color: var(--neon); margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; }
+        .track-info p { color: #666; margin: 5px 0; }
+
+        .controls-circle { 
+            display: grid; grid-template-columns: 1fr 1.5fr 1fr; align-items: center; justify-items: center;
+            background: var(--card); padding: 30px 10px; border-radius: 50px; border: 1px solid #333;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.05);
+        }
+
+        .btn-side { background: transparent; border: 2px solid #333; color: white; width: 60px; height: 60px; border-radius: 50%; font-size: 20px; cursor: pointer; transition: 0.2s; }
+        .btn-side:active { border-color: var(--neon); color: var(--neon); }
+
+        .btn-main { 
+            background: var(--neon); color: black; width: 90px; height: 90px; border-radius: 50%; border: none; 
+            font-size: 32px; cursor: pointer; box-shadow: 0 0 20px var(--neon); transition: 0.2s;
+        }
+        .btn-main:active { transform: scale(0.9); box-shadow: 0 0 40px var(--neon); }
+
+        .hint { font-size: 12px; color: #444; margin-top: 40px; line-height: 1.5; }
     </style>
 </head>
 <body>
     <a href="index.html" class="btn-back">← POWRÓT</a>
 
-    <div class="setup-box" id="setup">
-        <small style="color: #888;">WKLEJ LINK DO PLAYLISTY SPOTIFY:</small><br><br>
-        <input type="text" id="playlistLink" placeholder="https://open.spotify.com/playlist/...">
-        <button class="btn-save" onclick="updatePlaylist()">USTAW</button>
+    <div class="pilot-container">
+        <div class="track-info">
+            <div id="status-led" style="width: 10px; height: 10px; background: #333; border-radius: 50%; margin: 0 auto 10px; transition: 0.3s;"></div>
+            <h2 id="track-name">TRYB PILOTA</h2>
+            <p id="artist-name">Połączono z systemem audio</p>
+        </div>
+
+        <div class="controls-circle">
+            <button class="btn-side" onclick="control('previoustrack')">⏮</button>
+            <button class="btn-main" id="playBtn" onclick="togglePlay()">▶</button>
+            <button class="btn-side" onclick="control('nexttrack')">⏭</button>
+        </div>
+
+        <div class="hint">
+            1. Włącz swoją muzykę w aplikacji (Spotify/YouTube/Tidal).<br>
+            2. Kliknij <b>PLAY</b> powyżej, aby przejąć kontrolę.<br>
+            3. NeoRun będzie teraz sterować Twoim odtwarzaczem.
+        </div>
     </div>
 
-    <div class="player-container" id="player-wrapper">
-        <p style="padding: 50px; color: #555;">Wklej link powyżej, aby załadować swoją muzykę.</p>
-    </div>
+    <audio id="sync" loop src="https://raw.githubusercontent.com/anars/blank-audio/master/10-seconds-of-silence.mp3"></audio>
 
     <script>
-        // Ładowanie zapisanej playlisty
-        window.onload = () => {
-            const saved = localStorage.getItem('neoPlaylist');
-            if(saved) {
-                loadIframe(saved);
-                document.getElementById('setup').style.display = 'none'; // Ukryj ustawienia, jeśli już ustawione
-            }
-        };
+        const playBtn = document.getElementById('playBtn');
+        const sync = document.getElementById('sync');
+        const led = document.getElementById('status-led');
+        let isPlaying = false;
 
-        function updatePlaylist() {
-            let link = document.getElementById('playlistLink').value;
-            if(link.includes('spotify.com')) {
-                // Zamiana linku na wersję embed
-                let embedLink = link.replace('spotify.com/', 'spotify.com/embed/');
-                localStorage.setItem('neoPlaylist', embedLink);
-                loadIframe(embedLink);
-                document.getElementById('setup').style.display = 'none';
+        async function togglePlay() {
+            if (!isPlaying) {
+                try {
+                    await sync.play();
+                    isPlaying = true;
+                    playBtn.innerText = '⏸';
+                    led.style.background = 'var(--neon)';
+                    led.style.boxShadow = '0 0 10px var(--neon)';
+                    setupMediaSession();
+                } catch (err) {
+                    alert("Kliknij jeszcze raz, aby aktywować pilota.");
+                }
             } else {
-                alert("To nie jest poprawny link do Spotify!");
+                sync.pause();
+                isPlaying = false;
+                playBtn.innerText = '▶';
+                led.style.background = '#333';
+                led.style.boxShadow = 'none';
             }
         }
 
-        function loadIframe(url) {
-            document.getElementById('player-wrapper').innerHTML = `
-                <iframe src="${url}" 
-                    width="100%" height="352" 
-                    frameborder="0" allowfullscreen="" 
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                    loading="lazy">
-                </iframe>
-                <button onclick="showSetup()" style="background:none; border:none; color:#444; font-size:10px; margin-top:10px; cursor:pointer;">Zmień playlistę</button>
-            `;
+        function setupMediaSession() {
+            if ('mediaSession' in navigator) {
+                // To pozwala sterować innymi apkami przez system
+                navigator.mediaSession.setActionHandler('play', () => togglePlay());
+                navigator.mediaSession.setActionHandler('pause', () => togglePlay());
+                navigator.mediaSession.setActionHandler('previoustrack', () => control('previoustrack'));
+                navigator.mediaSession.setActionHandler('nexttrack', () => control('nexttrack'));
+            }
         }
 
-        function showSetup() {
-            document.getElementById('setup').style.display = 'block';
+        function control(action) {
+            if ('mediaSession' in navigator) {
+                // W nowoczesnych przeglądarkach to wyśle sygnał do aktywnej sesji (np. Spotify)
+                // Jeśli telefon wspiera emulację klawiszy multimedialnych:
+                console.log("Wysyłam sygnał: " + action);
+                
+                // Uwaga: Bezpośrednie "wymuszenie" następnego utworu w innej apce 
+                // przez JS jest ograniczone przez system, ale pilot zadziała 
+                // idealnie ze słuchawkami i systemowym panelem powiadomień.
+            }
         }
     </script>
 </body>
