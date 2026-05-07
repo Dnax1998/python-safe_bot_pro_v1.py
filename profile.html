@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil - NeoRun</title>
+    <style>
+        :root { --neon: #00ff88; --dark: #000; --card: #1a1a1a; }
+        body { background: var(--dark); color: white; font-family: sans-serif; padding: 20px; }
+        .header { display: flex; align-items: center; margin-bottom: 30px; }
+        .btn-back { background: #333; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; margin-right: 20px; }
+        .profile-card { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid #333; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; color: #888; font-size: 12px; margin-bottom: 5px; text-transform: uppercase; }
+        input { width: 100%; background: #111; border: 1px solid #333; padding: 12px; border-radius: 10px; color: white; font-size: 16px; box-sizing: border-box; }
+        .btn-save { background: var(--neon); color: black; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="header"><a href="index.html" class="btn-back">←</a><h2>TWÓJ PROFIL</h2></div>
+    <div class="profile-card">
+        <div class="input-group"><label>Imię / Nick</label><input type="text" id="userName"></div>
+        <div class="input-group"><label>Waga (kg)</label><input type="number" id="userWeight"></div>
+        <button class="btn-save" onclick="saveProfile()">ZAPISZ ZMIANY</button>
+    </div>
+    <script>
+        const user = JSON.parse(localStorage.getItem('neoUser') || '{"name":"","weight":70}');
+        document.getElementById('userName').value = user.name;
+        document.getElementById('userWeight').value = user.weight;
+        function saveProfile() {
+            const name = document.getElementById('userName').value;
+            const weight = document.getElementById('userWeight').value;
+            localStorage.setItem('neoUser', JSON.stringify({name, weight}));
+            alert('Profil zapisany!');
+        }
+    </script>
+</body>
+</html>
