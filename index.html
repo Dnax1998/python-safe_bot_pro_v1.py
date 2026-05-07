@@ -2,80 +2,91 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoRunner - Twój Tracker</title>
-    <link rel="stylesheet" href="[https://unpkg.com/leaflet@1.9.4/dist/leaflet.css](https://unpkg.com/leaflet@1.9.4/dist/leaflet.css)" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NeoRun - Tracker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; }
-        #map { flex-grow: 1; width: 100%; }
-        #stats { background: #222; color: white; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; }
-        .stat-box { border-bottom: 1px solid #444; padding-bottom: 5px; }
-        .label { font-size: 0.8rem; color: #aaa; display: block; }
-        .value { font-size: 1.2rem; font-weight: bold; }
-        #controls { background: #222; padding: 10px; text-align: center; }
-        button { background: #0px; cursor: pointer; }
-        button:disabled { background: #555; }
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; height: 100vh; display: flex; flex-direction: column; }
+        #stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #333; padding: 10px; border-bottom: 2px solid #00ff88; }
+        .stat-box { background: #222; padding: 10px; text-align: center; }
+        .label { font-size: 10px; color: #00ff88; text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 22px; font-weight: bold; display: block; }
+        #map { flex-grow: 1; width: 100%; background: #242424; }
+        #controls { padding: 20px; background: #1a1a1a; display: flex; justify-content: center; }
+        #startBtn { 
+            background: #00ff88; color: black; border: none; padding: 15px 50px; 
+            font-size: 18px; font-weight: bold; border-radius: 50px; 
+            box-shadow: 0 4px 15px rgba(0,255,136,0.3); cursor: pointer;
+        }
+        #startBtn.active { background: #ff4444; color: white; }
     </style>
 </head>
 <body>
 
     <div id="stats">
-        <div class="stat-box"><span class="label">Dystans</span><span id="dist" class="value">0.00</span> km</div>
-        <div class="stat-box"><span class="label">Tempo</span><span id="pace" class="value">0:00</span> min/km</div>
+        <div class="stat-box"><span class="label">Dystans</span><span id="dist" class="value">0.00</span><span style="font-size:12px">km</span></div>
+        <div class="stat-box"><span class="label">Tempo</span><span id="pace" class="value">0:00</span><span style="font-size:12px">min/km</span></div>
         <div class="stat-box"><span class="label">Czas</span><span id="time" class="value">00:00</span></div>
-        <div class="stat-box"><span class="label">Dokładność</span><span id="acc" class="value">-</span> m</div>
+        <div class="stat-box"><span class="label">GPS Acc</span><span id="acc" class="value">---</span></div>
     </div>
 
     <div id="map"></div>
 
     <div id="controls">
-        <button id="startBtn">START BIEGU</button>
+        <button id="startBtn">ZACZNIJ TRENING</button>
     </div>
 
-    <script src="[https://unpkg.com/leaflet@1.9.4/dist/leaflet.js](https://unpkg.com/leaflet@1.9.4/dist/leaflet.js)"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         let map, path, watchId;
         let coords = [];
         let totalDistance = 0;
-        let startTime, timerInterval;
+        let startTime;
 
-        // Inicjalizacja mapy
-        map = L.map('map').setView([0, 0], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        path = L.polyline([], {color: '#00ff88', weight: 5}).addTo(map);
+        // Inicjalizacja Mapy z domyślnym widokiem na Polskę
+        map = L.map('map').setView([52.2297, 21.0122], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+        
+        path = L.polyline([], {color: '#00ff88', weight: 6, opacity: 0.8}).addTo(map);
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Promień Ziemi w km
+            const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) *                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
-        function updateStats(position) {
+        function updatePosition(position) {
             const { latitude, longitude, accuracy } = position.coords;
+            document.getElementById('acc').innerText = Math.round(accuracy) + "m";
+
+            // Jeśli GPS jest bardzo niedokładny (>50m), pomiń punkt, żeby nie "skakało"
+            if (accuracy > 50) return;
+
             const newPoint = [latitude, longitude];
             
-            document.getElementById('acc').innerText = Math.round(accuracy);
-
             if (coords.length > 0) {
                 const lastPoint = coords[coords.length - 1];
-                const d = calculateDistance(lastPoint[0], lastPoint[1], latitude, longitude);
-                
-                // Ignoruj skoki GPS powyżej 30m jeśli dokładność jest słaba
-                if (accuracy < 30) {
-                    totalDistance += d;
+                const dist = calculateDistance(lastPoint[0], lastPoint[1], latitude, longitude);
+                if (dist > 0.005) { // Tylko jeśli przesunął się o min. 5 metrów
+                    totalDistance += dist;
                     document.getElementById('dist').innerText = totalDistance.toFixed(2);
                 }
             }
 
             coords.push(newPoint);
             path.setLatLngs(coords);
-            map.panTo(newPoint);
+            map.setView(newPoint, 17); // Przybliż mapę do biegacza
 
-            // Oblicz tempo
+            // Tempo
             const now = new Date();
             const elapsedMins = (now - startTime) / 60000;
-            if (totalDistance > 0.01) {
+            if (totalDistance > 0.02) {
                 const pace = elapsedMins / totalDistance;
                 const paceMins = Math.floor(pace);
                 const paceSecs = Math.round((pace - paceMins) * 60);
@@ -85,25 +96,31 @@
 
         document.getElementById('startBtn').addEventListener('click', function() {
             if (!watchId) {
-                this.innerText = "STOP";
-                this.style.background = "#ff4444";
+                // START
+                this.innerText = "ZAKOŃCZ";
+                this.classList.add('active');
                 startTime = new Date();
                 
                 // Timer
-                timerInterval = setInterval(() => {
+                setInterval(() => {
                     const elapsed = Math.floor((new Date() - startTime) / 1000);
                     const m = Math.floor(elapsed / 60);
                     const s = elapsed % 60;
-                    document.getElementById('time').innerText = `${m}:${s.toString().padStart(2, '0')}`;
+                    document.getElementById('time').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                 }, 1000);
 
-                // GPS
-                watchId = navigator.geolocation.watchPosition(updateStats, 
-                    (err) => console.error(err), 
-                    { enableHighAccuracy: true, distanceFilter: 5 }
-                );
+                // GPS Start
+                if ("geolocation" in navigator) {
+                    watchId = navigator.geolocation.watchPosition(updatePosition, 
+                        (err) => alert("Błąd GPS: " + err.message), 
+                        { enableHighAccuracy: true }
+                    );
+                } else {
+                    alert("Twoja przeglądarka nie obsługuje GPS!");
+                }
             } else {
-                location.reload(); // Prosty reset aplikacji
+                // STOP
+                location.reload();
             }
         });
     </script>
