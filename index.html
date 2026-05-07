@@ -2,160 +2,22 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NeoRun Pro - Tracker</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeoRun - Panel</title>
     <style>
-        :root { --neon: #00ff88; --dark: #121212; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--dark); color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        #stats { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; background: #222; padding: 10px; z-index: 10; }
-        .stat-box { background: #1a1a1a; padding: 10px; text-align: center; border-radius: 8px; border: 1px solid #333; }
-        .label { font-size: 10px; color: var(--neon); text-transform: uppercase; }
-        .value { font-size: 20px; font-weight: bold; display: block; }
-        #map { flex-grow: 1; width: 100%; }
-        #controls { padding: 15px; background: #1a1a1a; display: flex; flex-direction: column; gap: 10px; align-items: center; }
-        button { background: var(--neon); color: black; border: none; padding: 15px 40px; font-size: 18px; font-weight: bold; border-radius: 30px; cursor: pointer; width: 80%; }
-        button.active { background: #ff4444; color: white; }
-        #history { position: fixed; bottom: -60vh; left: 0; width: 100%; height: 60vh; background: #222; z-index: 20; transition: 0.3s; border-radius: 20px 20px 0 0; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-        #history.open { bottom: 0; }
-        .history-item { background: #333; padding: 10px; margin-bottom: 10px; border-radius: 10px; border-left: 4px solid var(--neon); display: flex; justify-content: space-between; }
-        .toggle-history { background: transparent; color: var(--neon); font-size: 14px; padding: 5px; text-decoration: underline; cursor: pointer; border: none; width: auto; }
+        body { background: #121212; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .menu-card { background: #1e1e1e; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; }
+        h1 { color: #00ff88; letter-spacing: 2px; }
+        .btn-main { background: #00ff88; color: black; border: none; padding: 20px; width: 100%; font-size: 1.5rem; font-weight: bold; border-radius: 10px; text-decoration: none; display: block; margin-bottom: 15px; }
+        .btn-sec { background: #333; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; text-decoration: none; display: block; }
     </style>
 </head>
 <body>
-
-    <div id="stats">
-        <div class="stat-box"><span class="label">Dystans</span><span id="dist" class="value">0.00</span> km</div>
-        <div class="stat-box"><span class="label">Tempo</span><span id="pace" class="value">0:00</span> min/km</div>
-        <div class="stat-box"><span class="label">Czas</span><span id="time" class="value">00:00</span></div>
-        <div class="stat-box"><span class="label">Dokładność</span><span id="acc" class="value">---</span></div>
+    <h1>NEORUN</h1>
+    <div class="menu-card">
+        <p>Witaj w swojej aplikacji!</p>
+        <a href="run.html" class="btn-main">ZACZNIJ BIEG</a>
+        <a href="history.html" class="btn-sec">TWOJA HISTORIA</a>
     </div>
-
-    <div id="map"></div>
-
-    <div id="controls">
-        <button id="startBtn">ZACZNIJ TRENING</button>
-        <button class="toggle-history" onclick="toggleHistory()">Pokaż historię biegów</button>
-    </div>
-
-    <div id="history">
-        <h3 style="margin-top: 0;">Ostatnie treningi</h3>
-        <div id="historyList"></div>
-        <button onclick="toggleHistory()" style="background: #444; color: white; margin-top: 10px;">Zamknij</button>
-    </div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        let map, path, watchId, startTime, timerInterval;
-        let coords = [];
-        let totalDistance = 0;
-        let lastAnnouncedDistance = 0;
-
-        // Inicjalizacja mapy
-        map = L.map('map', { zoomControl: false }).setView([52.23, 21.01], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        path = L.polyline([], {color: '#00ff88', weight: 6}).addTo(map);
-
-        // Funkcja mówienia (Głosowy trener)
-        function speak(text) {
-            const msg = new SpeechSynthesisUtterance(text);
-            msg.lang = 'pl-PL';
-            window.speechSynthesis.speak(msg);
-        }
-
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2-lat1)*Math.PI/180;
-            const dLon = (lon2-lon1)*Math.PI/180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        }
-
-        function updatePosition(pos) {
-            const { latitude, longitude, accuracy } = pos.coords;
-            document.getElementById('acc').innerText = Math.round(accuracy) + "m";
-            if (accuracy > 40) return;
-
-            const newPoint = [latitude, longitude];
-            if (coords.length > 0) {
-                const d = calculateDistance(coords[coords.length-1][0], coords[coords.length-1][1], latitude, longitude);
-                if (d > 0.003) {
-                    totalDistance += d;
-                    document.getElementById('dist').innerText = totalDistance.toFixed(2);
-                    
-                    // Głosowy trener co 0.5 km
-                    if (totalDistance - lastAnnouncedDistance >= 0.5) {
-                        lastAnnouncedDistance = Math.floor(totalDistance * 2) / 2;
-                        speak(`Dystans: ${lastAnnouncedDistance} kilometra. Twoje tempo to ${document.getElementById('pace').innerText} na kilometr.`);
-                    }
-                }
-            }
-            coords.push(newPoint);
-            path.setLatLngs(coords);
-            map.panTo(newPoint);
-
-            // Oblicz tempo
-            const elapsedMins = (new Date() - startTime) / 60000;
-            if (totalDistance > 0.01) {
-                const pace = elapsedMins / totalDistance;
-                const pM = Math.floor(pace);
-                const pS = Math.round((pace - pM) * 60);
-                document.getElementById('pace').innerText = `${pM}:${pS.toString().padStart(2,'0')}`;
-            }
-        }
-
-        document.getElementById('startBtn').addEventListener('click', function() {
-            if (!watchId) {
-                // START
-                this.innerText = "ZAKOŃCZ I ZAPISZ";
-                this.classList.add('active');
-                startTime = new Date();
-                coords = []; totalDistance = 0; lastAnnouncedDistance = 0;
-                path.setLatLngs([]);
-                speak("Rozpoczynam trening. Powodzenia!");
-
-                timerInterval = setInterval(() => {
-                    const s = Math.floor((new Date() - startTime) / 1000);
-                    document.getElementById('time').innerText = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
-                }, 1000);
-
-                watchId = navigator.geolocation.watchPosition(updatePosition, null, {enableHighAccuracy:true});
-            } else {
-                // STOP
-                saveWorkout();
-                location.reload();
-            }
-        });
-
-        function saveWorkout() {
-            const workout = {
-                date: new Date().toLocaleDateString(),
-                dist: totalDistance.toFixed(2),
-                time: document.getElementById('time').innerText,
-                pace: document.getElementById('pace').innerText
-            };
-            const history = JSON.parse(localStorage.getItem('runHistory') || '[]');
-            history.unshift(workout);
-            localStorage.setItem('runHistory', JSON.stringify(history));
-            alert("Trening zapisany!");
-        }
-
-        function loadHistory() {
-            const history = JSON.parse(localStorage.getItem('runHistory') || '[]');
-            const list = document.getElementById('historyList');
-            list.innerHTML = history.map(h => `
-                <div class="history-item">
-                    <div><b>${h.date}</b><br><small>${h.time}</small></div>
-                    <div style="text-align:right"><b style="color:var(--neon)">${h.dist} km</b><br>${h.pace} min/km</div>
-                </div>
-            `).join('');
-        }
-
-        function toggleHistory() {
-            const h = document.getElementById('history');
-            h.classList.toggle('open');
-            if(h.classList.contains('open')) loadHistory();
-        }
-    </script>
 </body>
 </html>
