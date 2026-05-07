@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bieg - NeoRun</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        #stats { display: grid; grid-template-columns: 1fr 1fr; background: #1e1e1e; padding: 10px; border-bottom: 2px solid #00ff88; }
+        .stat { text-align: center; padding: 5px; }
+        .label { font-size: 12px; color: #00ff88; }
+        .val { font-size: 20px; font-weight: bold; display: block; }
+        #map { flex-grow: 1; }
+        .controls { padding: 20px; background: #1e1e1e; text-align: center; }
+        #stopBtn { background: #ff4444; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div id="stats">
+        <div class="stat"><span class="label">Dystans</span><span id="dist" class="val">0.00 km</span></div>
+        <div class="stat"><span class="label">Tempo</span><span id="pace" class="val">0:00</span></div>
+        <div class="stat"><span class="label">Czas</span><span id="time" class="val">00:00</span></div>
+        <div class="stat"><span class="label">GPS</span><span id="acc" class="val">---</span></div>
+    </div>
+    <div id="map"></div>
+    <div class="controls">
+        <button id="stopBtn">STOP I ZAPISZ</button>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map = L.map('map').setView([52.2, 21.0], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let path = L.polyline([], {color: '#00ff88', weight: 5}).addTo(map);
+        let coords = [], dist = 0, start = new Date(), watchId;
+
+        // Start GPS automatycznie po wejściu na stronę
+        watchId = navigator.geolocation.watchPosition(pos => {
+            const {latitude, longitude, accuracy} = pos.coords;
+            document.getElementById('acc').innerText = Math.round(accuracy) + 'm';
+            if(accuracy > 30) return;
+            
+            const newPos = [latitude, longitude];
+            if(coords.length > 0) {
+                const prev = coords[coords.length-1];
+                const d = L.latLng(prev).distanceTo(L.latLng(newPos)) / 1000;
+                if(d > 0.005) {
+                    dist += d;
+                    document.getElementById('dist').innerText = dist.toFixed(2) + ' km';
+                }
+            }
+            coords.push(newPos);
+            path.setLatLngs(coords);
+            map.setView(newPos, 16);
+
+            // Tempo
+            const elapsed = (new Date() - start) / 60000;
+            if(dist > 0.02) {
+                const pace = elapsed / dist;
+                const m = Math.floor(pace), s = Math.round((pace-m)*60);
+                document.getElementById('pace').innerText = `${m}:${s.toString().padStart(2,'0')}`;
+            }
+        }, null, {enableHighAccuracy: true});
+
+        // Timer
+        setInterval(() => {
+            const s = Math.floor((new Date() - start) / 1000);
+            document.getElementById('time').innerText = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+        }, 1000);
+
+        document.getElementById('stopBtn').onclick = () => {
+            const run = {
+                date: new Date().toLocaleString(),
+                dist: dist.toFixed(2),
+                time: document.getElementById('time').innerText,
+                pace: document.getElementById('pace').innerText
+            };
+            let history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
+            history.unshift(run);
+            localStorage.setItem('neoHistory', JSON.stringify(history));
+            location.href = 'history.html';
+        };
+    </script>
+</body>
+</html>
