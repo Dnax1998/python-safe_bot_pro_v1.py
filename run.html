@@ -8,105 +8,137 @@
     <style>
         :root { --neon: #00ff88; --dark: #000; }
         body { margin: 0; background: var(--dark); color: #fff; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Ekran startowy wymuszający interakcję */
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--dark); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .start-pulse { background: var(--neon); color: black; border: none; width: 150px; height: 150px; border-radius: 50%; font-weight: bold; font-size: 20px; cursor: pointer; box-shadow: 0 0 20px var(--neon); animation: pulse 2s infinite; }
+        
+        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(0, 255, 136, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); } }
+
         #stats { display: grid; grid-template-columns: 1fr 1fr; background: #111; padding: 15px; border-bottom: 2px solid var(--neon); gap: 10px; z-index: 100; }
         .stat { text-align: center; background: #1e1e1e; padding: 10px; border-radius: 8px; }
         .label { font-size: 11px; color: var(--neon); text-transform: uppercase; display: block; }
         .val { font-size: 22px; font-weight: bold; }
+        
         #map { flex-grow: 1; filter: invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%); }
-        .controls { padding: 20px; background: #111; text-align: center; }
+        .controls { padding: 20px; background: #111; }
         #stopBtn { background: #ff4444; color: white; border: none; padding: 15px; border-radius: 30px; font-weight: bold; font-size: 18px; width: 100%; }
+        
         .pause-overlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 170, 0, 0.9); color: black; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 1000; }
     </style>
 </head>
 <body>
+
+    <div id="overlay">
+        <h2 style="color: var(--neon)">GOTOWY?</h2>
+        <p style="padding: 0 20px; font-size: 14px;">Kliknij START, aby aktywować GPS i blokadę usypiania ekranu.</p>
+        <button class="start-pulse" onclick="initRun()">START</button>
+    </div>
+
     <div id="pause-msg" class="pause-overlay">AUTO-PAUZA (STÓJ)</div>
+
     <div id="stats">
         <div class="stat"><span class="label">Dystans</span><span id="dist" class="val">0.00 km</span></div>
         <div class="stat"><span class="label">Tempo</span><span id="pace" class="val">0:00</span></div>
         <div class="stat"><span class="label">Czas</span><span id="time" class="val">00:00</span></div>
-        <div class="stat"><span class="label">GPS</span><span id="acc" class="val">CZEKAM...</span></div>
+        <div class="stat"><span class="label">GPS</span><span id="acc" class="val">---</span></div>
     </div>
+
     <div id="map"></div>
-    <div class="controls"><button id="stopBtn">ZAKOŃCZ</button></div>
+
+    <div class="controls">
+        <button id="stopBtn">ZAKOŃCZ I ZAPISZ</button>
+    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        let map = L.map('map', {zoomControl: false}).setView([52.2, 21.0], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        let path = L.polyline([], {color: '#00ff88', weight: 6}).addTo(map);
-        let coords = [], dist = 0, elapsedSecs = 0, watchId, wakeLock = null;
-        let isPaused = false;
+        let map, path, watchId, wakeLock = null;
+        let coords = [], dist = 0, elapsedSecs = 0, isPaused = false;
+        let timerStarted = false;
 
-        // FUNKCJA: Nie pozwól telefonowi zasnąć
-        async function requestWakeLock() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                }
-            } catch (err) { console.log("WakeLock nieobsługiwany"); }
-        }
-        requestWakeLock();
+        function initRun() {
+            document.getElementById('overlay').style.display = 'none';
+            
+            // 1. Aktywuj Mapę
+            map = L.map('map', {zoomControl: false}).setView([52.22, 21.01], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            path = L.polyline([], {color: '#00ff88', weight: 6}).addTo(map);
 
-        // Timer
-        setInterval(() => {
-            if (!isPaused && coords.length > 0) {
-                elapsedSecs++;
-                const m = Math.floor(elapsedSecs / 60);
-                const s = elapsedSecs % 60;
-                document.getElementById('time').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            }
-        }, 1000);
-
-        function updateStats(pos) {
-            const {latitude, longitude, accuracy, speed} = pos.coords;
-            document.getElementById('acc').innerText = Math.round(accuracy) + 'm';
-
-            // Auto-pauza (jeśli stoisz)
-            if (speed !== null && speed < 0.4) {
-                isPaused = true;
-                document.getElementById('pause-msg').style.display = 'block';
-                return;
-            } else {
-                isPaused = false;
-                document.getElementById('pause-msg').style.display = 'none';
+            // 2. Blokada usypiania (WakeLock)
+            if ('wakeLock' in navigator) {
+                navigator.wakeLock.request('screen').then(lock => wakeLock = lock);
             }
 
-            if (accuracy > 40) return;
+            // 3. Start GPS
+            startTracking();
 
-            const newPos = [latitude, longitude];
-            if (coords.length > 0) {
-                const prev = coords[coords.length-1];
-                const d = L.latLng(prev).distanceTo(L.latLng(newPos)) / 1000;
-                if (d > 0.003) {
-                    dist += d;
-                    document.getElementById('dist').innerText = dist.toFixed(2) + ' km';
-                }
-            }
-            coords.push(newPos);
-            path.setLatLngs(coords);
-            map.setView(newPos, 17);
-
-            if (dist > 0.01) {
-                const paceMin = (elapsedSecs / 60) / dist;
-                const m = Math.floor(paceMin), s = Math.round((paceMin - m) * 60);
-                document.getElementById('pace').innerText = `${m}:${s.toString().padStart(2,'0')}`;
+            // 4. Start Timer
+            if(!timerStarted) {
+                setInterval(() => {
+                    if (!isPaused && coords.length > 0) {
+                        elapsedSecs++;
+                        const m = Math.floor(elapsedSecs / 60);
+                        const s = elapsedSecs % 60;
+                        document.getElementById('time').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                    }
+                }, 1000);
+                timerStarted = true;
             }
         }
 
-        // Klucz do sukcesu: obsługa błędu i wysoka dokładność
-        watchId = navigator.geolocation.watchPosition(updateStats, 
-            (err) => { alert("Błąd GPS: " + err.message); }, 
-            {enableHighAccuracy: true, timeout: 5000, maximumAge: 0}
-        );
+        function startTracking() {
+            watchId = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const {latitude, longitude, accuracy, speed} = pos.coords;
+                    document.getElementById('acc').innerText = Math.round(accuracy) + 'm';
+
+                    // Auto-pauza (poniżej 1.5 km/h)
+                    if (speed !== null && speed < 0.4) {
+                        isPaused = true;
+                        document.getElementById('pause-msg').style.display = 'block';
+                        return;
+                    } else {
+                        isPaused = false;
+                        document.getElementById('pause-msg').style.display = 'none';
+                    }
+
+                    if (accuracy > 50) return;
+
+                    const newPos = [latitude, longitude];
+                    if (coords.length > 0) {
+                        const prev = coords[coords.length-1];
+                        const d = L.latLng(prev).distanceTo(L.latLng(newPos)) / 1000;
+                        if (d > 0.003) {
+                            dist += d;
+                            document.getElementById('dist').innerText = dist.toFixed(2) + ' km';
+                        }
+                    }
+                    coords.push(newPos);
+                    path.setLatLngs(coords);
+                    map.setView(newPos, 17);
+
+                    if (dist > 0.01) {
+                        const paceMin = (elapsedSecs / 60) / dist;
+                        const m = Math.floor(paceMin), s = Math.round((paceMin - m) * 60);
+                        document.getElementById('pace').innerText = `${m}:${s.toString().padStart(2,'0')}`;
+                    }
+                },
+                (err) => alert("Błąd GPS: " + err.message + ". Upewnij się, że masz włączoną lokalizację!"),
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
 
         document.getElementById('stopBtn').onclick = () => {
             if(wakeLock) wakeLock.release();
+            if(watchId) navigator.geolocation.clearWatch(watchId);
+            
             const run = {
                 date: new Date().toLocaleString('pl-PL'),
                 dist: dist.toFixed(2),
                 time: document.getElementById('time').innerText,
                 pace: document.getElementById('pace').innerText
             };
+            
             let history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
             history.unshift(run);
             localStorage.setItem('neoHistory', JSON.stringify(history));
