@@ -2,79 +2,120 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bieg - NeoRun</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; }
-        #stats { display: grid; grid-template-columns: 1fr 1fr; background: #1e1e1e; padding: 10px; border-bottom: 2px solid #00ff88; }
-        .stat { text-align: center; padding: 5px; }
-        .label { font-size: 12px; color: #00ff88; }
-        .val { font-size: 20px; font-weight: bold; display: block; }
-        #map { flex-grow: 1; }
-        .controls { padding: 20px; background: #1e1e1e; text-align: center; }
-        #stopBtn { background: #ff4444; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 18px; }
+        :root { --neon: #00ff88; --dark: #000; }
+        body { margin: 0; background: var(--dark); color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        #stats { display: grid; grid-template-columns: 1fr 1fr; background: #111; padding: 15px; border-bottom: 2px solid var(--neon); gap: 10px; }
+        .stat { text-align: center; background: #1e1e1e; padding: 10px; border-radius: 8px; }
+        .label { font-size: 11px; color: var(--neon); text-transform: uppercase; display: block; }
+        .val { font-size: 22px; font-weight: bold; }
+        
+        #map { flex-grow: 1; filter: invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%); } /* Cyberpunk look */
+        
+        .controls { padding: 20px; background: #111; text-align: center; display: flex; flex-direction: column; gap: 10px; }
+        #status-msg { font-size: 14px; color: #ffaa00; margin-bottom: 5px; min-height: 20px; }
+        #stopBtn { background: #ff4444; color: white; border: none; padding: 15px; border-radius: 30px; font-weight: bold; font-size: 18px; cursor: pointer; }
+        
+        .pause-overlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 170, 0, 0.9); color: black; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 1000; }
     </style>
 </head>
 <body>
+    <div id="pause-msg" class="pause-overlay">AUTO-PAUZA</div>
+
     <div id="stats">
         <div class="stat"><span class="label">Dystans</span><span id="dist" class="val">0.00 km</span></div>
         <div class="stat"><span class="label">Tempo</span><span id="pace" class="val">0:00</span></div>
         <div class="stat"><span class="label">Czas</span><span id="time" class="val">00:00</span></div>
-        <div class="stat"><span class="label">GPS</span><span id="acc" class="val">---</span></div>
+        <div class="stat"><span class="label">Kalorie</span><span id="kcal" class="val">0 kcal</span></div>
     </div>
+
     <div id="map"></div>
+
     <div class="controls">
-        <button id="stopBtn">STOP I ZAPISZ</button>
+        <div id="status-msg"></div>
+        <button id="stopBtn">ZAKOŃCZ I ZAPISZ</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        let map = L.map('map').setView([52.2, 21.0], 13);
+        let map = L.map('map', {zoomControl: false}).setView([52.2, 21.0], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        let path = L.polyline([], {color: '#00ff88', weight: 5}).addTo(map);
-        let coords = [], dist = 0, start = new Date(), watchId;
-
-        // Start GPS automatycznie po wejściu na stronę
-        watchId = navigator.geolocation.watchPosition(pos => {
-            const {latitude, longitude, accuracy} = pos.coords;
-            document.getElementById('acc').innerText = Math.round(accuracy) + 'm';
-            if(accuracy > 30) return;
-            
-            const newPos = [latitude, longitude];
-            if(coords.length > 0) {
-                const prev = coords[coords.length-1];
-                const d = L.latLng(prev).distanceTo(L.latLng(newPos)) / 1000;
-                if(d > 0.005) {
-                    dist += d;
-                    document.getElementById('dist').innerText = dist.toFixed(2) + ' km';
-                }
-            }
-            coords.push(newPos);
-            path.setLatLngs(coords);
-            map.setView(newPos, 16);
-
-            // Tempo
-            const elapsed = (new Date() - start) / 60000;
-            if(dist > 0.02) {
-                const pace = elapsed / dist;
-                const m = Math.floor(pace), s = Math.round((pace-m)*60);
-                document.getElementById('pace').innerText = `${m}:${s.toString().padStart(2,'0')}`;
-            }
-        }, null, {enableHighAccuracy: true});
+        
+        let path = L.polyline([], {color: '#00ff88', weight: 6}).addTo(map);
+        let coords = [], dist = 0, elapsedSecs = 0, watchId;
+        let isPaused = false;
+        let lastPosTime = Date.now();
 
         // Timer
         setInterval(() => {
-            const s = Math.floor((new Date() - start) / 1000);
-            document.getElementById('time').innerText = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+            if (!isPaused) {
+                elapsedSecs++;
+                const m = Math.floor(elapsedSecs / 60);
+                const s = elapsedSecs % 60;
+                document.getElementById('time').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
         }, 1000);
+
+        function updateStats(pos) {
+            const {latitude, longitude, accuracy, speed} = pos.coords;
+            document.getElementById('status-msg').innerText = accuracy < 25 ? "" : "Słaby sygnał GPS...";
+
+            // LOGIKA AUTO-PAUZY
+            // Speed jest w m/s. 0.5 m/s = 1.8 km/h (wolny spacer/stanie)
+            if (speed !== null && speed < 0.5) {
+                isPaused = true;
+                document.getElementById('pause-msg').style.display = 'block';
+                return;
+            } else {
+                isPaused = false;
+                document.getElementById('pause-msg').style.display = 'none';
+            }
+
+            if (accuracy > 30) return;
+
+            const newPos = [latitude, longitude];
+            if (coords.length > 0) {
+                const prev = coords[coords.length-1];
+                const d = L.latLng(prev).distanceTo(L.latLng(newPos)) / 1000;
+                
+                if (d > 0.003) { // Minimum 3 metry ruchu
+                    dist += d;
+                    document.getElementById('dist').innerText = dist.toFixed(2) + ' km';
+                    
+                    // Kalorie: ~65 kcal na km
+                    document.getElementById('kcal').innerText = Math.floor(dist * 65) + ' kcal';
+                }
+            }
+            
+            coords.push(newPos);
+            path.setLatLngs(coords);
+            map.setView(newPos, 17);
+
+            // Tempo (min/km)
+            if (dist > 0.01) {
+                const paceMin = (elapsedSecs / 60) / dist;
+                const m = Math.floor(paceMin);
+                const s = Math.round((paceMin - m) * 60);
+                document.getElementById('pace').innerText = `${m}:${s.toString().padStart(2,'0')}`;
+            }
+        }
+
+        watchId = navigator.geolocation.watchPosition(updateStats, 
+            (err) => console.error(err), 
+            {enableHighAccuracy: true}
+        );
 
         document.getElementById('stopBtn').onclick = () => {
             const run = {
-                date: new Date().toLocaleString(),
+                date: new Date().toLocaleString('pl-PL'),
                 dist: dist.toFixed(2),
                 time: document.getElementById('time').innerText,
-                pace: document.getElementById('pace').innerText
+                pace: document.getElementById('pace').innerText,
+                kcal: Math.floor(dist * 65)
             };
             let history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
             history.unshift(run);
