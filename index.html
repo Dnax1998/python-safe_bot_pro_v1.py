@@ -3,22 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeoRun - Panel</title>
+    <title>NeoRun - Home</title>
     <style>
-        body { background: #121212; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
-        .menu-card { background: #1e1e1e; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; }
-        h1 { color: #00ff88; letter-spacing: 2px; }
-        .btn-main { background: #00ff88; color: black; border: none; padding: 20px; width: 100%; font-size: 1.5rem; font-weight: bold; border-radius: 10px; text-decoration: none; display: block; margin-bottom: 15px; }
-        .btn-sec { background: #333; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; text-decoration: none; display: block; }
+        body { background: #121212; color: white; font-family: sans-serif; margin: 0; padding: 20px; text-align: center; }
+        .xp-bar-container { background: #333; height: 10px; border-radius: 5px; margin: 10px 0; overflow: hidden; }
+        #xp-progress { background: #00ff88; height: 100%; width: 0%; transition: 1s; }
+        .menu-card { background: #1e1e1e; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-top: 20px; }
+        .btn-main { background: #00ff88; color: black; border: none; padding: 20px; width: 100%; font-size: 1.2rem; font-weight: bold; border-radius: 10px; text-decoration: none; display: block; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-sec { background: #333; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; text-decoration: none; display: block; margin-bottom: 10px; box-sizing: border-box; }
+        #level-text { color: #00ff88; font-weight: bold; font-size: 1.5rem; }
     </style>
 </head>
 <body>
-    <h1>NEORUN</h1>
+    <div id="level-text">POZIOM 1</div>
+    <div class="xp-bar-container"><div id="xp-progress"></div></div>
+    <div id="xp-info" style="font-size: 12px; color: #aaa;">0 / 1000 XP</div>
+
     <div class="menu-card">
-        <p>Witaj w swojej aplikacji!</p>
         <a href="run.html" class="btn-main">ZACZNIJ BIEG</a>
-        <a href="history.html" class="btn-sec">TWOJA HISTORIA</a>
-        <a href="achievements.html" class="btn-sec" style="margin-top:10px; background: #222; border: 1px solid #00ff88;">MOJE ODZNAKI 🏆</a>
+        <a href="history.html" class="btn-sec">HISTORIA</a>
+        <a href="achievements.html" class="btn-sec">ODZNAKI 🏆</a>
     </div>
+
+    <script>
+        const history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
+        let totalDist = 0;
+        history.forEach(run => totalDist += parseFloat(run.dist));
+
+        const totalXP = Math.floor(totalDist * 100); // 1km = 100 XP
+        const level = Math.floor(totalXP / 1000) + 1;
+        const currentLevelXP = totalXP % 1000;
+
+        document.getElementById('level-text').innerText = `POZIOM ${level}`;
+        document.getElementById('xp-progress').style.width = (currentLevelXP / 10) + "%";
+        document.getElementById('xp-info').innerText = `${currentLevelXP} / 1000 XP do nast. poziomu`;
+    </script>
 </body>
 </html>
