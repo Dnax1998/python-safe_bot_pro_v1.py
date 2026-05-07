@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historia - NeoRun</title>
+    <style>
+        body { background: #121212; color: white; font-family: sans-serif; padding: 20px; }
+        h2 { color: #00ff88; }
+        .run-item { background: #1e1e1e; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; border-left: 5px solid #00ff88; }
+        .btn-back { background: #333; color: white; padding: 10px; text-decoration: none; display: inline-block; margin-bottom: 20px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="btn-back">← POWRÓT</a>
+    <h2>Twoje biegi</h2>
+    <div id="list"></div>
+
+    <script>
+        const history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
+        const container = document.getElementById('list');
+        
+        if(history.length === 0) {
+            container.innerHTML = "<p>Brak zapisanych biegów.</p>";
+        } else {
+            container.innerHTML = history.map(run => `
+                <div class="run-item">
+                    <div><b>${run.date}</b><br><small>Czas: ${run.time}</small></div>
+                    <div style="text-align:right"><b>${run.dist} km</b><br><small>${run.pace} min/km</small></div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
