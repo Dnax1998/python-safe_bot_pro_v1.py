@@ -5,67 +5,146 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Osiągnięcia - NeoRun</title>
     <style>
-        body { background: #121212; color: white; font-family: sans-serif; padding: 20px; text-align: center; }
-        .badge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .badge { background: #1e1e1e; padding: 20px; border-radius: 15px; border: 2px solid #333; opacity: 0.3; transition: 0.5s; }
-        .badge.unlocked { opacity: 1; border-color: #00ff88; box-shadow: 0 0 15px rgba(0, 255, 136, 0.2); }
-        .icon { font-size: 40px; margin-bottom: 10px; display: block; }
-        .title { font-weight: bold; font-size: 14px; color: #00ff88; }
-        .desc { font-size: 11px; color: #aaa; }
-        .btn-back { background: #333; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        :root { --neon: #00ff88; --dark: #121212; --card: #1e1e1e; }
+        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; text-align: center; margin: 0; }
+        
+        .header { margin-bottom: 30px; }
+        h2 { color: var(--neon); letter-spacing: 1px; margin-bottom: 5px; }
+        
+        /* Statystyki ogólne */
+        .stats-summary { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 25px; border: 1px solid #333; }
+        .xp-text { font-size: 1.2rem; font-weight: bold; color: var(--neon); }
+
+        /* Grid odznak */
+        .badge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .badge { 
+            background: var(--card); 
+            padding: 20px 10px; 
+            border-radius: 15px; 
+            border: 2px solid #222; 
+            opacity: 0.2; 
+            filter: grayscale(1);
+            transition: all 0.5s ease;
+        }
+        
+        /* Styl dla odblokowanej odznaki */
+        .badge.unlocked { 
+            opacity: 1; 
+            filter: grayscale(0); 
+            border-color: var(--neon); 
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+            transform: scale(1.05);
+        }
+
+        .icon { font-size: 45px; margin-bottom: 10px; display: block; }
+        .title { font-weight: bold; font-size: 14px; color: var(--neon); display: block; margin-bottom: 5px; }
+        .desc { font-size: 11px; color: #aaa; line-height: 1.3; }
+
+        .btn-back { 
+            background: #333; color: white; padding: 12px 25px; 
+            text-decoration: none; border-radius: 30px; 
+            display: inline-block; margin-bottom: 20px; font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <a href="index.html" class="btn-back">← POWRÓT</a>
-    <h2>Twoje Odznaki</h2>
+
+    <a href="index.html" class="btn-back">← POWRÓT DO PANELU</a>
+
+    <div class="header">
+        <h2>TWOJE TROFEA</h2>
+        <div class="stats-summary">
+            <div id="total-stats" class="desc">Łączny dystans: 0.00 km</div>
+            <div id="xp-display" class="xp-text">0 XP</div>
+        </div>
+    </div>
     
     <div class="badge-grid" id="badgeGrid">
         <div class="badge" id="badge-1km">
             <span class="icon">🏃</span>
-            <span class="title">Pierwszy Kilometr</span>
-            <span class="desc">Pokonaj dystans 1 km</span>
+            <span class="title">PIERWSZY KROK</span>
+            <span class="desc">Pokonaj dystans min. 1 km</span>
         </div>
+
         <div class="badge" id="badge-10km">
-            <span class="icon">🏆</span>
-            <span class="title">Dycha pękła</span>
-            <span class="desc">Łączny dystans 10 km</span>
+            <span class="icon">🏅</span>
+            <span class="title">WYTRWAŁY</span>
+            <span class="desc">Łączny dystans powyżej 10 km</span>
         </div>
+
+        <div class="badge" id="badge-streak">
+            <span class="icon">🔥</span>
+            <span class="title">W GAZIE</span>
+            <span class="desc">Biegaj dzień po dniu</span>
+        </div>
+
         <div class="badge" id="badge-fast">
             <span class="icon">⚡</span>
-            <span class="title">Szybka Strzała</span>
+            <span class="title">SPRINTER</span>
             <span class="desc">Tempo poniżej 5:00 min/km</span>
         </div>
+
         <div class="badge" id="badge-pro">
-            <span class="icon">🔥</span>
-            <span class="title">Mistrz Tempa</span>
+            <span class="icon">👑</span>
+            <span class="title">ELITA</span>
             <span class="desc">Tempo poniżej 4:00 min/km</span>
+        </div>
+
+        <div class="badge" id="badge-night">
+            <span class="icon">🌑</span>
+            <span class="title">NOCNY MAREK</span>
+            <span class="desc">Ukończ bieg po godzinie 21:00</span>
         </div>
     </div>
 
     <script>
         const history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
         
-        // Logika sprawdzania odznak
         let totalDist = 0;
         let fastRun = false;
         let proRun = false;
-        let anyRun = history.length > 0;
+        let nightRun = false;
+        let streakActive = false;
 
-        history.forEach(run => {
+        // Przetwarzanie historii
+        history.forEach((run, index) => {
             const d = parseFloat(run.dist);
             totalDist += d;
             
-            // Wyciąganie minut z tempa (format "M:SS")
-            const paceMin = parseInt(run.pace.split(':')[0]);
+            // Sprawdź tempo
+            const paceParts = run.pace.split(':');
+            const paceMin = parseInt(paceParts[0]);
             if(paceMin < 5) fastRun = true;
             if(paceMin < 4) proRun = true;
+
+            // Sprawdź godzinę (zakładamy format daty: "DD.MM.YYYY, HH:MM:SS")
+            try {
+                const runHour = parseInt(run.date.split(', ')[1].split(':')[0]);
+                if(runHour >= 21 || runHour <= 4) nightRun = true;
+            } catch(e) {}
+
+            // Sprawdź serię (streak) - porównaj z poprzednim biegiem
+            if (index < history.length - 1) {
+                const dateCurrent = new Date(run.date.split(',')[0].split('.').reverse().join('-'));
+                const datePrev = new Date(history[index+1].date.split(',')[0].split('.').reverse().join('-'));
+                const diffTime = Math.abs(dateCurrent - datePrev);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays === 1) streakActive = true;
+            }
         });
 
-        // Odblokowywanie wizualne
+        // Wyświetlanie statystyk
+        document.getElementById('total-stats').innerText = `Łączny dystans: ${totalDist.toFixed(2)} km`;
+        document.getElementById('xp-display').innerText = `${Math.floor(totalDist * 100)} XP`;
+
+        // Odblokowywanie odznak
         if(totalDist >= 1) document.getElementById('badge-1km').classList.add('unlocked');
         if(totalDist >= 10) document.getElementById('badge-10km').classList.add('unlocked');
         if(fastRun) document.getElementById('badge-fast').classList.add('unlocked');
         if(proRun) document.getElementById('badge-pro').classList.add('unlocked');
+        if(nightRun) document.getElementById('badge-night').classList.add('unlocked');
+        if(streakActive) document.getElementById('badge-streak').classList.add('unlocked');
+
     </script>
 </body>
 </html>
