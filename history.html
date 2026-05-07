@@ -5,28 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historia - NeoRun</title>
     <style>
-        body { background: #121212; color: white; font-family: sans-serif; padding: 20px; }
-        h2 { color: #00ff88; }
-        .run-item { background: #1e1e1e; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; border-left: 5px solid #00ff88; }
-        .btn-back { background: #333; color: white; padding: 10px; text-decoration: none; display: inline-block; margin-bottom: 20px; border-radius: 5px; }
+        :root { --neon: #00ff88; --dark: #121212; }
+        body { background: var(--dark); color: white; font-family: sans-serif; padding: 20px; margin: 0; }
+        h2 { color: var(--neon); text-align: center; }
+        .run-item { 
+            background: #1e1e1e; padding: 15px; border-radius: 12px; 
+            margin-bottom: 15px; border-left: 5px solid var(--neon);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .run-data { display: flex; justify-content: space-between; align-items: center; }
+        .btn-share { 
+            background: #222; color: var(--neon); border: 1px solid var(--neon); 
+            padding: 8px; border-radius: 5px; cursor: pointer; font-size: 12px;
+            font-weight: bold; transition: 0.3s;
+        }
+        .btn-share:active { background: var(--neon); color: black; }
+        .btn-back { background: #333; color: white; padding: 10px; text-decoration: none; display: inline-block; margin-bottom: 20px; border-radius: 8px; }
+        .toast { 
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: var(--neon); color: black; padding: 10px 20px; 
+            border-radius: 20px; font-weight: bold; display: none; z-index: 100;
+        }
     </style>
 </head>
 <body>
+    <div id="toast" class="toast">Skopiowano do schowka! 🏃‍♂️</div>
     <a href="index.html" class="btn-back">← POWRÓT</a>
-    <h2>Twoje biegi</h2>
+    <h2>TWOJE BIEGI</h2>
     <div id="list"></div>
 
     <script>
         const history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
         const container = document.getElementById('list');
         
+        // Obliczanie poziomu do raportu
+        let totalDistAll = 0;
+        history.forEach(r => totalDistAll += parseFloat(r.dist));
+        const currentLevel = Math.floor((totalDistAll * 100) / 1000) + 1;
+
+        function shareRun(dist, time, pace, date) {
+            const text = `🏃‍♂️ Mój trening w NeoRun (${date}):\n🏁 Dystans: ${dist} km\n⏱ Czas: ${time}\n⚡ Tempo: ${pace} min/km\n🏆 Poziom: ${currentLevel}\n\n#NeoRun #Bieganie`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.style.display = 'block';
+                setTimeout(() => toast.style.display = 'none', 2000);
+            });
+        }
+
         if(history.length === 0) {
-            container.innerHTML = "<p>Brak zapisanych biegów.</p>";
+            container.innerHTML = "<p style='text-align:center; color:#666;'>Brak zapisanych biegów.</p>";
         } else {
             container.innerHTML = history.map(run => `
                 <div class="run-item">
-                    <div><b>${run.date}</b><br><small>Czas: ${run.time}</small></div>
-                    <div style="text-align:right"><b>${run.dist} km</b><br><small>${run.pace} min/km</small></div>
+                    <div class="run-data">
+                        <div><b>${run.date.split(',')[0]}</b><br><small>${run.time}</small></div>
+                        <div style="text-align:right"><b style="color:var(--neon)">${run.dist} km</b><br><small>${run.pace} min/km</small></div>
+                    </div>
+                    <button class="btn-share" onclick="shareRun('${run.dist}', '${run.time}', '${run.pace}', '${run.date.split(',')[0]}')">
+                        UDOSTĘPNIJ WYNIK 📤
+                    </button>
                 </div>
             `).join('');
         }
