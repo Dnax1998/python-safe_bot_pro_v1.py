@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Osiągnięcia - NeoRun</title>
+    <style>
+        body { background: #121212; color: white; font-family: sans-serif; padding: 20px; text-align: center; }
+        .badge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .badge { background: #1e1e1e; padding: 20px; border-radius: 15px; border: 2px solid #333; opacity: 0.3; transition: 0.5s; }
+        .badge.unlocked { opacity: 1; border-color: #00ff88; box-shadow: 0 0 15px rgba(0, 255, 136, 0.2); }
+        .icon { font-size: 40px; margin-bottom: 10px; display: block; }
+        .title { font-weight: bold; font-size: 14px; color: #00ff88; }
+        .desc { font-size: 11px; color: #aaa; }
+        .btn-back { background: #333; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="btn-back">← POWRÓT</a>
+    <h2>Twoje Odznaki</h2>
+    
+    <div class="badge-grid" id="badgeGrid">
+        <div class="badge" id="badge-1km">
+            <span class="icon">🏃</span>
+            <span class="title">Pierwszy Kilometr</span>
+            <span class="desc">Pokonaj dystans 1 km</span>
+        </div>
+        <div class="badge" id="badge-10km">
+            <span class="icon">🏆</span>
+            <span class="title">Dycha pękła</span>
+            <span class="desc">Łączny dystans 10 km</span>
+        </div>
+        <div class="badge" id="badge-fast">
+            <span class="icon">⚡</span>
+            <span class="title">Szybka Strzała</span>
+            <span class="desc">Tempo poniżej 5:00 min/km</span>
+        </div>
+        <div class="badge" id="badge-pro">
+            <span class="icon">🔥</span>
+            <span class="title">Mistrz Tempa</span>
+            <span class="desc">Tempo poniżej 4:00 min/km</span>
+        </div>
+    </div>
+
+    <script>
+        const history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
+        
+        // Logika sprawdzania odznak
+        let totalDist = 0;
+        let fastRun = false;
+        let proRun = false;
+        let anyRun = history.length > 0;
+
+        history.forEach(run => {
+            const d = parseFloat(run.dist);
+            totalDist += d;
+            
+            // Wyciąganie minut z tempa (format "M:SS")
+            const paceMin = parseInt(run.pace.split(':')[0]);
+            if(paceMin < 5) fastRun = true;
+            if(paceMin < 4) proRun = true;
+        });
+
+        // Odblokowywanie wizualne
+        if(totalDist >= 1) document.getElementById('badge-1km').classList.add('unlocked');
+        if(totalDist >= 10) document.getElementById('badge-10km').classList.add('unlocked');
+        if(fastRun) document.getElementById('badge-fast').classList.add('unlocked');
+        if(proRun) document.getElementById('badge-pro').classList.add('unlocked');
+    </script>
+</body>
+</html>
