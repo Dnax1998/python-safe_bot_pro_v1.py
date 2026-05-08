@@ -9,124 +9,81 @@
             --neon: #00ff88; --dark: #000; 
             --t1: #cd7f32; --t2: #a19d94; --t3: #e5e4e2; --t4: #ffd700; --t5: #b9f2ff;
         }
-        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
+        body { 
+            background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; margin: 0; 
+        }
         
-        .header { display: flex; align-items: center; margin: 20px 0; }
-        .btn-back { background: #1a1a1a; color: white; padding: 12px; border-radius: 12px; text-decoration: none; margin-right: 15px; border: 1px solid #333; }
+        .header { position: absolute; top: 20px; left: 20px; display: flex; align-items: center; }
+        .btn-back { background: #1a1a1a; color: white; padding: 12px; border-radius: 12px; text-decoration: none; border: 1px solid #333; }
 
-        .trophy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 40px; }
-        
         .trophy-card { 
-            background: #111; border: 2px solid #222; padding: 25px 10px; 
-            border-radius: 24px; text-align: center; transition: 0.4s;
-            opacity: 0.25; filter: grayscale(1);
+            background: #111; border: 2px solid #222; padding: 40px 20px; 
+            border-radius: 30px; text-align: center; transition: 0.5s;
+            width: 200px;
         }
         
-        .trophy-card.unlocked { 
-            opacity: 1; filter: grayscale(0); border-color: #333; 
-            background: linear-gradient(145deg, #1a1a1a, #0b0b0b);
-        }
+        /* Stan zablokowany (Tier 0) */
+        .locked { opacity: 0.3; filter: grayscale(1); }
         
-        /* Specjalny styl dla ewoluującej odznaki (Butów) */
-        .trophy-card.evolution { border-color: var(--neon); box-shadow: 0 0 15px rgba(0,255,136,0.2); opacity: 1; filter: grayscale(0); }
+        /* Stan odblokowany */
+        .unlocked { border-color: var(--neon); box-shadow: 0 0 30px rgba(0, 255, 136, 0.2); }
 
-        .icon-container { height: 60px; display: flex; align-items: center; justify-content: center; font-size: 45px; margin-bottom: 10px; }
+        .icon-container { font-size: 80px; margin-bottom: 20px; }
         
         .tier-label { 
-            font-size: 10px; font-weight: bold; text-transform: uppercase; 
-            padding: 3px 10px; border-radius: 8px; margin-bottom: 12px; display: inline-block;
+            font-size: 12px; font-weight: bold; text-transform: uppercase; 
+            padding: 5px 15px; border-radius: 10px; margin-bottom: 15px; display: inline-block;
         }
         
+        .tier0 { background: #333; color: #888; }
         .tier1 { background: var(--t1); color: #000; }
         .tier2 { background: var(--t2); color: #000; }
         .tier3 { background: var(--t3); color: #000; }
         .tier4 { background: var(--t4); color: #000; }
         .tier5 { background: var(--t5); color: #000; }
 
-        .name { font-weight: bold; font-size: 14px; display: block; color: #fff; margin-bottom: 4px; }
-        .desc { font-size: 11px; color: #888; line-height: 1.3; }
-        .unlocked .desc { color: #bbb; }
+        .name { font-weight: bold; font-size: 20px; display: block; color: #fff; margin-bottom: 8px; }
+        .desc { font-size: 14px; color: var(--neon); font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <a href="index.html" class="btn-back">←</a>
-        <h2 style="margin:0;">TWOJA GABLOTA</h2>
     </div>
 
-    <div class="trophy-grid" id="grid"></div>
+    <div id="display">
+        </div>
 
     <script>
         const history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
         let totalKm = 0;
         history.forEach(r => totalKm += parseFloat(r.dist));
-        const totalRuns = history.length;
 
-        // 1. Logika Ewoluującego Buta (Tylko jedna odznaka, która się zmienia)
-        function getEvolutionShoe() {
-            let data = { name: "Znoszone Buty", icon: "👟", tier: 1, next: "1 km" };
+        function getShoe() {
+            if (totalKm >= 500) return { name: "Diamentowy But", icon: "👟", tier: 5, tName: "Tier V", label: "MAX POZIOM", class: "unlocked" };
+            if (totalKm >= 250) return { name: "Złoty But", icon: "👟", tier: 4, tName: "Tier IV", label: "Do 500km", class: "unlocked" };
+            if (totalKm >= 100) return { name: "Srebrny But", icon: "👟", tier: 3, tName: "Tier III", label: "Do 250km", class: "unlocked" };
+            if (totalKm >= 25)  return { name: "Żelazny But", icon: "👟", tier: 2, tName: "Tier II", label: "Do 100km", class: "unlocked" };
+            if (totalKm >= 1)   return { name: "Brązowy But", icon: "👟", tier: 1, tName: "Tier I", label: "Do 25km", class: "unlocked" };
             
-            if (totalKm >= 500) data = { name: "Diamentowy But", icon: "💎", tier: 5, next: "MAX" };
-            else if (totalKm >= 250) data = { name: "Złoty But", icon: "🥇", tier: 4, next: "500 km" };
-            else if (totalKm >= 100) data = { name: "Srebrny But", icon: "🥈", tier: 3, next: "250 km" };
-            else if (totalKm >= 25)  data = { name: "Żelazny But", icon: "⚙️", tier: 2, next: "100 km" };
-            else if (totalKm >= 1)   data = { name: "Brązowy But", icon: "🥉", tier: 1, next: "25 km" };
-            
-            return data;
+            // Tier 0 - Zablokowany
+            return { name: "Buty Treningowe", icon: "👟", tier: 0, tName: "Tier 0", label: "Przebiegnij 1 km", class: "locked" };
         }
 
-        const evoShoe = getEvolutionShoe();
+        const s = getShoe();
+        const container = document.getElementById('display');
 
-        // 2. Pozostałe 19 stałych odznak
-        const staticTrophies = [
-            { name: "Brązowy Bidon", icon: "🍼", tier: 1, req: () => totalKm >= 5, desc: "Przebiegnij 5 km" },
-            { name: "Brązowa Opaska", icon: "🩹", tier: 1, req: () => totalKm >= 10, desc: "Przebiegnij 10 km" },
-            { name: "Brązowy Stoper", icon: "⏱", tier: 1, req: () => totalRuns >= 1, desc: "Pierwszy trening" },
-            { name: "Żelazny Pulsometr", icon: "💓", tier: 2, req: () => totalKm >= 50, desc: "Przebiegnij 50 km" },
-            { name: "Żelazna Koszulka", icon: "👕", tier: 2, req: () => totalRuns >= 10, desc: "Ukończ 10 biegów" },
-            { name: "Żelazny Płomień", icon: "🔥", tier: 2, req: () => totalRuns >= 15, desc: "Regularność" },
-            { name: "Żelazne Słuchawki", icon: "🎧", tier: 2, req: () => totalKm >= 75, desc: "75 km" },
-            { name: "Srebrna Kurtka", icon: "🧥", tier: 3, req: () => totalKm >= 150, desc: "Przebiegnij 150 km" },
-            { name: "Srebrny Kompas", icon: "🧭", tier: 3, req: () => totalRuns >= 30, desc: "30 treningów" },
-            { name: "Srebrna Błyskawica", icon: "⚡", tier: 3, req: () => totalRuns >= 40, desc: "Szybkie Tempo" },
-            { name: "Srebrny Plecak", icon: "🎒", tier: 3, req: () => totalKm >= 200, desc: "Dystans 200 km" },
-            { name: "Złoty Puchar", icon: "🏆", tier: 4, req: () => totalKm >= 350, desc: "Przebiegnij 350 km" },
-            { name: "Złote Skrzydła", icon: "💸", tier: 4, req: () => totalRuns >= 70, desc: "70 treningów" },
-            { name: "Złoty Medal", icon: "🥇", tier: 4, req: () => totalRuns >= 100, desc: "Setny bieg!" },
-            { name: "Złoty Zegarek", icon: "⌚", tier: 4, req: () => totalKm >= 450, desc: "Dystans 450 km" },
-            { name: "Korona NeoRun", icon: "👑", tier: 5, req: () => totalKm >= 750, desc: "Przebiegnij 750 km" },
-            { name: "Diamentowe Serce", icon: "💎", tier: 5, req: () => totalKm >= 1000, desc: "Legendarne 1000 km" },
-            { name: "Nieśmiertelny", icon: "💀", tier: 5, req: () => totalRuns >= 365, desc: "Rok treningów" },
-            { name: "Kosmiczny Biegacz", icon: "🚀", tier: 5, req: () => totalKm >= 2000, desc: "Dystans 2000 km" }
-        ];
-
-        const grid = document.getElementById('grid');
-
-        // Renderowanie Buta (zawsze pierwszy, zawsze kolorowy/widoczny jako Twój postęp)
-        let html = `
-            <div class="trophy-card evolution unlocked">
-                <span class="tier-label tier${evoShoe.tier}">Tier ${evoShoe.tier}</span>
-                <div class="icon-container">${evoShoe.icon}</div>
-                <span class="name">${evoShoe.name}</span>
-                <span class="desc">Cel: ${evoShoe.next}</span>
+        container.innerHTML = `
+            <div class="trophy-card ${s.class}">
+                <span class="tier-label tier${s.tier}">${s.tName}</span>
+                <div class="icon-container">${s.icon}</div>
+                <span class="name">${s.name}</span>
+                <span class="desc">${s.label}</span>
             </div>
         `;
-
-        // Renderowanie reszty trofeów
-        staticTrophies.forEach(t => {
-            const isUnlocked = t.req();
-            html += `
-                <div class="trophy-card ${isUnlocked ? 'unlocked' : ''}">
-                    <span class="tier-label tier${t.tier}">Tier ${t.tier}</span>
-                    <div class="icon-container">${t.icon}</div>
-                    <span class="name">${t.name}</span>
-                    <span class="desc">${t.desc}</span>
-                </div>
-            `;
-        });
-
-        grid.innerHTML = html;
     </script>
 </body>
 </html>
