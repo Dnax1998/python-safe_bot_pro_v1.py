@@ -3,87 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gablota - NeoRun</title>
+    <title>Ewolucja - NeoRun</title>
     <style>
         :root { 
             --neon: #00ff88; --dark: #000; 
-            --t1: #cd7f32; --t2: #a19d94; --t3: #e5e4e2; --t4: #ffd700; --t5: #b9f2ff;
+            --t0: #333; --t1: #cd7f32; --t2: #a19d94; --t3: #e5e4e2; --t4: #ffd700; --t5: #b9f2ff;
         }
-        body { 
-            background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; margin: 0; 
-        }
+        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
         
-        .header { position: absolute; top: 20px; left: 20px; display: flex; align-items: center; }
+        .header { display: flex; align-items: center; margin: 20px 0; }
         .btn-back { background: #1a1a1a; color: white; padding: 12px; border-radius: 12px; text-decoration: none; border: 1px solid #333; }
 
+        .trophy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 40px; }
+        
         .trophy-card { 
-            background: #111; border: 2px solid #222; padding: 40px 20px; 
-            border-radius: 30px; text-align: center; transition: 0.5s;
-            width: 200px;
+            background: #111; border: 2px solid #222; padding: 25px 10px; 
+            border-radius: 24px; text-align: center; transition: 0.5s;
         }
         
-        /* Stan zablokowany (Tier 0) */
-        .locked { opacity: 0.3; filter: grayscale(1); }
+        /* Stan zablokowany */
+        .locked { opacity: 0.25; filter: grayscale(1); }
         
         /* Stan odblokowany */
-        .unlocked { border-color: var(--neon); box-shadow: 0 0 30px rgba(0, 255, 136, 0.2); }
+        .unlocked { border-color: var(--neon); box-shadow: 0 0 15px rgba(0, 255, 136, 0.15); background: linear-gradient(145deg, #1a1a1a, #0b0b0b); }
 
-        .icon-container { font-size: 80px; margin-bottom: 20px; }
+        .icon-container { font-size: 50px; margin-bottom: 10px; height: 60px; display: flex; align-items: center; justify-content: center; }
         
         .tier-label { 
-            font-size: 12px; font-weight: bold; text-transform: uppercase; 
-            padding: 5px 15px; border-radius: 10px; margin-bottom: 15px; display: inline-block;
+            font-size: 10px; font-weight: bold; text-transform: uppercase; 
+            padding: 3px 10px; border-radius: 8px; margin-bottom: 12px; display: inline-block;
         }
         
-        .tier0 { background: #333; color: #888; }
+        .tier0 { background: var(--t0); color: #888; }
         .tier1 { background: var(--t1); color: #000; }
         .tier2 { background: var(--t2); color: #000; }
         .tier3 { background: var(--t3); color: #000; }
         .tier4 { background: var(--t4); color: #000; }
         .tier5 { background: var(--t5); color: #000; }
 
-        .name { font-weight: bold; font-size: 20px; display: block; color: #fff; margin-bottom: 8px; }
-        .desc { font-size: 14px; color: var(--neon); font-weight: bold; }
+        .name { font-weight: bold; font-size: 14px; display: block; color: #fff; margin-bottom: 4px; }
+        .desc { font-size: 11px; color: var(--neon); font-weight: bold; }
+        .locked .desc { color: #555; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <a href="index.html" class="btn-back">←</a>
+        <h2 style="margin:0; margin-left: 15px;">EWOLUCJA SPRZĘTU</h2>
     </div>
 
-    <div id="display">
-        </div>
+    <div class="trophy-grid" id="grid"></div>
 
     <script>
         const history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
         let totalKm = 0;
         history.forEach(r => totalKm += parseFloat(r.dist));
+        const totalRuns = history.length;
 
+        // --- DEFINICJA DRZEWEK EWOLUCJI ---
+
+        // 1. Drzewko Butów (Dystans)
         function getShoe() {
-            if (totalKm >= 500) return { name: "Diamentowy But", icon: "👟", tier: 5, tName: "Tier V", label: "MAX POZIOM", class: "unlocked" };
-            if (totalKm >= 250) return { name: "Złoty But", icon: "👟", tier: 4, tName: "Tier IV", label: "Do 500km", class: "unlocked" };
-            if (totalKm >= 100) return { name: "Srebrny But", icon: "👟", tier: 3, tName: "Tier III", label: "Do 250km", class: "unlocked" };
-            if (totalKm >= 25)  return { name: "Żelazny But", icon: "👟", tier: 2, tName: "Tier II", label: "Do 100km", class: "unlocked" };
-            if (totalKm >= 1)   return { name: "Brązowy But", icon: "👟", tier: 1, tName: "Tier I", label: "Do 25km", class: "unlocked" };
-            
-            // Tier 0 - Zablokowany
-            return { name: "Buty Treningowe", icon: "👟", tier: 0, tName: "Tier 0", label: "Przebiegnij 1 km", class: "locked" };
+            if (totalKm >= 500) return { name: "Diamentowy But", icon: "👟", tier: 5, label: "LEGENDA", unlocked: true };
+            if (totalKm >= 100) return { name: "Złoty But", icon: "👟", tier: 4, label: "Do 500km", unlocked: true };
+            if (totalKm >= 50)  return { name: "Srebrny But", icon: "👟", tier: 3, label: "Do 100km", unlocked: true };
+            if (totalKm >= 10)  return { name: "Żelazny But", icon: "👟", tier: 2, label: "Do 50km", unlocked: true };
+            if (totalKm >= 1)   return { name: "Brązowy But", icon: "👟", tier: 1, label: "Do 10km", unlocked: true };
+            return { name: "Buty", icon: "👟", tier: 0, label: "Biegnij 1km", unlocked: false };
         }
 
-        const s = getShoe();
-        const container = document.getElementById('display');
+        // 2. Drzewko Odzieży (Liczba treningów)
+        function getCloth() {
+            if (totalRuns >= 100) return { name: "Pancerz Neo", icon: "👕", tier: 5, label: "HEROS", unlocked: true };
+            if (totalRuns >= 50)  return { name: "Złota Koszulka", icon: "👕", tier: 4, label: "Do 100 biegów", unlocked: true };
+            if (totalRuns >= 25)  return { name: "Srebrna Koszulka", icon: "👕", tier: 3, label: "Do 50 biegów", unlocked: true };
+            if (totalRuns >= 10)  return { name: "Żelazna Koszulka", icon: "👕", tier: 2, label: "Do 25 biegów", unlocked: true };
+            if (totalRuns >= 3)   return { name: "Brązowa Koszulka", icon: "👕", tier: 1, label: "Do 10 biegów", unlocked: true };
+            return { name: "Koszulka", icon: "👕", tier: 0, label: "3 treningi", unlocked: false };
+        }
 
-        container.innerHTML = `
-            <div class="trophy-card ${s.class}">
-                <span class="tier-label tier${s.tier}">${s.tName}</span>
-                <div class="icon-container">${s.icon}</div>
-                <span class="name">${s.name}</span>
-                <span class="desc">${s.label}</span>
+        // 3. Drzewko Nawodnienia (Dystans łączny)
+        function getWater() {
+            if (totalKm >= 300) return { name: "System Hydracji", icon: "🎒", tier: 5, label: "ULTRA", unlocked: true };
+            if (totalKm >= 150) return { name: "Złoty Bidon", icon: "🍼", tier: 4, label: "Do 300km", unlocked: true };
+            if (totalKm >= 75)  return { name: "Srebrny Bidon", icon: "🍼", tier: 3, label: "Do 150km", unlocked: true };
+            if (totalKm >= 30)  return { name: "Żelazny Bidon", icon: "🍼", tier: 2, label: "Do 75km", unlocked: true };
+            if (totalKm >= 5)   return { name: "Brązowy Bidon", icon: "🍼", tier: 1, label: "Do 30km", unlocked: true };
+            return { name: "Bidon", icon: "🍼", tier: 0, label: "Biegnij 5km", unlocked: false };
+        }
+
+        // 4. Drzewko Technologii (Najdłuższy bieg - symulacja lub suma biegów)
+        function getTech() {
+            if (totalKm >= 1000) return { name: "Cyber-Oko", icon: "👁️‍🗨️", tier: 5, label: "CYBORG", unlocked: true };
+            if (totalKm >= 400)  return { name: "Złoty Zegarek", icon: "⌚", tier: 4, label: "Do 1000km", unlocked: true };
+            if (totalKm >= 200)  return { name: "Srebrny Zegarek", icon: "⌚", tier: 3, label: "Do 400km", unlocked: true };
+            if (totalKm >= 80)   return { name: "Pulsometr", icon: "💓", tier: 2, label: "Do 200km", unlocked: true };
+            if (totalKm >= 20)   return { name: "Opaska", icon: "🩹", tier: 1, label: "Do 80km", unlocked: true };
+            return { name: "Gadżet", icon: "📟", tier: 0, label: "Biegnij 20km", unlocked: false };
+        }
+
+        const items = [getShoe(), getCloth(), getWater(), getTech()];
+        const grid = document.getElementById('grid');
+
+        grid.innerHTML = items.map(i => `
+            <div class="trophy-card ${i.unlocked ? 'unlocked' : 'locked'}">
+                <span class="tier-label tier${i.tier}">Tier ${i.tier}</span>
+                <div class="icon-container">${i.icon}</div>
+                <span class="name">${i.name}</span>
+                <span class="desc">${i.label}</span>
             </div>
-        `;
+        `).join('');
     </script>
 </body>
 </html>
