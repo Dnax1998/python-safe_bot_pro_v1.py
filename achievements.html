@@ -1,51 +1,132 @@
-const history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
-let totalKm = 0;
-history.forEach(r => totalKm += parseFloat(r.dist));
-const totalRuns = history.length;
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trofea - NeoRun</title>
+    <style>
+        :root { 
+            --neon: #00ff88; --dark: #000; 
+            --t1: #cd7f32; --t2: #a19d94; --t3: #e5e4e2; --t4: #ffd700; --t5: #b9f2ff;
+        }
+        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
+        
+        .header { display: flex; align-items: center; margin: 20px 0; }
+        .btn-back { 
+            background: #1a1a1a; color: white; padding: 12px; border-radius: 12px; 
+            text-decoration: none; margin-right: 15px; border: 1px solid #333;
+        }
 
-// Funkcja obliczająca aktualny stan "Ewolucyjnego Buta"
-function getShoeTier() {
-    if (totalKm >= 500) return { name: "Diamentowy But", tier: 5, icon: "💎👟", next: "MAX" };
-    if (totalKm >= 250) return { name: "Złoty But", tier: 4, icon: "🥇👟", next: "500 km" };
-    if (totalKm >= 100) return { name: "Srebrny But", tier: 3, icon: "🥈👟", next: "250 km" };
-    if (totalKm >= 25)  return { name: "Żelazny But", tier: 2, icon: "⚙️👟", next: "100 km" };
-    if (totalKm >= 1)   return { name: "Brązowy But", tier: 1, icon: "🥉👟", next: "25 km" };
-    return { name: "Brak Butów", tier: 0, icon: "👟", next: "1 km" };
-}
+        .trophy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 40px; }
+        
+        .trophy-card { 
+            background: #111; border: 1px solid #222; padding: 20px 10px; 
+            border-radius: 24px; text-align: center; transition: 0.4s;
+            filter: grayscale(1); opacity: 0.3;
+        }
+        
+        /* Styl dla odblokowanych */
+        .trophy-card.unlocked { 
+            filter: grayscale(0); opacity: 1; border-color: #333; 
+            background: linear-gradient(145deg, #1a1a1a, #000);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        
+        /* Neonowa ramka dla najwyższego aktualnego osiągnięcia (Buta) */
+        .trophy-card.highlight { border-color: var(--neon); box-shadow: 0 0 15px rgba(0,255,136,0.3); }
 
-const currentShoe = getShoeTier();
+        .icon { font-size: 45px; margin-bottom: 12px; display: block; }
+        
+        .tier-label { 
+            font-size: 10px; font-weight: bold; text-transform: uppercase; 
+            padding: 3px 10px; border-radius: 8px; margin-bottom: 10px; display: inline-block;
+        }
+        
+        .tier1 { background: var(--t1); color: #000; }
+        .tier2 { background: var(--t2); color: #000; }
+        .tier3 { background: var(--t3); color: #000; }
+        .tier4 { background: var(--t4); color: #000; }
+        .tier5 { background: var(--t5); color: #000; }
 
-// Nowa lista 20 trofeów (But jest teraz jeden, dynamiczny)
-const trophies = [
-    // 1. EWOLUCYJNY BUT (Dynamiczny)
-    { 
-        id: "shoe", 
-        name: currentShoe.name, 
-        icon: currentShoe.icon, 
-        tier: currentShoe.tier, 
-        req: () => totalKm >= 1, 
-        desc: currentShoe.tier === 0 ? "Przebiegnij 1 km, by zacząć" : `Następny poziom: ${currentShoe.next}` 
-    },
+        .name { font-weight: bold; font-size: 14px; display: block; color: #fff; margin-bottom: 4px; }
+        .desc { font-size: 11px; color: #666; line-height: 1.3; }
+    </style>
+</head>
+<body>
 
-    // Pozostałe trofea (bez zmian tierów, by dobić do 20)
-    { id: 2, name: "Brązowy Bidon", icon: "🍼", tier: 1, req: () => totalKm >= 5, desc: "Przebiegnij 5 km" },
-    { id: 3, name: "Brązowa Opaska", icon: "🩹", tier: 1, req: () => totalKm >= 10, desc: "Przebiegnij 10 km" },
-    { id: 4, name: "Brązowy Stoper", icon: "⏱", tier: 1, req: () => totalRuns >= 1, desc: "Pierwszy trening" },
-    
-    { id: 6, name: "Żelazny Pulsometr", icon: "💓", tier: 2, req: () => totalKm >= 50, desc: "Przebiegnij 50 km" },
-    { id: 7, name: "Żelazna Koszulka", icon: "👕", tier: 2, req: () => totalRuns >= 10, desc: "Ukończ 10 biegów" },
-    { id: 8, name: "Żelazny Płomień", icon: "🔥", tier: 2, req: () => totalRuns >= 15, desc: "Pokaż regularność" },
+    <div class="header">
+        <a href="index.html" class="btn-back">←</a>
+        <h2 style="text-transform: uppercase; letter-spacing: 1px;">Twoja Gablota</h2>
+    </div>
 
-    { id: 10, name: "Srebrna Kurtka", icon: "🧥", tier: 3, req: () => totalKm >= 150, desc: "Przebiegnij 150 km" },
-    { id: 11, name: "Srebrny Kompas", icon: "🧭", tier: 3, req: () => totalRuns >= 30, desc: "30 treningów" },
-    { id: 12, name: "Srebrna Błyskawica", icon: "⚡", tier: 3, req: () => totalRuns >= 40, desc: "Szybki postęp" },
+    <div class="trophy-grid" id="grid"></div>
 
-    { id: 14, name: "Złoty Puchar", icon: "🏆", tier: 4, req: () => totalKm >= 350, desc: "Przebiegnij 350 km" },
-    { id: 15, name: "Złote Skrzydła", icon: "💸", tier: 4, req: () => totalRuns >= 70, desc: "70 treningów" },
-    { id: 16, name: "Złoty Medal", icon: "🥇", tier: 4, req: () => totalRuns >= 100, desc: "Setny bieg!" },
+    <script>
+        const history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
+        let totalKm = 0;
+        history.forEach(r => totalKm += parseFloat(r.dist));
+        const totalRuns = history.length;
 
-    { id: 18, name: "Korona NeoRun", icon: "👑", tier: 5, req: () => totalKm >= 750, desc: "Przebiegnij 750 km" },
-    { id: 19, name: "Diamentowe Serce", icon: "💎", tier: 5, req: () => totalKm >= 1000, desc: "Legendarne 1000 km" },
-    { id: 20, name: "Nieśmiertelny", icon: "💀", tier: 5, req: () => totalRuns >= 365, desc: "Rok biegania" }
-    // Możesz dopisać brakujące 4 trofea wg własnego uznania, by mieć pełne 20!
-];
+        // Logika Ewolucyjnego Buta
+        function getShoeData() {
+            if (totalKm >= 500) return { name: "Diamentowy But", icon: "💎👟", tier: 5, next: "MAX LEVEL" };
+            if (totalKm >= 250) return { name: "Złoty But", icon: "🥇👟", tier: 4, next: "500 km" };
+            if (totalKm >= 100) return { name: "Srebrny But", icon: "🥈👟", tier: 3, next: "250 km" };
+            if (totalKm >= 25)  return { name: "Żelazny But", icon: "⚙️👟", tier: 2, next: "100 km" };
+            if (totalKm >= 1)   return { name: "Brązowy But", icon: "🥉👟", tier: 1, next: "25 km" };
+            return { name: "Znoszone Buty", icon: "👟", tier: 0, next: "1 km" };
+        }
+
+        const shoe = getShoeData();
+
+        // Lista 20 trofeów
+        const trophies = [
+            // 1. EWOLUCYJNY BUT
+            { name: shoe.name, icon: shoe.icon, tier: shoe.tier || 1, req: () => totalKm >= 1, desc: `Cel: ${shoe.next}`, special: true },
+            
+            // TIER 1 - BRĄZ
+            { name: "Brązowy Bidon", icon: "🍼", tier: 1, req: () => totalKm >= 5, desc: "Przebiegnij 5 km" },
+            { name: "Brązowa Opaska", icon: "🩹", tier: 1, req: () => totalKm >= 10, desc: "Przebiegnij 10 km" },
+            { name: "Brązowy Stoper", icon: "⏱", tier: 1, req: () => totalRuns >= 1, desc: "Pierwszy trening" },
+            
+            // TIER 2 - ŻELAZO
+            { name: "Żelazny Pulsometr", icon: "💓", tier: 2, req: () => totalKm >= 50, desc: "Przebiegnij 50 km" },
+            { name: "Żelazna Koszulka", icon: "👕", tier: 2, req: () => totalRuns >= 10, desc: "Ukończ 10 biegów" },
+            { name: "Żelazny Płomień", icon: "🔥", tier: 2, req: () => totalRuns >= 15, desc: "Pokaż regularność" },
+            { name: "Żelazne Słuchawki", icon: "🎧", tier: 2, req: () => totalKm >= 75, desc: "75 km z muzyką" },
+
+            // TIER 3 - SREBRO
+            { name: "Srebrna Kurtka", icon: "🧥", tier: 3, req: () => totalKm >= 150, desc: "Przebiegnij 150 km" },
+            { name: "Srebrny Kompas", icon: "🧭", tier: 3, req: () => totalRuns >= 30, desc: "30 treningów" },
+            { name: "Srebrna Błyskawica", icon: "⚡", tier: 3, req: () => totalRuns >= 40, desc: "Szybki postęp" },
+            { name: "Srebrny Plecak", icon: "🎒", tier: 3, req: () => totalKm >= 200, desc: "Długie trasy (200km)" },
+
+            // TIER 4 - ZŁOTO
+            { name: "Złoty Puchar", icon: "🏆", tier: 4, req: () => totalKm >= 350, desc: "Przebiegnij 350 km" },
+            { name: "Złote Skrzydła", icon: "💸", tier: 4, req: () => totalRuns >= 70, desc: "70 treningów" },
+            { name: "Złoty Medal", icon: "🥇", tier: 4, req: () => totalRuns >= 100, desc: "Setny bieg!" },
+            { name: "Złoty Zegarek", icon: "⌚", tier: 4, req: () => totalKm >= 450, desc: "Czas na progres" },
+
+            // TIER 5 - DIAMENT
+            { name: "Korona NeoRun", icon: "👑", tier: 5, req: () => totalKm >= 750, desc: "Przebiegnij 750 km" },
+            { name: "Diamentowe Serce", icon: "💎", tier: 5, req: () => totalKm >= 1000, desc: "Legendarne 1000 km" },
+            { name: "Nieśmiertelny", icon: "💀", tier: 5, req: () => totalRuns >= 365, desc: "Rok treningów" },
+            { name: "Kosmiczny Biegacz", icon: "🚀", tier: 5, req: () => totalKm >= 2000, desc: "Osiągnij orbitę" }
+        ];
+
+        const grid = document.getElementById('grid');
+        grid.innerHTML = trophies.map(t => {
+            const isUnlocked = t.req();
+            const highlightClass = (t.special && isUnlocked) ? 'highlight' : '';
+            return `
+                <div class="trophy-card ${isUnlocked ? 'unlocked' : ''} ${highlightClass}">
+                    <span class="tier-label tier${t.tier}">Tier ${t.tier}</span>
+                    <span class="icon">${t.icon}</span>
+                    <span class="name">${t.name}</span>
+                    <span class="desc">${t.desc}</span>
+                </div>
+            `;
+        }).join('');
+    </script>
+</body>
+</html>
