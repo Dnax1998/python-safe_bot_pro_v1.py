@@ -1,0 +1,17 @@
+{
+  "short_name": "NeoRun",
+  "name": "NeoRun - Evolution",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3112/3112933.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#000000",
+  "display": "standalone",
+  "scope": "./",
+  "theme_color": "#00ff88"
+}
