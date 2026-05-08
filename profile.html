@@ -3,155 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profil Pro - NeoRun</title>
+    <title>Profil - NeoRun</title>
     <style>
-        :root { --neon: #00ff88; --dark: #000; --card: #1a1a1a; --gray: #888; }
-        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
-        
-        .header { display: flex; align-items: center; margin-bottom: 20px; }
-        .btn-back { background: #333; color: white; padding: 10px 15px; text-decoration: none; border-radius: 10px; margin-right: 15px; font-size: 18px; }
-
-        /* Karta Awatara */
-        .user-card { 
-            background: linear-gradient(145deg, #1a1a1a, #000);
-            padding: 30px; border-radius: 25px; border: 1px solid #333;
-            text-align: center; position: relative; overflow: hidden; margin-bottom: 20px;
-        }
-        .avatar-circle { 
-            width: 80px; height: 80px; background: var(--neon); color: black; 
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 40px; font-weight: bold; margin: 0 auto 15px;
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
-        }
-        .rank-tag { 
-            display: inline-block; background: #222; border: 1px solid var(--neon);
-            color: var(--neon); padding: 5px 15px; border-radius: 20px;
-            font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px;
-        }
-
-        /* Formularz */
-        .settings { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #333; }
-        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; color: var(--gray); font-size: 11px; margin-bottom: 5px; text-transform: uppercase; }
-        input { 
-            width: 100%; background: #111; border: 1px solid #333; padding: 12px; 
-            border-radius: 12px; color: white; font-size: 16px; box-sizing: border-box; 
-            transition: 0.3s;
-        }
-        input:focus { border-color: var(--neon); outline: none; background: #151515; }
-
-        /* Statystyki zdrowotne */
-        .health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .health-box { background: #111; padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #222; }
-        .health-box b { display: block; font-size: 18px; color: var(--neon); }
-        .health-box small { font-size: 10px; color: var(--gray); }
-
-        .btn-save { 
-            background: var(--neon); color: black; border: none; padding: 18px; 
-            width: 100%; border-radius: 15px; font-weight: bold; font-size: 16px; 
-            cursor: pointer; margin-top: 20px; transition: 0.3s;
-        }
-        .btn-save:active { transform: scale(0.98); }
+        body { background: #000; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
+        .avatar { width: 100px; height: 100px; background: #1a1a1a; border-radius: 50%; margin: 20px auto; border: 2px solid #00ff88; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+        .stat-card { background: #111; padding: 20px; border-radius: 20px; margin: 10px 0; border: 1px solid #222; }
+        .val { font-size: 1.5rem; color: #00ff88; font-weight: bold; }
+        .label { color: #666; font-size: 0.8rem; text-transform: uppercase; }
+        .btn-back { position: absolute; top: 20px; left: 20px; color: #666; text-decoration: none; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <a href="index.html" class="btn-back">←</a>
-        <h2 style="margin:0; font-size: 20px;">TWÓJ PROFIL</h2>
+    <a href="index.html" class="btn-back">← Wstecz</a>
+    <div class="avatar">👤</div>
+    <h2>BIEGACZ NEO</h2>
+    
+    <div class="stat-card">
+        <div id="total-km" class="val">0.00</div>
+        <div class="label">Suma Kilometrów</div>
     </div>
-
-    <div class="user-card">
-        <div class="rank-tag" id="user-rank">Rekrut</div>
-        <div class="avatar-circle" id="avatar-initial">N</div>
-        <h3 id="display-name" style="margin: 10px 0 5px 0;">Biegacz</h3>
-        <p style="font-size: 12px; color: var(--gray); margin: 0;">Dołączono: Maj 2026</p>
-    </div>
-
-    <div class="settings">
-        <div class="input-group">
-            <label>Imię / Nick</label>
-            <input type="text" id="userName" placeholder="Jak Cię nazywać?">
-        </div>
-        
-        <div class="input-row">
-            <div class="input-group">
-                <label>Waga (kg)</label>
-                <input type="number" id="userWeight" placeholder="0">
-            </div>
-            <div class="input-group">
-                <label>Wzrost (cm)</label>
-                <input type="number" id="userHeight" placeholder="0">
-            </div>
-        </div>
-
-        <div class="health-grid">
-            <div class="health-box">
-                <small>TWOJE BMI</small>
-                <b id="bmi-val">--</b>
-            </div>
-            <div class="health-box">
-                <small>STATUS</small>
-                <b id="bmi-status" style="font-size: 12px;">Wpisz dane</b>
-            </div>
-        </div>
-
-        <button class="btn-save" onclick="saveProfile()">ZAPISZ I AKTUALIZUJ</button>
+    <div class="stat-card">
+        <div id="total-runs" class="val">0</div>
+        <div class="label">Ukończone Biegi</div>
     </div>
 
     <script>
-        // Ładowanie historii do wyliczenia rangi
         const history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
-        let totalKm = 0;
-        history.forEach(r => totalKm += parseFloat(r.dist));
-
-        // Logika rang
-        let rank = "Rekrut";
-        if(totalKm > 5) rank = "Biegacz";
-        if(totalKm > 20) rank = "Sprinter";
-        if(totalKm > 50) rank = "Maratończyk";
-        if(totalKm > 100) rank = "Legenda NeoRun";
-        document.getElementById('user-rank').innerText = rank;
-
-        // Ładowanie danych użytkownika
-        const user = JSON.parse(localStorage.getItem('neoUser') || '{"name":"Biegacz","weight":0,"height":0}');
-        document.getElementById('userName').value = user.name;
-        document.getElementById('userWeight').value = user.weight;
-        document.getElementById('userHeight').value = user.height;
-        document.getElementById('display-name').innerText = user.name || "Biegacz";
-        document.getElementById('avatar-initial').innerText = (user.name || "N").charAt(0).toUpperCase();
-
-        function calculateBMI() {
-            const w = parseFloat(document.getElementById('userWeight').value);
-            const h = parseFloat(document.getElementById('userHeight').value) / 100;
-            if(w > 0 && h > 0) {
-                const bmi = (w / (h * h)).toFixed(1);
-                document.getElementById('bmi-val').innerText = bmi;
-                
-                let status = "Norma";
-                if(bmi < 18.5) status = "Niedowaga";
-                if(bmi > 25) status = "Nadwaga";
-                if(bmi > 30) status = "Otyłość";
-                document.getElementById('bmi-status').innerText = status;
-            }
-        }
-
-        function saveProfile() {
-            const name = document.getElementById('userName').value;
-            const weight = document.getElementById('userWeight').value;
-            const height = document.getElementById('userHeight').value;
-            
-            localStorage.setItem('neoUser', JSON.stringify({name, weight, height}));
-            document.getElementById('display-name').innerText = name;
-            document.getElementById('avatar-initial').innerText = name.charAt(0).toUpperCase();
-            
-            calculateBMI();
-            alert('Dane zaktualizowane! 🚀');
-        }
-
-        // Licz BMI na starcie
-        calculateBMI();
+        let total = 0;
+        history.forEach(r => total += parseFloat(r.dist));
+        
+        document.getElementById('total-km').innerText = total.toFixed(2) + " KM";
+        document.getElementById('total-runs').innerText = history.length;
     </script>
 </body>
 </html>
