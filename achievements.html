@@ -3,65 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ewolucja - NeoRun</title>
+    <title>Sprzęt - NeoRun</title>
     <style>
         :root { 
             --neon: #00ff88; --dark: #000; 
             --t0: #333; --t1: #cd7f32; --t2: #a19d94; --t3: #e5e4e2; --t4: #ffd700; --t5: #b9f2ff;
         }
         body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
-        
-        .header { display: flex; align-items: center; margin: 20px 0; }
+        .header { display: flex; align-items: center; margin-bottom: 20px; }
         .btn-back { background: #1a1a1a; color: white; padding: 12px; border-radius: 12px; text-decoration: none; border: 1px solid #333; }
-
-        .trophy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 40px; }
-        
+        .trophy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .trophy-card { 
-            background: #111; border: 2px solid #222; padding: 20px 10px; 
-            border-radius: 24px; text-align: center; transition: 0.5s;
-            display: flex; flex-direction: column; align-items: center;
+            background: #111; border: 2px solid #222; padding: 20px 10px; border-radius: 24px; 
+            text-align: center; display: flex; flex-direction: column; align-items: center;
         }
-        
         .locked { opacity: 0.4; filter: grayscale(0.8); }
-        .unlocked { border-color: #333; background: linear-gradient(145deg, #1a1a1a, #0b0b0b); }
         .max-tier { border-color: var(--neon); box-shadow: 0 0 15px rgba(0, 255, 136, 0.2); }
-
         .icon-container { font-size: 45px; margin-bottom: 5px; height: 50px; display: flex; align-items: center; }
-        
-        .tier-label { 
-            font-size: 9px; font-weight: bold; text-transform: uppercase; 
-            padding: 3px 10px; border-radius: 8px; margin-bottom: 10px;
-        }
-        
+        .tier-label { font-size: 9px; font-weight: bold; text-transform: uppercase; padding: 3px 10px; border-radius: 8px; margin-bottom: 10px; }
         .tier0 { background: var(--t0); color: #888; }
         .tier1 { background: var(--t1); color: #000; }
         .tier2 { background: var(--t2); color: #000; }
         .tier3 { background: var(--t3); color: #000; }
         .tier4 { background: var(--t4); color: #000; }
         .tier5 { background: var(--t5); color: #000; }
-
         .name { font-weight: bold; font-size: 13px; display: block; color: #fff; margin-bottom: 4px; }
         .desc { font-size: 10px; color: #888; margin-bottom: 12px; }
-
-        /* PASEK POSTĘPU */
-        .progress-container {
-            width: 80%; background: #222; height: 6px; border-radius: 3px; 
-            overflow: hidden; margin-top: auto; position: relative;
-        }
-        .progress-bar {
-            height: 100%; background: var(--neon); width: 0%;
-            box-shadow: 0 0 10px var(--neon); transition: width 1s ease-out;
-        }
+        .progress-container { width: 80%; background: #222; height: 6px; border-radius: 3px; overflow: hidden; margin-top: auto; }
+        .progress-bar { height: 100%; background: var(--neon); width: 0%; box-shadow: 0 0 10px var(--neon); transition: width 1s; }
         .perc-text { font-size: 9px; color: var(--neon); margin-top: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div class="header">
         <a href="index.html" class="btn-back">←</a>
-        <h2 style="margin:0; margin-left: 15px; font-size: 18px;">SPRZĘT</h2>
+        <h2 style="margin-left: 15px; font-size: 18px;">TWOJA EWOLUCJA</h2>
     </div>
-
     <div class="trophy-grid" id="grid"></div>
 
     <script>
@@ -70,70 +47,36 @@
         history.forEach(r => totalKm += parseFloat(r.dist));
         const totalRuns = history.length;
 
-        // Funkcja pomocnicza do liczenia % i postępu
         function calcProgress(current, levels) {
-            let tier = 0;
-            let nextVal = levels[0];
-            let prevVal = 0;
-
+            let tier = 0, prevVal = 0, nextVal = levels[0];
             for (let i = 0; i < levels.length; i++) {
-                if (current >= levels[i]) {
-                    tier = i + 1;
-                    prevVal = levels[i];
-                    nextVal = levels[i+1] || levels[i];
-                } else {
-                    nextVal = levels[i];
-                    break;
-                }
+                if (current >= levels[i]) { tier = i + 1; prevVal = levels[i]; nextVal = levels[i+1] || levels[i]; }
+                else { nextVal = levels[i]; break; }
             }
-
-            let percent = 0;
-            if (tier === levels.length) {
-                percent = 100;
-            } else {
-                percent = ((current - prevVal) / (nextVal - prevVal)) * 100;
-            }
+            let percent = (tier === levels.length) ? 100 : ((current - prevVal) / (nextVal - prevVal)) * 100;
             return { tier, percent: Math.min(100, Math.max(0, percent)), nextVal };
         }
 
-        const shoeLevels = [1, 10, 50, 100, 500];
-        const clothLevels = [3, 10, 25, 50, 100];
-        const waterLevels = [5, 30, 75, 150, 300];
-        const techLevels = [20, 80, 200, 400, 1000];
-
-        function getItems() {
-            const sP = calcProgress(totalKm, shoeLevels);
-            const cP = calcProgress(totalRuns, clothLevels);
-            const wP = calcProgress(totalKm, waterLevels);
-            const tP = calcProgress(totalKm, techLevels);
-
-            const shoeNames = ["Znoszone Buty", "Brązowy But", "Żelazny But", "Srebrny But", "Złoty But", "Diamentowy But"];
-            const clothNames = ["Koszulka", "Brązowa Koszulka", "Żelazna Koszulka", "Srebrna Koszulka", "Złota Koszulka", "Pancerz Neo"];
-            const waterNames = ["Bidon", "Brązowy Bidon", "Żelazny Bidon", "Srebrny Bidon", "Złoty Bidon", "System Hydracji"];
-            const techNames = ["Gadżet", "Opaska", "Pulsometr", "Srebrny Zegarek", "Złoty Zegarek", "Cyber-Oko"];
-
-            return [
-                { name: shoeNames[sP.tier], icon: "👟", tier: sP.tier, percent: sP.percent, req: sP.nextVal, unit: "km", current: totalKm },
-                { name: clothNames[cP.tier], icon: "👕", tier: cP.tier, percent: cP.percent, req: cP.nextVal, unit: "biegów", current: totalRuns },
-                { name: waterNames[wP.tier], icon: "🍼", tier: wP.tier, percent: wP.percent, req: wP.nextVal, unit: "km", current: totalKm },
-                { name: techNames[tP.tier], icon: "⌚", tier: tP.tier, percent: tP.percent, req: tP.nextVal, unit: "km", current: totalKm }
-            ];
-        }
+        const config = [
+            { lv: [1, 10, 50, 100, 500], names: ["Buty", "Brązowy But", "Żelazny But", "Srebrny But", "Złoty But", "Diamentowy But"], icon: "👟", val: totalKm, unit: "km" },
+            { lv: [3, 10, 25, 50, 100], names: ["Koszulka", "Brązowa", "Żelazna", "Srebrna", "Złota", "Pancerz Neo"], icon: "👕", val: totalRuns, unit: "b." },
+            { lv: [5, 30, 75, 150, 300], names: ["Bidon", "Brązowy", "Żelazny", "Srebrny", "Złoty", "Hydracja"], icon: "🍼", val: totalKm, unit: "km" },
+            { lv: [20, 80, 200, 400, 1000], names: ["Gadżet", "Opaska", "Pulsometr", "Sreb. Zegarek", "Złoty Zegarek", "Cyber-Oko"], icon: "⌚", val: totalKm, unit: "km" }
+        ];
 
         const grid = document.getElementById('grid');
-        grid.innerHTML = getItems().map(i => `
-            <div class="trophy-card ${i.tier > 0 ? 'unlocked' : 'locked'} ${i.tier === 5 ? 'max-tier' : ''}">
-                <span class="tier-label tier${i.tier}">Tier ${i.tier}</span>
-                <div class="icon-container">${i.icon}</div>
-                <span class="name">${i.name}</span>
-                <span class="desc">${i.tier === 5 ? 'POZIOM MAKS' : 'Cel: ' + i.req + i.unit}</span>
-                
-                <div class="progress-container">
-                    <div class="progress-bar" style="width: ${i.percent}%"></div>
-                </div>
-                <span class="perc-text">${Math.floor(i.percent)}%</span>
-            </div>
-        `).join('');
+        grid.innerHTML = config.map(c => {
+            const p = calcProgress(c.val, c.lv);
+            return `
+                <div class="trophy-card ${p.tier > 0 ? 'unlocked' : 'locked'} ${p.tier === 5 ? 'max-tier' : ''}">
+                    <span class="tier-label tier${p.tier}">Tier ${p.tier}</span>
+                    <div class="icon-container">${c.icon}</div>
+                    <span class="name">${c.names[p.tier]}</span>
+                    <span class="desc">${p.tier === 5 ? 'MAX' : 'Cel: ' + p.nextVal + c.unit}</span>
+                    <div class="progress-container"><div class="progress-bar" style="width: ${p.percent}%"></div></div>
+                    <span class="perc-text">${Math.floor(p.percent)}%</span>
+                </div>`;
+        }).join('');
     </script>
 </body>
 </html>
