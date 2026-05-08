@@ -5,98 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historia - NeoRun</title>
     <style>
-        :root { --neon: #00ff88; --dark: #121212; }
-        body { background: var(--dark); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; margin: 0; }
-        
-        .header { text-align: center; margin-bottom: 20px; }
-        h2 { color: var(--neon); letter-spacing: 2px; text-transform: uppercase; }
-        
-        .run-card { 
-            background: #1e1e1e; 
-            padding: 20px; 
-            border-radius: 15px; 
-            margin-bottom: 20px; 
-            border: 1px solid #333;
-            line-height: 1.6;
-            position: relative;
-        }
-
-        /* Stylizacja tekstu raportu */
-        .report-line { display: block; margin-bottom: 5px; font-size: 15px; }
-        .report-header { color: var(--neon); font-weight: bold; margin-bottom: 10px; display: block; }
-
-        .btn-share { 
-            background: var(--neon); 
-            color: black; 
-            border: none; 
-            padding: 10px; 
-            width: 100%; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            margin-top: 15px;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-size: 12px;
-        }
-
-        .btn-back { background: #333; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; display: inline-block; margin-bottom: 20px; font-size: 14px; }
-        
-        .toast { 
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: var(--neon); color: black; padding: 10px 20px; 
-            border-radius: 20px; font-weight: bold; display: none; z-index: 100;
-        }
+        body { background: #000; color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .btn-back { background: #1a1a1a; color: white; padding: 12px; border-radius: 12px; text-decoration: none; border: 1px solid #333; display: inline-block; margin-bottom: 20px; }
+        .run-item { background: #111; padding: 15px; border-radius: 15px; margin-bottom: 10px; border-left: 4px solid #00ff88; display: flex; justify-content: space-between; align-items: center; }
+        .run-dist { font-size: 1.2rem; font-weight: bold; color: #00ff88; }
+        .run-date { color: #666; font-size: 0.9rem; }
     </style>
 </head>
 <body>
-    <div id="toast" class="toast">Skopiowano raport! 🏃‍♂️</div>
     <a href="index.html" class="btn-back">← POWRÓT</a>
-    
-    <div class="header">
-        <h2>Twoja Historia</h2>
-    </div>
-
-    <div id="list"></div>
+    <h2>HISTORIA AKTYWNOŚCI</h2>
+    <div id="history-list"></div>
 
     <script>
         const history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
-        const container = document.getElementById('list');
+        const list = document.getElementById('history-list');
         
-        // Obliczanie poziomu ogólnego
-        let totalDistAll = 0;
-        history.forEach(r => totalDistAll += parseFloat(r.dist));
-        const currentLevel = Math.floor((totalDistAll * 100) / 1000) + 1;
-
         if(history.length === 0) {
-            container.innerHTML = "<p style='text-align:center; color:#666;'>Brak zapisanych biegów. Ruszaj na trening!</p>";
+            list.innerHTML = '<p style="color:#444">Brak biegów. Czas zacząć!</p>';
         } else {
-            container.innerHTML = history.map(run => {
-                const dateOnly = run.date.split(',')[0];
-                const reportText = `🏃‍♂️ Mój trening w NeoRun (${dateOnly}):\n🏁 Dystans: ${run.dist} km\n⏱ Czas: ${run.time}\n⚡ Tempo: ${run.pace} min/km\n🏆 Poziom: ${currentLevel}`;
-                
-                return `
-                <div class="run-card">
-                    <span class="report-header">🏃‍♂️ Mój trening w NeoRun (${dateOnly}):</span>
-                    <span class="report-line">🏁 Dystans: <b>${run.dist} km</b></span>
-                    <span class="report-line">⏱ Czas: <b>${run.time}</b></span>
-                    <span class="report-line">⚡ Tempo: <b>${run.pace} min/km</b></span>
-                    <span class="report-line">🏆 Poziom: <b>${currentLevel}</b></span>
-                    
-                    <button class="btn-share" onclick="copyReport(\`${reportText}\`)">
-                        KOPIUJ RAPORT DO SCHOWKA 📋
-                    </button>
+            list.innerHTML = history.reverse().map(run => `
+                <div class="run-item">
+                    <div>
+                        <div class="run-dist">${run.dist} km</div>
+                        <div class="run-date">${run.date}</div>
+                    </div>
+                    <div style="color:#333">🏃‍♂️</div>
                 </div>
-                `;
-            }).join('');
-        }
-
-        function copyReport(text) {
-            const finalDoc = text + "\n\n#NeoRun #Bieganie";
-            navigator.clipboard.writeText(finalDoc).then(() => {
-                const toast = document.getElementById('toast');
-                toast.style.display = 'block';
-                setTimeout(() => toast.style.display = 'none', 2000);
-            });
+            `).join('');
         }
     </script>
 </body>
