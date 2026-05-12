@@ -3,202 +3,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GymRank - Twój Poziom Siły</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <title>GymRank Pro - Twoja Sylwetka</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #00f2fe;
-            --secondary: #4facfe;
-            --bg: #0f172a;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --text: #f8fafc;
+            --primary: #00ff88;
+            --secondary: #60efff;
+            --bg: #050505;
+            --card: #111;
+            --accent: #ff0055;
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
-            background: radial-gradient(circle at top right, #1e293b, #0f172a);
-            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: white;
             margin: 0;
             display: flex;
             justify-content: center;
-            align-items: center;
-            min-height: 100vh;
             padding: 20px;
         }
 
-        .container {
-            background: var(--card-bg);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 40px;
+        .app-container {
             width: 100%;
-            max-width: 500px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            text-align: center;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
         }
 
-        h1 { font-weight: 800; letter-spacing: -1px; margin-bottom: 5px; }
-        p.subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 30px; }
+        @media (max-width: 768px) {
+            .app-container { grid-template-columns: 1fr; }
+        }
 
-        .input-group {
+        .card {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 30px;
+            border: 1px solid #222;
+        }
+
+        h2 { margin-top: 0; font-weight: 900; text-transform: uppercase; color: var(--primary); }
+
+        .input-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
-            margin-bottom: 25px;
         }
 
-        .field { text-align: left; }
-        label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--secondary); font-weight: 600; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 5px; color: #888; }
         
         input {
             width: 100%;
+            background: #1a1a1a;
+            border: 2px solid #333;
             padding: 12px;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             color: white;
-            font-size: 1rem;
+            font-weight: bold;
             box-sizing: border-box;
-            transition: 0.3s;
         }
 
-        input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 10px rgba(0, 242, 254, 0.3); }
+        input:focus { border-color: var(--primary); outline: none; }
 
-        /* Ludzik SVG */
-        .avatar-container {
-            margin: 20px 0;
-            height: 120px;
+        /* WIZUALIZACJA LUDZIKA */
+        .visual-box {
             display: flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
+            position: sticky;
+            top: 20px;
+            height: fit-content;
         }
 
-        #gym-character {
-            width: 100px;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        #avatar-svg {
+            width: 250px;
+            filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.2));
         }
 
-        /* Wyniki */
-        .result-card {
-            background: linear-gradient(135deg, var(--secondary), var(--primary));
-            padding: 20px;
-            border-radius: 16px;
+        .rank-badge {
             margin-top: 20px;
-            color: #0f172a;
+            padding: 15px 30px;
+            border-radius: 50px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: black;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
         }
 
-        .rank-name { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; }
-        .score { font-size: 0.9rem; opacity: 0.8; font-weight: 600; }
-
-        .progress-bar {
-            background: rgba(0, 0, 0, 0.1);
-            height: 8px;
-            border-radius: 4px;
-            margin-top: 10px;
-            overflow: hidden;
+        .stats-summary {
+            margin-top: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
         }
 
-        #progress-fill {
-            background: #0f172a;
-            height: 100%;
-            width: 0%;
-            transition: 1s ease-out;
-        }
-
-        .ranking-preview {
-            margin-top: 30px;
+        .ranking-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
             font-size: 0.8rem;
-            color: #94a3b8;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 20px;
         }
+        .ranking-table th { color: var(--primary); text-align: left; padding: 5px; border-bottom: 1px solid #333; }
+        .ranking-table td { padding: 8px 5px; border-bottom: 1px solid #1a1a1a; }
+        .user-row { background: rgba(0, 255, 136, 0.1); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>GymRank</h1>
-    <p class="subtitle">Przelicz swoją siłę na rangę</p>
-
-    <div class="avatar-container">
-        <!-- Prosty ludzik SVG, który "rośnie" wraz z siłą -->
-        <svg id="gym-character" viewBox="0 0 100 100">
-            <circle cx="50" cy="20" r="10" fill="white"/> <!-- Głowa -->
-            <rect id="body" x="40" y="32" width="20" height="40" rx="5" fill="white"/> <!-- Tułów -->
-            <path d="M30 40 L40 35 M60 35 L70 40" stroke="white" stroke-width="4" stroke-linecap="round"/> <!-- Ramiona -->
-            <path d="M45 72 L40 90 M55 72 L60 90" stroke="white" stroke-width="4" stroke-linecap="round"/> <!-- Nogi -->
-        </svg>
-    </div>
-
-    <div class="input-group">
-        <div class="field">
-            <label>Waga ciała (kg)</label>
-            <input type="number" id="weight" placeholder="np. 80" oninput="calculate()">
+<div class="app-container">
+    <!-- LEWA KOLUMNA: DANE -->
+    <div class="card">
+        <h2>Twoje Rekordy</h2>
+        <div class="input-group">
+            <label>Twoja Waga (kg)</label>
+            <input type="number" id="userWeight" value="80" oninput="updateAll()">
         </div>
-        <div class="field">
-            <label>Wyciskanie (kg)</label>
-            <input type="number" id="bench" placeholder="np. 100" oninput="calculate()">
-        </div>
-    </div>
-
-    <div id="result-area" style="display: none;">
-        <div class="result-card">
-            <div id="rank-text" class="rank-name">Nowicjusz</div>
-            <div id="ratio-text" class="score">Siła: 0.0x wagi ciała</div>
-            <div class="progress-bar">
-                <div id="progress-fill"></div>
+        
+        <div class="input-grid">
+            <div class="input-group">
+                <label>Klatka (Wyciskanie)</label>
+                <input type="number" id="chest" placeholder="kg" oninput="updateAll()">
+            </div>
+            <div class="input-group">
+                <label>Plecy (Martwy ciąg)</label>
+                <input type="number" id="back" placeholder="kg" oninput="updateAll()">
+            </div>
+            <div class="input-group">
+                <label>Barki (OHP)</label>
+                <input type="number" id="shoulders" placeholder="kg" oninput="updateAll()">
+            </div>
+            <div class="input-group">
+                <label>Nogi (Przysiad)</label>
+                <input type="number" id="legs" placeholder="kg" oninput="updateAll()">
+            </div>
+            <div class="input-group">
+                <label>Biceps (Uginanie)</label>
+                <input type="number" id="biceps" placeholder="kg" oninput="updateAll()">
+            </div>
+            <div class="input-group">
+                <label>Triceps (Dipsy/+kg)</label>
+                <input type="number" id="triceps" placeholder="kg" oninput="updateAll()">
             </div>
         </div>
-        <div class="ranking-preview">
-            Twój wynik punktowy: <span id="points">0</span> pkt
+
+        <h3>Ranking Twojej Kat. Wagowej</h3>
+        <table class="ranking-table">
+            <thead>
+                <tr>
+                    <th>Poz.</th>
+                    <th>Zawodnik</th>
+                    <th>Wynik (Ratio)</th>
+                </tr>
+            </thead>
+            <tbody id="ranking-body">
+                <!-- Generowane przez JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PRAWA KOLUMNA: LUDZIK I RANGA -->
+    <div class="card visual-box">
+        <svg id="avatar-svg" viewBox="0 0 200 200">
+            <!-- Głowa -->
+            <circle cx="100" cy="30" r="15" fill="white" />
+            <!-- Klatka -->
+            <rect id="svg-chest" x="75" y="48" width="50" height="40" rx="10" fill="#333" stroke="white" />
+            <!-- Barki -->
+            <circle id="svg-shoulder-l" cx="70" cy="55" r="8" fill="white" />
+            <circle id="svg-shoulder-r" cx="130" cy="55" r="8" fill="white" />
+            <!-- Biceps -->
+            <ellipse id="svg-biceps-l" cx="60" cy="75" rx="7" ry="10" fill="white" />
+            <ellipse id="svg-biceps-r" cx="140" cy="75" rx="7" ry="10" fill="white" />
+            <!-- Nogi -->
+            <rect id="svg-leg-l" x="80" y="90" width="15" height="50" rx="5" fill="white" />
+            <rect id="svg-leg-r" x="105" y="90" width="15" height="50" rx="5" fill="white" />
+        </svg>
+
+        <div id="rank-display" class="rank-badge">Brak Danych</div>
+        <div class="stats-summary">
+            Średni mnożnik siły: <span id="avg-ratio">0.00</span>x
         </div>
     </div>
 </div>
 
 <script>
-    const ranks = [
-        "Kanapowiec", "Początkujący", "Adept", "Siłacz", "Atleta", 
-        "Bestia", "Półbóg", "Tytan", "Hercules", "Legenda"
+    const ranks = ["Start", "Amator", "Regularny", "Siłacz", "Atleta", "Kulturysta", "Dzik", "Tytan", "Elita", "Legenda"];
+
+    // Przykładowe dane do rankingu (statyczne dla demo)
+    const mockRanking = [
+        {name: "Pudzian Junior", ratio: 2.8},
+        {name: "Marek_Kulturysta", ratio: 2.5},
+        {name: "Siłowy_Świr", ratio: 2.1},
+        {name: "Ty (Obliczanie...)", ratio: 0, isUser: true}
     ];
 
-    function calculate() {
-        const weight = parseFloat(document.getElementById('weight').value);
-        const bench = parseFloat(document.getElementById('bench').value);
-        const resultArea = document.getElementById('result-area');
-        const character = document.getElementById('gym-character');
-        const body = document.getElementById('body');
+    function updateAll() {
+        const weight = parseFloat(document.getElementById('userWeight').value) || 1;
+        
+        // Pobieranie wartości
+        const chest = parseFloat(document.getElementById('chest').value) || 0;
+        const back = parseFloat(document.getElementById('back').value) || 0;
+        const shoulders = parseFloat(document.getElementById('shoulders').value) || 0;
+        const legs = parseFloat(document.getElementById('legs').value) || 0;
+        const biceps = parseFloat(document.getElementById('biceps').value) || 0;
+        const triceps = parseFloat(document.getElementById('triceps').value) || 0;
 
-        if (weight > 20 && bench > 0) {
-            resultArea.style.display = 'block';
-            
-            // Logika obliczeń (ratio = kg wyciskane / waga)
-            const ratio = bench / weight;
-            const points = Math.round(ratio * 100);
-            
-            // Wybór rangi (1-10)
-            // Zakładamy, że ratio 2.0 (2x masa ciała) to już poziom elitarny (Rank 10)
-            let rankIndex = Math.floor(ratio * 5); 
-            if (rankIndex > 9) rankIndex = 9;
-            if (rankIndex < 0) rankIndex = 0;
+        // Obliczanie ratio dla każdej partii
+        const rChest = chest / weight;
+        const rBack = back / weight;
+        const rShoulders = shoulders / weight;
+        const rLegs = legs / weight;
+        const rBiceps = biceps / (weight * 0.5); // Biceps liczymy inaczej bo mniejszy ciężar
 
-            // Aktualizacja UI
-            document.getElementById('rank-text').innerText = ranks[rankIndex];
-            document.getElementById('ratio-text').innerText = `Siła: ${ratio.toFixed(2)}x wagi ciała`;
-            document.getElementById('points').innerText = points;
-            
-            // Pasek postępu (do następnej rangi)
-            const progress = (ratio / 2.0) * 100;
-            document.getElementById('progress-fill').style.width = Math.min(progress, 100) + "%";
+        const avgRatio = (rChest + rBack + rShoulders + rLegs) / 4;
 
-            // Animacja ludzika - staje się szerszy gdy rośnie siła
-            const scale = 1 + (ratio * 0.2);
-            character.style.transform = `scale(${Math.min(scale, 1.5)})`;
-            body.setAttribute('width', 20 + (ratio * 5));
-            body.setAttribute('x', 40 - (ratio * 2.5));
-        } else {
-            resultArea.style.display = 'none';
-        }
+        // Manipulacja ludzikiem SVG
+        document.getElementById('svg-chest').style.fill = `rgb(${rChest*100}, 255, 136)`;
+        document.getElementById('svg-chest').setAttribute('width', 50 + (rChest * 15));
+        document.getElementById('svg-chest').setAttribute('x', 100 - (25 + (rChest * 7.5)));
+        
+        document.getElementById('svg-shoulder-l').setAttribute('r', 8 + (rShoulders * 5));
+        document.getElementById('svg-shoulder-r').setAttribute('r', 8 + (rShoulders * 5));
+        
+        document.getElementById('svg-biceps-l').setAttribute('rx', 7 + (rBiceps * 8));
+        document.getElementById('svg-biceps-r').setAttribute('rx', 7 + (rBiceps * 8));
+        
+        document.getElementById('svg-leg-l').setAttribute('width', 15 + (rLegs * 10));
+        document.getElementById('svg-leg-r').setAttribute('width', 15 + (rLegs * 10));
+
+        // Ranga
+        let rankIdx = Math.floor(avgRatio * 3.5);
+        if(rankIdx > 9) rankIdx = 9;
+        if(rankIdx < 0) rankIdx = 0;
+        
+        document.getElementById('rank-display').innerText = ranks[rankIdx];
+        document.getElementById('avg-ratio').innerText = avgRatio.toFixed(2);
+
+        renderRanking(avgRatio);
     }
+
+    function renderRanking(userRatio) {
+        const tbody = document.getElementById('ranking-body');
+        const data = [...mockRanking];
+        data[3].ratio = userRatio;
+        data.sort((a, b) => b.ratio - a.ratio);
+
+        tbody.innerHTML = data.map((player, index) => `
+            <tr class="${player.isUser ? 'user-row' : ''}">
+                <td>${index + 1}</td>
+                <td>${player.isUser ? 'TY' : player.name}</td>
+                <td>${player.ratio.toFixed(2)}x</td>
+            </tr>
+        `).join('');
+    }
+
+    // Inicjalizacja rankingu na start
+    renderRanking(0);
 </script>
 
 </body>
