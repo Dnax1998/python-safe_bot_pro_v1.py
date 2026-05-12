@@ -2,47 +2,204 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NeoRun</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#00ff88">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymRank - Twój Poziom Siły</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00ff88; --dark: #000; }
-        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; text-align: center; }
-        .hero { padding: 40px 20px; background: linear-gradient(to bottom, #111, #000); }
-        h1 { color: var(--neon); letter-spacing: 5px; font-size: 2.5rem; margin: 0; }
-        .menu { display: grid; gap: 15px; padding: 20px; grid-template-columns: 1fr 1fr; }
-        .nav-btn { 
-            background: #111; color: white; padding: 20px 10px; border-radius: 20px; 
-            text-decoration: none; border: 1px solid #222; font-weight: bold; font-size: 0.9rem;
-            transition: 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        :root {
+            --primary: #00f2fe;
+            --secondary: #4facfe;
+            --bg: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text: #f8fafc;
         }
-        .nav-btn.main { grid-column: span 2; border-color: var(--neon); color: var(--neon); font-size: 1.4rem; padding: 30px; }
-        .nav-btn:active { transform: scale(0.95); background: #1a1a1a; }
-        .icon { font-size: 1.5rem; margin-bottom: 5px; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        h1 { font-weight: 800; letter-spacing: -1px; margin-bottom: 5px; }
+        p.subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 30px; }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .field { text-align: left; }
+        label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--secondary); font-weight: 600; }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+
+        input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 10px rgba(0, 242, 254, 0.3); }
+
+        /* Ludzik SVG */
+        .avatar-container {
+            margin: 20px 0;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #gym-character {
+            width: 100px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Wyniki */
+        .result-card {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            padding: 20px;
+            border-radius: 16px;
+            margin-top: 20px;
+            color: #0f172a;
+        }
+
+        .rank-name { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; }
+        .score { font-size: 0.9rem; opacity: 0.8; font-weight: 600; }
+
+        .progress-bar {
+            background: rgba(0, 0, 0, 0.1);
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        #progress-fill {
+            background: #0f172a;
+            height: 100%;
+            width: 0%;
+            transition: 1s ease-out;
+        }
+
+        .ranking-preview {
+            margin-top: 30px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <div class="hero">
-        <h1>NEORUN</h1>
-        <p style="color: #666; font-size: 0.8rem;">SYSTEM EWOLUCJI V1.0</p>
-    </div>
-    <div class="menu">
-        <a href="run.html" class="nav-btn main"><span class="icon">🏃‍♂️</span>START RUN</a>
-        <a href="achievements.html" class="nav-btn"><span class="icon">🛡️</span>GABLOTA</a>
-        <a href="history.html" class="nav-btn"><span class="icon">📜</span>HISTORIA</a>
-        <a href="player.html" class="nav-btn"><span class="icon">🎵</span>MUZYKA</a>
-        <a href="profile.html" class="nav-btn"><span class="icon">👤</span>PROFIL</a>
-        <a href="shop.html" class="nav-btn"><span class="icon">🛒</span>SKLEP</a>
+
+<div class="container">
+    <h1>GymRank</h1>
+    <p class="subtitle">Przelicz swoją siłę na rangę</p>
+
+    <div class="avatar-container">
+        <!-- Prosty ludzik SVG, który "rośnie" wraz z siłą -->
+        <svg id="gym-character" viewBox="0 0 100 100">
+            <circle cx="50" cy="20" r="10" fill="white"/> <!-- Głowa -->
+            <rect id="body" x="40" y="32" width="20" height="40" rx="5" fill="white"/> <!-- Tułów -->
+            <path d="M30 40 L40 35 M60 35 L70 40" stroke="white" stroke-width="4" stroke-linecap="round"/> <!-- Ramiona -->
+            <path d="M45 72 L40 90 M55 72 L60 90" stroke="white" stroke-width="4" stroke-linecap="round"/> <!-- Nogi -->
+        </svg>
     </div>
 
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js');
-            });
+    <div class="input-group">
+        <div class="field">
+            <label>Waga ciała (kg)</label>
+            <input type="number" id="weight" placeholder="np. 80" oninput="calculate()">
+        </div>
+        <div class="field">
+            <label>Wyciskanie (kg)</label>
+            <input type="number" id="bench" placeholder="np. 100" oninput="calculate()">
+        </div>
+    </div>
+
+    <div id="result-area" style="display: none;">
+        <div class="result-card">
+            <div id="rank-text" class="rank-name">Nowicjusz</div>
+            <div id="ratio-text" class="score">Siła: 0.0x wagi ciała</div>
+            <div class="progress-bar">
+                <div id="progress-fill"></div>
+            </div>
+        </div>
+        <div class="ranking-preview">
+            Twój wynik punktowy: <span id="points">0</span> pkt
+        </div>
+    </div>
+</div>
+
+<script>
+    const ranks = [
+        "Kanapowiec", "Początkujący", "Adept", "Siłacz", "Atleta", 
+        "Bestia", "Półbóg", "Tytan", "Hercules", "Legenda"
+    ];
+
+    function calculate() {
+        const weight = parseFloat(document.getElementById('weight').value);
+        const bench = parseFloat(document.getElementById('bench').value);
+        const resultArea = document.getElementById('result-area');
+        const character = document.getElementById('gym-character');
+        const body = document.getElementById('body');
+
+        if (weight > 20 && bench > 0) {
+            resultArea.style.display = 'block';
+            
+            // Logika obliczeń (ratio = kg wyciskane / waga)
+            const ratio = bench / weight;
+            const points = Math.round(ratio * 100);
+            
+            // Wybór rangi (1-10)
+            // Zakładamy, że ratio 2.0 (2x masa ciała) to już poziom elitarny (Rank 10)
+            let rankIndex = Math.floor(ratio * 5); 
+            if (rankIndex > 9) rankIndex = 9;
+            if (rankIndex < 0) rankIndex = 0;
+
+            // Aktualizacja UI
+            document.getElementById('rank-text').innerText = ranks[rankIndex];
+            document.getElementById('ratio-text').innerText = `Siła: ${ratio.toFixed(2)}x wagi ciała`;
+            document.getElementById('points').innerText = points;
+            
+            // Pasek postępu (do następnej rangi)
+            const progress = (ratio / 2.0) * 100;
+            document.getElementById('progress-fill').style.width = Math.min(progress, 100) + "%";
+
+            // Animacja ludzika - staje się szerszy gdy rośnie siła
+            const scale = 1 + (ratio * 0.2);
+            character.style.transform = `scale(${Math.min(scale, 1.5)})`;
+            body.setAttribute('width', 20 + (ratio * 5));
+            body.setAttribute('x', 40 - (ratio * 2.5));
+        } else {
+            resultArea.style.display = 'none';
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>
