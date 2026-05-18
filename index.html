@@ -1,256 +1,1365 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="pl" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexusHub - Twoje Centrum Dowodzenia</title>
-    <!-- Tailwind CSS dla genialnego i szybkiego stylowania -->
+    <title>NexusHub Ultimate Workspace</title>
+    <!-- Tailwind CSS dla nowoczesnego designu -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Ikony Lucide dla nowoczesnego wyglądu -->
+    <!-- Ikony Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js do interaktywnej analityki -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            950: '#030712',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #090d16;
+        }
+        /* Płynne przewijanie i customowy scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5;
+        }
+        /* Efekt szklanej tafli (Glassmorphism) */
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        /* Animacje dla przejść między zakładkami */
+        .tab-content {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen flex">
+<body class="text-slate-100 min-h-screen flex flex-col md:flex-row overflow-x-hidden">
 
     <!-- 1. BOCZNE MENU (SIDEBAR) -->
-    <aside class="w-64 bg-gray-950 border-r border-gray-800 p-6 flex flex-col justify-between hidden md:flex">
-        <div>
-            <div class="flex items-center gap-3 mb-10">
-                <div class="bg-indigo-600 p-2 rounded-xl text-white">
-                    <i data-lucide="layers"></i>
+    <aside class="w-full md:w-64 bg-slate-950 border-b md:border-b-0 md:border-r border-slate-800/60 p-5 flex flex-col justify-between shrink-0 z-20">
+        <div class="flex flex-col h-full">
+            <!-- Logo -->
+            <div class="flex items-center gap-3 mb-8 justify-between md:justify-start">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-tr from-indigo-500 to-fuchsia-500 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/25">
+                        <i data-lucide="layout" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-lg font-extrabold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">NEXUSHUB</span>
+                        <span class="block text-[9px] text-slate-500 font-bold uppercase tracking-widest">PRO WORKSPACE</span>
+                    </div>
                 </div>
-                <span class="text-xl font-bold tracking-wider bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">NEXUSHUB</span>
+                <!-- Przycisk mobilny -->
+                <button class="md:hidden p-2 text-slate-400 hover:text-white" onclick="toggleMobileMenu()">
+                    <i data-lucide="menu" id="menu-icon"></i>
+                </button>
             </div>
             
-            <nav class="space-y-2">
-                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-600 text-white font-medium transition-all text-left">
-                    <i data-lucide="layout-dashboard"></i> Panel Główny
+            <!-- Nawigacja główna -->
+            <nav id="nav-links" class="hidden md:flex flex-col gap-1.5 flex-1">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl bg-indigo-600 text-white font-semibold transition-all text-left group">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Panel Główny
+                    </span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 opacity-60"></i>
                 </button>
-                <button onclick="switchTab('tasks')" id="btn-tasks" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-gray-900 hover:text-white transition-all text-left">
-                    <i data-lucide="check-square"></i> Zadania (Kanban)
+                <button onclick="switchTab('tasks')" id="btn-tasks" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="trello" class="w-5 h-5"></i> Kanban Zadania
+                    </span>
+                    <span id="badge-tasks" class="bg-indigo-500/10 text-indigo-400 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
                 </button>
-                <button onclick="switchTab('analytics')" id="btn-analytics" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-gray-900 hover:text-white transition-all text-left">
-                    <i data-lucide="bar-chart-2"></i> Analityka
+                <button onclick="switchTab('notes')" id="btn-notes" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="sticky-note" class="w-5 h-5"></i> Notatnik Live
+                    </span>
+                    <span id="badge-notes" class="bg-fuchsia-500/10 text-fuchsia-400 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </button>
+                <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="calendar" class="w-5 h-5"></i> Kalendarz dnia
+                    </span>
+                </button>
+                <button onclick="switchTab('pomodoro')" id="btn-pomodoro" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="timer" class="w-5 h-5"></i> Pomodoro Timer
+                    </span>
                 </button>
             </nav>
         </div>
         
-        <div class="border-t border-gray-800 pt-4 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white">
-                U
+        <!-- Stopka profilu -->
+        <div class="hidden md:flex border-t border-slate-800/60 pt-4 items-center justify-between mt-auto">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-500/10">
+                        PL
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-950 rounded-full"></span>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-slate-200">User Developer</p>
+                    <p class="text-xs text-slate-500">Premium Account</p>
+                </div>
             </div>
-            <div>
-                <p class="text-sm font-medium">User Testowy</p>
-                <p class="text-xs text-gray-500">Konto Premium</p>
-            </div>
+            <button onclick="resetAllData()" class="p-2 text-slate-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-all" title="Resetuj wszystkie dane aplikacji">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
         </div>
     </aside>
 
     <!-- 2. GŁÓWNA TREŚĆ -->
     <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <!-- Pasek górny -->
-        <header class="h-16 border-b border-gray-800 flex items-center justify-between px-8 bg-gray-900/50 backdrop-blur-md sticky top-0 z-10">
-            <h1 id="page-title" class="text-xl font-semibold">Panel Główny</h1>
+        <!-- Pasek górny (Top Header) -->
+        <header class="h-16 border-b border-slate-800/60 flex items-center justify-between px-6 md:px-8 bg-slate-950/40 backdrop-blur-md sticky top-0 z-10 shrink-0">
             <div class="flex items-center gap-4">
-                <button class="p-2 text-gray-400 hover:text-white relative bg-gray-850 rounded-lg border border-gray-800">
-                    <i data-lucide="bell"></i>
-                    <span class="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full"></span>
-                </button>
-                <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Nowy Projekt
+                <h1 id="page-title" class="text-lg md:text-xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Panel Główny</h1>
+                <span id="live-clock" class="hidden md:inline text-xs text-slate-500 font-medium bg-slate-900 border border-slate-850 px-2.5 py-1 rounded-full"></span>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="p-2 text-slate-400 hover:text-white bg-slate-900 border border-slate-800/60 rounded-xl relative transition-all">
+                        <i data-lucide="bell" class="w-4 h-4"></i>
+                        <span id="notif-badge" class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full hidden"></span>
+                    </button>
+                    <!-- Powiadomienia Dropdown -->
+                    <div id="notif-dropdown" class="absolute right-0 mt-2 w-80 glass rounded-xl border border-slate-800 p-4 shadow-2xl hidden z-50">
+                        <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Powiadomienia</span>
+                            <button onclick="clearNotifications()" class="text-[10px] text-indigo-400 hover:underline">Wyczyść</button>
+                        </div>
+                        <div id="notif-list" class="space-y-2 max-h-60 overflow-y-auto text-xs text-slate-400">
+                            <p class="text-center py-4 text-slate-500">Brak nowych powiadomień.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="openQuickTaskModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95">
+                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Nowe Zadanie</span>
                 </button>
             </div>
         </header>
 
-        <!-- Dynamiczne sekcje -->
-        <div class="p-8 max-w-7xl w-full mx-auto">
+        <!-- Dynamiczny kontener na sekcje (Tabs) -->
+        <div class="p-6 md:p-8 max-w-7xl w-full mx-auto flex-1">
             
-            <!-- ZAKŁADKA: PANEL GŁÓWNY -->
-            <section id="tab-dashboard" class="space-y-8">
-                <!-- Statystyki -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-gray-950 p-6 rounded-2xl border border-gray-800 shadow-sm">
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="text-gray-400 text-sm font-medium">Ukończone Zadania</span>
-                            <div class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
-                        </div>
-                        <h3 class="text-3xl font-bold">24 / 30</h3>
-                        <p class="text-xs text-emerald-400 mt-2">↑ 12% więcej niż w zeszłym tygodniu</p>
+            <!-- SECTION A: DASHBOARD -->
+            <section id="tab-dashboard" class="tab-content space-y-6">
+                <!-- Witacz & Podsumowanie -->
+                <div class="p-6 md:p-8 rounded-2xl bg-gradient-to-r from-indigo-950/60 via-purple-950/20 to-slate-950 border border-indigo-500/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-white">Witaj ponownie, User! 👋</h2>
+                        <p class="text-slate-400 text-sm mt-1">Oto podsumowanie Twoich dzisiejszych celów i produktywności.</p>
                     </div>
-                    <div class="bg-gray-950 p-6 rounded-2xl border border-gray-800 shadow-sm">
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="text-gray-400 text-sm font-medium">Czas w tym tygodniu</span>
-                            <div class="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg"><i data-lucide="clock" class="w-5 h-5"></i></div>
-                        </div>
-                        <h3 class="text-3xl font-bold">38.5 godz.</h3>
-                        <p class="text-xs text-gray-500 mt-2">Cel: 40 godzin</p>
-                    </div>
-                    <div class="bg-gray-950 p-6 rounded-2xl border border-gray-800 shadow-sm">
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="text-gray-400 text-sm font-medium">Aktywne Projekty</span>
-                            <div class="p-2 bg-purple-500/10 text-purple-400 rounded-lg"><i data-lucide="folder" class="w-5 h-5"></i></div>
-                        </div>
-                        <h3 class="text-3xl font-bold">7</h3>
-                        <p class="text-xs text-purple-400 mt-2">2 projekty blisko deadline'u</p>
+                    <div class="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-4 py-2.5 rounded-xl">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
+                        <span id="dashboard-status-text" class="text-xs font-semibold text-indigo-300">Wszystko pod kontrolą!</span>
                     </div>
                 </div>
 
-                <!-- Lista Najnowszych Aktywności -->
-                <div class="bg-gray-950 rounded-2xl border border-gray-800 p-6">
-                    <h3 class="text-lg font-semibold mb-4">Ostatnia aktywność</h3>
-                    <div class="divide-y divide-gray-800">
-                        <div class="py-3 flex justify-between items-center">
-                            <div class="flex items-center gap-3">
-                                <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
-                                <p class="text-sm font-medium">Zaktualizowano design strony głównej</p>
-                            </div>
-                            <span class="text-xs text-gray-500">2 min temu</span>
+                <!-- Liczniki (KPI) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Wszystkie Zadania</span>
+                            <h3 id="stat-total-tasks" class="text-2xl font-bold mt-1 text-white">0</h3>
+                            <span class="text-[10px] text-slate-500 block mt-1">Aktywne w bazie danych</span>
                         </div>
-                        <div class="py-3 flex justify-between items-center">
-                            <div class="flex items-center gap-3">
-                                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                <p class="text-sm font-medium">Dodano nowe zadanie do tablicy Kanban</p>
+                        <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl"><i data-lucide="list-todo" class="w-6 h-6"></i></div>
+                    </div>
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Ukończone</span>
+                            <h3 id="stat-done-tasks" class="text-2xl font-bold mt-1 text-emerald-400">0</h3>
+                            <span id="stat-done-percentage" class="text-[10px] text-emerald-500 font-semibold block mt-1">0% ukończenia</span>
+                        </div>
+                        <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl"><i data-lucide="check-circle" class="w-6 h-6"></i></div>
+                    </div>
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Aktywne Notatki</span>
+                            <h3 id="stat-total-notes" class="text-2xl font-bold mt-1 text-fuchsia-400">0</h3>
+                            <span class="text-[10px] text-slate-500 block mt-1">Zapisane pomysły i szkice</span>
+                        </div>
+                        <div class="p-3 bg-fuchsia-500/10 text-fuchsia-400 rounded-xl"><i data-lucide="book-open" class="w-6 h-6"></i></div>
+                    </div>
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Sesje Pomodoro</span>
+                            <h3 id="stat-pomodoros" class="text-2xl font-bold mt-1 text-rose-400">0</h3>
+                            <span class="text-[10px] text-slate-500 block mt-1">Zrealizowane interwały skupienia</span>
+                        </div>
+                        <div class="p-3 bg-rose-500/10 text-rose-400 rounded-xl"><i data-lucide="flame" class="w-6 h-6"></i></div>
+                    </div>
+                </div>
+
+                <!-- Wykresy i Ostatnie zadania (Grid) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Wykres podziału zadań -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 lg:col-span-2 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Statystyki Zadań & Katedry</h4>
+                            <span class="text-xs text-slate-500 font-medium">Aktualizacja na żywo</span>
+                        </div>
+                        <div class="relative w-full h-64 flex items-center justify-center">
+                            <canvas id="tasksChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Nadchodzące wydarzenia z kalendarza -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 flex flex-col h-full justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Harmonogram Dnia</h4>
+                                <button onclick="switchTab('calendar')" class="text-xs text-indigo-400 hover:underline">Zobacz wszystko</button>
                             </div>
-                            <span class="text-xs text-gray-500">1 godz. temu</span>
+                            <div id="dashboard-agenda-list" class="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                                <!-- Generowane dynamicznie -->
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- ZAKŁADKA: ZADANIA (KANBAN) -->
-            <section id="tab-tasks" class="hidden space-y-6">
-                <!-- Dodawanie zadania -->
-                <div class="flex gap-4 bg-gray-950 p-4 rounded-xl border border-gray-800">
-                    <input id="task-input" type="text" placeholder="Wpisz treść nowego zadania..." class="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
-                    <button onclick="addTask()" class="bg-indigo-600 hover:bg-indigo-700 px-6 py-2 rounded-xl text-sm font-medium transition-all">Dodaj</button>
+            <!-- SECTION B: KANBAN -->
+            <section id="tab-tasks" class="tab-content hidden space-y-6">
+                <!-- Kontrolki i Filtry -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60">
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <div class="relative flex-1 sm:flex-initial">
+                            <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-slate-500"></i>
+                            <input oninput="filterTasks(this.value)" type="text" placeholder="Szukaj zadań..." class="bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-indigo-500 w-full sm:w-64 text-slate-200">
+                        </div>
+                        <select onchange="filterPriority(this.value)" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 text-slate-200">
+                            <option value="all">Priorytet: Wszystkie</option>
+                            <option value="high">Wysoki</option>
+                            <option value="medium">Średni</option>
+                            <option value="low">Niski</option>
+                        </select>
+                    </div>
+                    <button onclick="openQuickTaskModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Dodaj nowe zadanie
+                    </button>
                 </div>
 
-                <!-- Kolumny Kanban -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Tablice Kanban -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Do zrobienia -->
-                    <div class="bg-gray-950 p-4 rounded-2xl border border-gray-800">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-semibold text-gray-300">Do zrobienia</h4>
-                            <span id="todo-count" class="bg-gray-800 text-xs px-2 py-1 rounded-md text-gray-400">2</span>
+                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/40 flex flex-col h-[600px]">
+                        <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800/40 shrink-0">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                                <h4 class="font-bold text-sm text-slate-200">Do zrobienia</h4>
+                            </div>
+                            <span id="count-todo" class="bg-slate-900 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-lg border border-slate-800/60">0</span>
                         </div>
-                        <div id="col-todo" class="space-y-3 min-h-[200px]">
-                            <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 hover:border-gray-700 transition-all cursor-pointer">
-                                <p class="text-sm font-medium mb-2">Zaprojektować bazę danych</p>
-                                <span class="text-[10px] bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded-md font-semibold uppercase">Backend</span>
-                            </div>
-                            <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 hover:border-gray-700 transition-all cursor-pointer">
-                                <p class="text-sm font-medium mb-2">Napisać regulamin aplikacji</p>
-                                <span class="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-md font-semibold uppercase">Formalności</span>
-                            </div>
+                        <div id="col-todo" ondragover="allowDrop(event)" ondrop="drop(event, 'todo')" class="flex-1 overflow-y-auto space-y-3 pb-4">
+                            <!-- Zadania generowane JS -->
                         </div>
                     </div>
+
                     <!-- W trakcie -->
-                    <div class="bg-gray-950 p-4 rounded-2xl border border-gray-800">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-semibold text-indigo-400">W trakcie</h4>
-                            <span class="bg-indigo-950 text-indigo-400 text-xs px-2 py-1 rounded-md font-medium">1</span>
-                        </div>
-                        <div id="col-progress" class="space-y-3 min-h-[200px]">
-                            <div class="bg-gray-900 p-4 rounded-xl border border-indigo-900/50 hover:border-indigo-500 transition-all cursor-pointer">
-                                <p class="text-sm font-medium mb-2">Kodowanie widoku głównego</p>
-                                <span class="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-md font-semibold uppercase">Frontend</span>
+                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/40 flex flex-col h-[600px]">
+                        <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800/40 shrink-0">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                <h4 class="font-bold text-sm text-slate-200">W trakcie</h4>
                             </div>
+                            <span id="count-progress" class="bg-slate-900 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-lg border border-slate-800/60">0</span>
+                        </div>
+                        <div id="col-progress" ondragover="allowDrop(event)" ondrop="drop(event, 'progress')" class="flex-1 overflow-y-auto space-y-3 pb-4">
+                            <!-- Zadania generowane JS -->
                         </div>
                     </div>
+
                     <!-- Zrobione -->
-                    <div class="bg-gray-950 p-4 rounded-2xl border border-gray-800">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-semibold text-emerald-400">Ukończone</h4>
-                            <span class="bg-emerald-950 text-emerald-400 text-xs px-2 py-1 rounded-md font-medium">0</span>
+                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/40 flex flex-col h-[600px]">
+                        <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800/40 shrink-0">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                <h4 class="font-bold text-sm text-slate-200">Zakończone</h4>
+                            </div>
+                            <span id="count-done" class="bg-slate-900 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-lg border border-slate-800/60">0</span>
                         </div>
-                        <div id="col-done" class="space-y-3 min-h-[200px]">
-                            <!-- Tu trafią ukończone zadania -->
+                        <div id="col-done" ondragover="allowDrop(event)" ondrop="drop(event, 'done')" class="flex-1 overflow-y-auto space-y-3 pb-4">
+                            <!-- Zadania generowane JS -->
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- ZAKŁADKA: ANALITYKA -->
-            <section id="tab-analytics" class="hidden">
-                <div class="bg-gray-950 border border-gray-800 p-8 rounded-2xl text-center max-w-md mx-auto mt-12 space-y-4">
-                    <div class="w-16 h-16 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center mx-auto">
-                        <i data-lucide="bar-chart-2" class="w-8 h-8"></i>
+            <!-- SECTION C: NOTATNIK -->
+            <section id="tab-notes" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+                    <!-- Lewy panel: Lista notatek i wyszukiwarka -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 flex flex-col h-[600px]">
+                        <div class="space-y-3 mb-4 shrink-0">
+                            <div class="relative">
+                                <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-slate-500"></i>
+                                <input id="note-search-input" oninput="filterNotes(this.value)" type="text" placeholder="Szukaj notatek..." class="bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-indigo-500 w-full text-slate-200">
+                            </div>
+                            <button onclick="createNewNote()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-4 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Nowa Notatka
+                            </button>
+                        </div>
+
+                        <!-- Lista notatek -->
+                        <div id="notes-sidebar-list" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                            <!-- Generowane przez JS -->
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold">Wykresy i Statystyki</h3>
-                    <p class="text-gray-400 text-sm">Integracja z Chart.js pozwoli wyświetlić tutaj zaawansowane wykresy kołowe i liniowe dotyczące Twojej produktywności.</p>
+
+                    <!-- Prawy panel: Edytor wybranej notatki -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 lg:col-span-2 flex flex-col h-[600px]">
+                        <div id="editor-placeholder" class="flex-1 flex flex-col items-center justify-center text-center text-slate-500 p-8 space-y-3">
+                            <div class="p-4 bg-slate-900 border border-slate-800 rounded-full text-indigo-400"><i data-lucide="edit-3" class="w-8 h-8"></i></div>
+                            <h4 class="font-bold text-slate-300">Wybierz lub utwórz notatkę</h4>
+                            <p class="text-xs max-w-xs">Zarządzaj swoimi pomysłami, szkicami lub informacjami. Zmiany zapisują się automatycznie na bieżąco.</p>
+                        </div>
+
+                        <div id="note-editor" class="flex-1 flex flex-col hidden space-y-4">
+                            <div class="flex items-center justify-between gap-4 border-b border-slate-800 pb-3">
+                                <input id="editor-note-title" oninput="saveCurrentNote()" type="text" class="bg-transparent text-lg md:text-xl font-bold focus:outline-none text-white w-full border-b border-transparent focus:border-indigo-500/30" placeholder="Bez tytułu">
+                                
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <!-- Wybór koloru -->
+                                    <div class="flex items-center gap-1.5 mr-2">
+                                        <button onclick="changeNoteColor('indigo')" class="w-5 h-5 rounded-full bg-indigo-500 ring-2 ring-offset-2 ring-offset-slate-905 ring-transparent hover:scale-110 transition-all" title="Fioletowy"></button>
+                                        <button onclick="changeNoteColor('rose')" class="w-5 h-5 rounded-full bg-rose-500 ring-2 ring-offset-2 ring-offset-slate-905 ring-transparent hover:scale-110 transition-all" title="Różowy"></button>
+                                        <button onclick="changeNoteColor('emerald')" class="w-5 h-5 rounded-full bg-emerald-500 ring-2 ring-offset-2 ring-offset-slate-905 ring-transparent hover:scale-110 transition-all" title="Zielony"></button>
+                                        <button onclick="changeNoteColor('amber')" class="w-5 h-5 rounded-full bg-amber-500 ring-2 ring-offset-2 ring-offset-slate-905 ring-transparent hover:scale-110 transition-all" title="Pomarańczowy"></button>
+                                    </div>
+                                    <button onclick="deleteCurrentNote()" class="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all" title="Usuń notatkę">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <textarea id="editor-note-content" oninput="saveCurrentNote()" class="flex-1 bg-transparent text-slate-300 focus:outline-none resize-none leading-relaxed text-sm" placeholder="Zacznij pisać tutaj..."></textarea>
+                            
+                            <div class="text-right text-[10px] text-slate-500 italic mt-auto pt-2 border-t border-slate-800">
+                                Zapisano automatycznie: <span id="editor-note-date">Nigdy</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION D: KALENDARZ -->
+            <section id="tab-calendar" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <!-- Formularz dodawania wydarzenia -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 space-y-4">
+                        <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Dodaj Wydarzenie</h4>
+                        <div class="space-y-3 text-xs">
+                            <div class="space-y-1">
+                                <label class="text-slate-400 font-semibold">Nazwa wydarzenia</label>
+                                <input id="event-title" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200" placeholder="np. Spotkanie z klientem">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-1">
+                                    <label class="text-slate-400 font-semibold">Data</label>
+                                    <input id="event-date" type="date" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-slate-400 font-semibold">Godzina</label>
+                                    <input id="event-time" type="time" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200">
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-slate-400 font-semibold">Opis (opcjonalnie)</label>
+                                <textarea id="event-desc" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 text-slate-200 h-16 resize-none" placeholder="Szczegóły..."></textarea>
+                            </div>
+                            <button onclick="addCalendarEvent()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all">
+                                Zapisz w harmonogramie
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Agenda / Nadchodzące wydarzenia -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 lg:col-span-2 space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-800/80">
+                            <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Lista Wydarzeń Chronologicznie</h4>
+                            <span class="text-xs text-slate-500">Auto-sortowanie po dacie</span>
+                        </div>
+                        
+                        <div id="full-calendar-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                            <!-- Generowane przez JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION E: POMODORO -->
+            <section id="tab-pomodoro" class="tab-content hidden flex items-center justify-center">
+                <div class="glass p-8 rounded-3xl border border-slate-800/60 text-center max-w-md w-full space-y-8 py-10 relative overflow-hidden">
+                    <div class="absolute -top-10 -left-10 w-40 h-40 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <!-- Selektor Praca / Przerwa -->
+                    <div class="flex items-center justify-center gap-2 bg-slate-900 border border-slate-800 p-1.5 rounded-2xl max-w-xs mx-auto text-xs font-semibold relative z-10">
+                        <button id="pomo-mode-work" onclick="setPomodoroMode('work')" class="flex-1 px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/25 transition-all">Praca</button>
+                        <button id="pomo-mode-break" onclick="setPomodoroMode('break')" class="flex-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white transition-all">Przerwa</button>
+                    </div>
+
+                    <!-- Okrągły Zegar (SVG Progress Ring) -->
+                    <div class="relative w-64 h-64 mx-auto flex items-center justify-center">
+                        <svg class="w-full h-full transform -rotate-90">
+                            <circle cx="128" cy="128" r="115" stroke-width="6" stroke="#1e293b" fill="transparent" />
+                            <circle id="pomo-progress-ring" cx="128" cy="128" r="115" stroke-width="8" stroke="#f43f5e" fill="transparent" 
+                                    stroke-dasharray="722" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-300" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span id="pomo-time" class="text-5xl font-extrabold tracking-tighter text-white">25:00</span>
+                            <span id="pomo-status-label" class="text-xs text-rose-400 font-bold tracking-widest uppercase mt-1">Czas na skupienie</span>
+                        </div>
+                    </div>
+
+                    <!-- Przyciski Kontroli -->
+                    <div class="flex items-center justify-center gap-4">
+                        <button onclick="resetPomodoro()" class="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                        </button>
+                        <button id="pomo-start-btn" onclick="togglePomodoro()" class="px-8 py-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-2xl shadow-lg shadow-rose-600/20 flex items-center gap-2 transition-all">
+                            <i data-lucide="play" id="pomo-start-icon"></i> <span id="pomo-start-text">Rozpocznij</span>
+                        </button>
+                        <button onclick="openTimerSettings()" class="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all">
+                            <i data-lucide="settings" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Ustawień Pomodoro (inline) -->
+                    <div id="pomo-settings-modal" class="hidden border-t border-slate-800 pt-6 mt-6 text-left space-y-4">
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400">Ustawienia Długości</h4>
+                        <div class="grid grid-cols-2 gap-4 text-xs">
+                            <div class="space-y-1">
+                                <label class="text-slate-400 font-semibold">Praca (minuty)</label>
+                                <input id="pomo-set-work" type="number" value="25" min="1" max="99" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-rose-500 text-slate-200">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-slate-400 font-semibold">Przerwa (minuty)</label>
+                                <input id="pomo-set-break" type="number" value="5" min="1" max="99" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-rose-500 text-slate-200">
+                            </div>
+                        </div>
+                        <button onclick="savePomodoroSettings()" class="w-full bg-slate-800 hover:bg-rose-600 text-white py-2 rounded-xl font-bold transition-all text-xs">
+                            Zastosuj Zmiany
+                        </button>
+                    </div>
                 </div>
             </section>
 
         </div>
     </main>
 
-    <!-- 3. SKRYPT LOGIKI (JAVASCRIPT) -->
+    <!-- ==================== MODALS ==================== -->
+    <!-- MODAL: SZYBKIE DODAWANIE ZADANIA -->
+    <div id="task-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="glass max-w-md w-full p-6 rounded-2xl border border-slate-800 shadow-2xl space-y-4 tab-content">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-lg text-white">Dodaj Nowe Zadanie</h3>
+                <button onclick="closeQuickTaskModal()" class="text-slate-500 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="space-y-3 text-xs">
+                <div class="space-y-1">
+                    <label class="text-slate-400 font-semibold">Nazwa zadania</label>
+                    <input id="modal-task-title" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200" placeholder="np. Przeprowadzić code review">
+                </div>
+                
+                <div class="space-y-1">
+                    <label class="text-slate-400 font-semibold">Opis</label>
+                    <textarea id="modal-task-desc" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 text-slate-200 h-20 resize-none" placeholder="Dodaj więcej szczegółów..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-slate-400 font-semibold">Kategoria / Tag</label>
+                        <select id="modal-task-tag" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200">
+                            <option value="Frontend">Frontend</option>
+                            <option value="Backend">Backend</option>
+                            <option value="Design">Design</option>
+                            <option value="Inne">Inne</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-slate-400 font-semibold">Priorytet</label>
+                        <select id="modal-task-priority" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200">
+                            <option value="low">Niski</option>
+                            <option value="medium">Średni</option>
+                            <option value="high">Wysoki</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button onclick="closeQuickTaskModal()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold rounded-xl text-xs">Anuluj</button>
+                <button onclick="createTaskFromModal()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs shadow-lg shadow-indigo-600/20">Dodaj Zadanie</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==================== LOGIKA JAVASCRIPT ==================== -->
     <script>
-        // Inicjalizacja ikon Lucide
-        lucide.createIcons();
+        // GLOBAL STATE
+        let state = {
+            tasks: [],
+            notes: [],
+            events: [],
+            notifications: [],
+            pomodoro: {
+                workMin: 25,
+                breakMin: 5,
+                completedSessions: 0
+            }
+        };
 
-        // System przełączania zakładek bez przeładowania strony
+        // Zmienne tymczasowe dla filtrów i edytora
+        let currentNoteId = null;
+        let searchTaskQuery = "";
+        let filterPriorityVal = "all";
+        let activeTab = 'dashboard';
+        let chartInstance = null;
+
+        // Pomodoro state
+        let pomoInterval = null;
+        let pomoMinutes = 25;
+        let pomoSeconds = 0;
+        let pomoIsRunning = false;
+        let pomoCurrentMode = 'work'; // 'work' lub 'break'
+
+        // INICJALIZACJA APLIKACJI
+        window.onload = function() {
+            loadState();
+            // Jeśli baza jest pusta, ładujemy przykładowe dane
+            if (state.tasks.length === 0 && state.notes.length === 0 && state.events.length === 0) {
+                loadMockData();
+            }
+            lucide.createIcons();
+            updateClock();
+            setInterval(updateClock, 1000);
+            renderDashboard();
+            renderTasks();
+            renderNotes();
+            renderCalendar();
+            renderNotifications();
+            resetPomodoroUI();
+        }
+
+        // AUTO-SAVE SYSTEM
+        function saveState() {
+            localStorage.setItem('nexushub_state', JSON.stringify(state));
+            updateBadges();
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('nexushub_state');
+            if (saved) {
+                state = JSON.parse(saved);
+            }
+        }
+
+        function resetAllData() {
+            if (confirm("Czy na pewno chcesz zresetować wszystkie dane? Spowoduje to bezpowrotne usunięcie zadań, kalendarza i notatek.")) {
+                localStorage.removeItem('nexushub_state');
+                location.reload();
+            }
+        }
+
+        // ŁADOWANIE PRZYKŁADOWYCH DANYCH NA START
+        function loadMockData() {
+            state.tasks = [
+                { id: "t1", title: "Zaimplementować system autoryzacji", desc: "Użyć JWT i bezpiecznego przechowywania tokenów.", tag: "Backend", priority: "high", status: "todo" },
+                { id: "t2", title: "Refaktoryzacja komponentów UI", desc: "Zoptymalizować czas renderowania tablic i list na urządzeniach mobilnych.", tag: "Frontend", priority: "medium", status: "progress" },
+                { id: "t3", title: "Zaprojektować logo dla nowego SaaS-a", desc: "Szkice koncepcyjne i wybór palety barw.", tag: "Design", priority: "low", status: "done" }
+            ];
+            state.notes = [
+                { id: "n1", title: "💡 Pomysły na rozwój projektu", content: "1. Integracja z GPT-4 do auto-generowania zadań.\n2. Wersja mobilna dedykowana jako PWA.\n3. Możliwość eksportu raportów analitycznych do plików PDF.", color: "indigo", date: new Date().toLocaleString() },
+                { id: "n2", title: "📋 Lista zakupów sprzętu", content: "- Nowy mikrofon pojemnościowy\n- Podkładka na biurko XL\n- Monitor 4K IPS do pracy", color: "emerald", date: new Date().toLocaleString() }
+            ];
+            state.events = [
+                { id: "e1", title: "🚀 Premiera wersji beta", date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], time: "12:00", desc: "Publikacja na serwerze produkcyjnym i powiadomienie zapisanych użytkowników." },
+                { id: "e2", title: "📅 Spotkanie strategiczne", date: new Date().toISOString().split('T')[0], time: "10:30", desc: "Omówienie celów i budżetu na kolejny kwartał." }
+            ];
+            state.notifications = [
+                { text: "Zainicjowano bazę danych NexusHub.", time: "Właśnie teraz" }
+            ];
+            saveState();
+        }
+
+        // LIVE CLOCK
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const dateStr = now.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('live-clock').innerText = `${dateStr} | ${timeStr}`;
+        }
+
+        // TABS NAVIGATION (Przełączanie zakładek)
         function switchTab(tabId) {
+            activeTab = tabId;
             // Ukryj wszystkie sekcje
-            document.getElementById('tab-dashboard').classList.add('hidden');
-            document.getElementById('tab-tasks').classList.add('hidden');
-            document.getElementById('tab-analytics').classList.add('hidden');
-
-            // Usuń aktywne style z przycisków menu
-            const buttons = ['dashboard', 'tasks', 'analytics'];
-            buttons.forEach(b => {
-                const btn = document.getElementById(`btn-${b}`);
-                btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-gray-900 hover:text-white transition-all text-left";
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            // Usuń aktywne klasy z nawigacji
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = "nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left";
             });
 
             // Pokaż wybraną sekcję
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
 
-            // Dodaj aktywne style do klikniętego przycisku
+            // Aktywuj wizualnie właściwy przycisk
             const activeBtn = document.getElementById(`btn-${tabId}`);
-            activeBtn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-600 text-white font-medium transition-all text-left";
+            if (activeBtn) {
+                const colorMap = {
+                    dashboard: 'bg-indigo-600 hover:bg-indigo-500 text-white',
+                    tasks: 'bg-indigo-600 hover:bg-indigo-500 text-white',
+                    notes: 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white',
+                    calendar: 'bg-emerald-600 hover:bg-emerald-500 text-white',
+                    pomodoro: 'bg-rose-600 hover:bg-rose-500 text-white'
+                };
+                const classToApply = colorMap[tabId] || 'bg-indigo-600 text-white';
+                activeBtn.className = `nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl ${classToApply} font-semibold transition-all text-left`;
+            }
 
-            // Zmień nagłówek strony
-            const titles = { dashboard: 'Panel Główny', tasks: 'Tablica Kanban', analytics: 'Analityka i Raporty' };
-            document.getElementById('page-title').innerText = titles[tabId];
+            // Nagłówek dynamiczny
+            const pageTitles = {
+                dashboard: 'Panel Główny i Statystyki',
+                tasks: 'Zadania i Tablica Kanban',
+                notes: 'Twój Notatnik Live',
+                calendar: 'Harmonogram i Kalendarz Dnia',
+                pomodoro: 'Pomodoro Timer - Skupienie'
+            };
+            document.getElementById('page-title').innerText = pageTitles[tabId] || 'NexusHub';
+
+            // Odśwież widoki, które mogą wymagać załadowania nowych stanów
+            if (tabId === 'dashboard') renderDashboard();
+            if (tabId === 'tasks') renderTasks();
+            if (tabId === 'calendar') renderCalendar();
+
+            // Automatyczne zamykanie menu mobilnego po kliknięciu
+            if (window.innerWidth < 768) {
+                toggleMobileMenu(true);
+            }
         }
 
-        // Funkcja dodawania nowego zadania do tablicy Kanban
-        function addTask() {
-            const input = document.getElementById('task-input');
-            const taskText = input.value.trim();
+        // MOBILNE MENU
+        function toggleMobileMenu(forceClose = false) {
+            const nav = document.getElementById('nav-links');
+            const icon = document.getElementById('menu-icon');
+            if (nav.classList.contains('hidden') && !forceClose) {
+                nav.classList.remove('hidden');
+                nav.classList.add('flex');
+                icon.setAttribute('data-lucide', 'x');
+            } else {
+                nav.classList.add('hidden');
+                nav.classList.remove('flex');
+                icon.setAttribute('data-lucide', 'menu');
+            }
+            lucide.createIcons();
+        }
+
+        // UPDATE BADGES (Wskaźniki liczbowe)
+        function updateBadges() {
+            document.getElementById('badge-tasks').innerText = state.tasks.filter(t => t.status !== 'done').length;
+            document.getElementById('badge-notes').innerText = state.notes.length;
+        }
+
+        // SYSTEM POWIADOMIEŃ
+        function addNotification(text) {
+            state.notifications.unshift({ text, time: new Date().toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'}) });
+            if (state.notifications.length > 20) state.notifications.pop(); // limit 20 powiadomień
+            saveState();
+            renderNotifications();
+        }
+
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notif-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        function clearNotifications() {
+            state.notifications = [];
+            saveState();
+            renderNotifications();
+        }
+
+        function renderNotifications() {
+            const list = document.getElementById('notif-list');
+            const badge = document.getElementById('notif-badge');
             
-            if (taskText === "") {
-                alert("Wpisz treść zadania!");
+            if (state.notifications.length === 0) {
+                list.innerHTML = `<p class="text-center py-4 text-slate-500">Brak nowych powiadomień.</p>`;
+                badge.classList.add('hidden');
+            } else {
+                badge.classList.remove('hidden');
+                list.innerHTML = state.notifications.map(n => `
+                    <div class="p-2 bg-slate-900 border border-slate-800 rounded-lg flex justify-between items-center gap-2">
+                        <span class="text-slate-300 font-medium">${n.text}</span>
+                        <span class="text-[9px] text-slate-500 shrink-0">${n.time}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+
+        // ==================== A: LOGIKA DASHBOARDU & CHART ====================
+        function renderDashboard() {
+            // Statystyki
+            const total = state.tasks.length;
+            const done = state.tasks.filter(t => t.status === 'done').length;
+            const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+
+            document.getElementById('stat-total-tasks').innerText = total;
+            document.getElementById('stat-done-tasks').innerText = done;
+            document.getElementById('stat-done-percentage').innerText = `${percent}% ukończenia`;
+            document.getElementById('stat-total-notes').innerText = state.notes.length;
+            document.getElementById('stat-pomodoros').innerText = state.pomodoro.completedSessions;
+
+            // Zmień status dynamiczny
+            const statusText = document.getElementById('dashboard-status-text');
+            if (percent === 100 && total > 0) {
+                statusText.innerText = "Świetna robota! Wszystkie zadania ukończone!";
+            } else if (percent > 50) {
+                statusText.innerText = "Więcej niż połowa za Tobą! Tak trzymaj!";
+            } else {
+                statusText.innerText = "Zacznij dzień od małych celów!";
+            }
+
+            // Agenda na dashboardzie
+            const agendaList = document.getElementById('dashboard-agenda-list');
+            const sortedEvents = [...state.events].sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
+            const todayStr = new Date().toISOString().split('T')[0];
+            const upcoming = sortedEvents.filter(e => e.date >= todayStr).slice(0, 3);
+
+            if (upcoming.length === 0) {
+                agendaList.innerHTML = `<p class="text-xs text-slate-500 text-center py-8">Brak zaplanowanych wydarzeń.</p>`;
+            } else {
+                agendaList.innerHTML = upcoming.map(e => `
+                    <div class="p-3 bg-slate-900 border border-slate-800 rounded-xl flex justify-between items-center gap-3">
+                        <div class="min-w-0">
+                            <span class="text-[10px] text-emerald-400 font-bold tracking-wider uppercase block">${e.date === todayStr ? 'Dziś' : e.date} o ${e.time}</span>
+                            <p class="text-xs font-semibold text-slate-200 truncate mt-0.5">${e.title}</p>
+                        </div>
+                        <i data-lucide="clock" class="w-4 h-4 text-slate-500 shrink-0"></i>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            }
+
+            // Inicjalizacja wykresu Chart.js
+            initDashboardChart();
+        }
+
+        function initDashboardChart() {
+            const ctx = document.getElementById('tasksChart');
+            if (!ctx) return;
+
+            // Zliczanie zadań wg kategorii
+            const tags = { Frontend: 0, Backend: 0, Design: 0, Inne: 0 };
+            state.tasks.forEach(t => {
+                if (tags[t.tag] !== undefined) tags[t.tag]++;
+                else tags.Inne++;
+            });
+
+            const completedTasks = state.tasks.filter(t => t.status === 'done').length;
+            const ongoingTasks = state.tasks.filter(t => t.status !== 'done').length;
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Skończone', 'W Toku', 'Frontend', 'Backend', 'Design'],
+                    datasets: [{
+                        label: 'Liczba elementów',
+                        data: [completedTasks, ongoingTasks, tags.Frontend, tags.Backend, tags.Design],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.4)', // zielony
+                            'rgba(99, 102, 241, 0.4)',  // indygo
+                            'rgba(139, 92, 246, 0.3)',  // fioletowy
+                            'rgba(236, 72, 153, 0.3)',  // fuksja
+                            'rgba(245, 158, 11, 0.3)'   // amber
+                        ],
+                        borderColor: [
+                            'rgb(16, 185, 129)',
+                            'rgb(99, 102, 241)',
+                            'rgb(139, 92, 246)',
+                            'rgb(236, 72, 153)',
+                            'rgb(245, 158, 11)'
+                        ],
+                        borderWidth: 1.5,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 10 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 10 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+
+        // ==================== B: LOGIKA KANBAN (DRAG & DROP + FILTRY) ====================
+        function renderTasks() {
+            const columns = {
+                todo: document.getElementById('col-todo'),
+                progress: document.getElementById('col-progress'),
+                done: document.getElementById('col-done')
+            };
+
+            // Wyczyszczenie kolumn
+            for (let c in columns) {
+                columns[c].innerHTML = "";
+            }
+
+            // Zliczenia
+            let counters = { todo: 0, progress: 0, done: 0 };
+
+            // Filtracja
+            const filtered = state.tasks.filter(t => {
+                const matchSearch = t.title.toLowerCase().includes(searchTaskQuery.toLowerCase()) || 
+                                    t.desc.toLowerCase().includes(searchTaskQuery.toLowerCase());
+                const matchPriority = filterPriorityVal === 'all' || t.priority === filterPriorityVal;
+                return matchSearch && matchPriority;
+            });
+
+            filtered.forEach(t => {
+                counters[t.status]++;
+                const card = document.createElement('div');
+                card.id = t.id;
+                card.draggable = true;
+                card.ondragstart = (e) => drag(e);
+                card.className = "bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-indigo-500/50 p-4 rounded-xl shadow-lg transition-all cursor-grab active:cursor-grabbing group space-y-3 relative";
+                
+                // Klasa priorytetu
+                const priorityColors = {
+                    high: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+                    medium: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                    low: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                };
+                const priorityClass = priorityColors[t.priority] || priorityColors.low;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">${t.tag}</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[9px] border px-2 py-0.5 rounded-md font-extrabold uppercase ${priorityClass}">${t.priority === 'high' ? 'Wysoki' : t.priority === 'medium' ? 'Średni' : 'Niski'}</span>
+                            <button onclick="deleteTask('${t.id}')" class="text-slate-500 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100 p-0.5">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <h5 class="text-xs font-bold text-slate-100">${t.title}</h5>
+                        <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">${t.desc || 'Brak opisu.'}</p>
+                    </div>
+                    <!-- Szybkie przyciski przechodzenia dla urządzeń mobilnych/bez myszki -->
+                    <div class="flex justify-end gap-1.5 pt-2 border-t border-slate-850 opacity-0 group-hover:opacity-100 lg:opacity-0 transition-opacity">
+                        ${t.status !== 'todo' ? `<button onclick="moveTask('${t.id}', 'todo')" class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded hover:text-white" title="Przenieś do: Do zrobienia">←</button>` : ''}
+                        ${t.status !== 'progress' ? `<button onclick="moveTask('${t.id}', 'progress')" class="text-[9px] bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded hover:bg-indigo-500/20" title="Przenieś do: W toku">W toku</button>` : ''}
+                        ${t.status !== 'done' ? `<button onclick="moveTask('${t.id}', 'done')" class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded hover:bg-emerald-500/20" title="Ukończ">✓</button>` : ''}
+                    </div>
+                `;
+                columns[t.status].appendChild(card);
+            });
+
+            // Aktualizacja liczników kolumn
+            document.getElementById('count-todo').innerText = counters.todo;
+            document.getElementById('count-progress').innerText = counters.progress;
+            document.getElementById('count-done').innerText = counters.done;
+
+            lucide.createIcons();
+            updateBadges();
+        }
+
+        // Wsparcie Drag & Drop
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+
+        function drop(ev, status) {
+            ev.preventDefault();
+            const id = ev.dataTransfer.getData("text");
+            moveTask(id, status);
+        }
+
+        function moveTask(id, status) {
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                const oldStatus = task.status;
+                task.status = status;
+                saveState();
+                renderTasks();
+                if (oldStatus !== status) {
+                    addNotification(`Zadanie "${task.title}" przeniesiono do: ${status === 'todo' ? 'Do zrobienia' : status === 'progress' ? 'W trakcie' : 'Zakończone'}`);
+                }
+            }
+        }
+
+        function filterTasks(val) {
+            searchTaskQuery = val;
+            renderTasks();
+        }
+
+        function filterPriority(val) {
+            filterPriorityVal = val;
+            renderTasks();
+        }
+
+        // Dodawanie z Modala
+        function openQuickTaskModal() {
+            document.getElementById('task-modal').classList.remove('hidden');
+        }
+
+        function closeQuickTaskModal() {
+            document.getElementById('task-modal').classList.add('hidden');
+            // Wyczyszczenie pól
+            document.getElementById('modal-task-title').value = "";
+            document.getElementById('modal-task-desc').value = "";
+        }
+
+        function createTaskFromModal() {
+            const title = document.getElementById('modal-task-title').value.trim();
+            const desc = document.getElementById('modal-task-desc').value.trim();
+            const tag = document.getElementById('modal-task-tag').value;
+            const priority = document.getElementById('modal-task-priority').value;
+
+            if (!title) {
+                alert("Tytuł zadania jest wymagany!");
                 return;
             }
 
-            const colTodo = document.getElementById('col-todo');
-            
-            // Tworzenie elementu zadania
-            const taskCard = document.createElement('div');
-            taskCard.className = "bg-gray-900 p-4 rounded-xl border border-gray-800 hover:border-indigo-500 transition-all cursor-pointer flex justify-between items-start group";
-            taskCard.innerHTML = `
-                <div>
-                    <p class="text-sm font-medium mb-2">${taskText}</p>
-                    <span class="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-md font-semibold uppercase">Zadanie</span>
-                </div>
-                <button onclick="this.parentElement.remove(); updateCount();" class="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                    Usuń
-                </button>
-            `;
+            const newTask = {
+                id: "task_" + Date.now(),
+                title,
+                desc,
+                tag,
+                priority,
+                status: "todo"
+            };
 
-            colTodo.appendChild(taskCard);
-            input.value = ""; // czyszczenie inputa
-            updateCount();
+            state.tasks.push(newTask);
+            saveState();
+            closeQuickTaskModal();
+            renderTasks();
+            addNotification(`Utworzono zadanie: "${title}"`);
         }
 
-        function updateCount() {
-            const count = document.getElementById('col-todo').children.length;
-            document.getElementById('todo-count').innerText = count;
+        function deleteTask(id) {
+            const idx = state.tasks.findIndex(t => t.id === id);
+            if (idx !== -1) {
+                const title = state.tasks[idx].title;
+                state.tasks.splice(idx, 1);
+                saveState();
+                renderTasks();
+                addNotification(`Usunięto zadanie: "${title}"`);
+            }
+        }
+
+
+        // ==================== C: LOGIKA NOTATNIKA ====================
+        let searchNoteQuery = "";
+
+        function renderNotes() {
+            const sidebarList = document.getElementById('notes-sidebar-list');
+            sidebarList.innerHTML = "";
+
+            const filtered = state.notes.filter(n => 
+                n.title.toLowerCase().includes(searchNoteQuery.toLowerCase()) ||
+                n.content.toLowerCase().includes(searchNoteQuery.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                sidebarList.innerHTML = `<p class="text-[11px] text-slate-500 text-center py-6">Brak notatek.</p>`;
+                return;
+            }
+
+            filtered.forEach(n => {
+                const item = document.createElement('button');
+                item.onclick = () => selectNote(n.id);
+                
+                // Mapowanie kolorów krawędzi
+                const borderColors = {
+                    indigo: 'border-l-indigo-500',
+                    rose: 'border-l-rose-500',
+                    emerald: 'border-l-emerald-500',
+                    amber: 'border-l-amber-500'
+                };
+                const borderClass = borderColors[n.color] || 'border-l-slate-600';
+                const isActive = n.id === currentNoteId ? 'bg-slate-900 border-slate-700' : 'bg-slate-950/40 hover:bg-slate-900/50 border-slate-850';
+
+                item.className = `w-full text-left p-3 border-l-4 ${borderClass} ${isActive} border-y border-r rounded-r-xl transition-all space-y-1`;
+                item.innerHTML = `
+                    <h5 class="text-xs font-bold text-slate-200 truncate">${n.title || 'Bez tytułu'}</h5>
+                    <p class="text-[10px] text-slate-400 truncate">${n.content || 'Pusta zawartość...'}</p>
+                    <span class="text-[8px] text-slate-500 block">${n.date}</span>
+                `;
+                sidebarList.appendChild(item);
+            });
+            updateBadges();
+        }
+
+        function selectNote(id) {
+            currentNoteId = id;
+            const note = state.notes.find(n => n.id === id);
+            
+            if (note) {
+                document.getElementById('editor-placeholder').classList.add('hidden');
+                document.getElementById('note-editor').classList.remove('hidden');
+
+                document.getElementById('editor-note-title').value = note.title;
+                document.getElementById('editor-note-content').value = note.content;
+                document.getElementById('editor-note-date').innerText = note.date;
+                renderNotes(); // Do aktualizacji podświetlenia aktywnej notatki
+            }
+        }
+
+        function createNewNote() {
+            const newNote = {
+                id: "note_" + Date.now(),
+                title: "Nowa Notatka",
+                content: "",
+                color: "indigo",
+                date: new Date().toLocaleString('pl-PL', {day: 'numeric', month: 'short', hour:'2-digit', minute:'2-digit'})
+            };
+
+            state.notes.unshift(newNote);
+            saveState();
+            renderNotes();
+            selectNote(newNote.id);
+            addNotification("Utworzono nową notatkę.");
+        }
+
+        function saveCurrentNote() {
+            if (!currentNoteId) return;
+            const note = state.notes.find(n => n.id === currentNoteId);
+            if (note) {
+                note.title = document.getElementById('editor-note-title').value;
+                note.content = document.getElementById('editor-note-content').value;
+                note.date = new Date().toLocaleString('pl-PL', {day: 'numeric', month: 'short', hour:'2-digit', minute:'2-digit'});
+                
+                document.getElementById('editor-note-date').innerText = note.date;
+                saveState();
+                
+                // Odśwież listę po lewej stronie płynnie
+                const activeItem = state.notes.findIndex(n => n.id === currentNoteId);
+                renderNotes();
+            }
+        }
+
+        function changeNoteColor(color) {
+            if (!currentNoteId) return;
+            const note = state.notes.find(n => n.id === currentNoteId);
+            if (note) {
+                note.color = color;
+                saveState();
+                renderNotes();
+            }
+        }
+
+        function deleteCurrentNote() {
+            if (!currentNoteId) return;
+            const idx = state.notes.findIndex(n => n.id === currentNoteId);
+            if (idx !== -1) {
+                state.notes.splice(idx, 1);
+                currentNoteId = null;
+                saveState();
+                renderNotes();
+                
+                document.getElementById('note-editor').classList.add('hidden');
+                document.getElementById('editor-placeholder').classList.remove('hidden');
+                addNotification("Usunięto notatkę.");
+            }
+        }
+
+        function filterNotes(val) {
+            searchNoteQuery = val;
+            renderNotes();
+        }
+
+
+        // ==================== D: LOGIKA KALENDARZA / AGENDA ====================
+        function renderCalendar() {
+            const list = document.getElementById('full-calendar-list');
+            list.innerHTML = "";
+
+            if (state.events.length === 0) {
+                list.innerHTML = `<p class="text-xs text-slate-500 text-center py-12">Twój kalendarz jest pusty. Zaplanuj pierwsze wydarzenie!</p>`;
+                return;
+            }
+
+            // Sortowanie wydarzeń od najbliższych chronologicznie
+            const sorted = [...state.events].sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
+
+            sorted.forEach(e => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/40 p-4 rounded-xl border border-slate-805 flex justify-between items-start gap-4 hover:border-slate-700 transition-all";
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">${e.date} | ${e.time}</span>
+                        </div>
+                        <h5 class="text-sm font-bold text-slate-100">${e.title}</h5>
+                        <p class="text-xs text-slate-400">${e.desc || 'Brak dodatkowego opisu.'}</p>
+                    </div>
+                    <button onclick="deleteEvent('${e.id}')" class="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all" title="Usuń wydarzenie">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                `;
+                list.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function addCalendarEvent() {
+            const title = document.getElementById('event-title').value.trim();
+            const date = document.getElementById('event-date').value;
+            const time = document.getElementById('event-time').value;
+            const desc = document.getElementById('event-desc').value.trim();
+
+            if (!title || !date || !time) {
+                alert("Wypełnij przynajmniej pola: Nazwa, Data i Godzina!");
+                return;
+            }
+
+            const newEvent = {
+                id: "event_" + Date.now(),
+                title,
+                date,
+                time,
+                desc
+            };
+
+            state.events.push(newEvent);
+            saveState();
+            renderCalendar();
+
+            // Reset pól formularza
+            document.getElementById('event-title').value = "";
+            document.getElementById('event-date').value = "";
+            document.getElementById('event-time').value = "";
+            document.getElementById('event-desc').value = "";
+
+            addNotification(`Zaplanowano wydarzenie: "${title}"`);
+        }
+
+        function deleteEvent(id) {
+            const idx = state.events.findIndex(e => e.id === id);
+            if (idx !== -1) {
+                const title = state.events[idx].title;
+                state.events.splice(idx, 1);
+                saveState();
+                renderCalendar();
+                addNotification(`Usunięto wydarzenie: "${title}"`);
+            }
+        }
+
+
+        // ==================== E: LOGIKA POMODORO TIMER ====================
+        // System powiadamiania dźwiękowego wykorzystujący natywny syntezator przeglądarki (Web Audio API)
+        function playAlertSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sine';
+                
+                // Miły, potrójny dźwięk
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.15); // E5
+                osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.3); // G5
+                
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.55);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.6);
+            } catch (e) {
+                console.log("AudioContext nie mógł zostać uruchomiony ze względu na brak interakcji.", e);
+            }
+        }
+
+        function resetPomodoroUI() {
+            pomoMinutes = pomoCurrentMode === 'work' ? state.pomodoro.workMin : state.pomodoro.breakMin;
+            pomoSeconds = 0;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const minStr = String(pomoMinutes).padStart(2, '0');
+            const secStr = String(pomoSeconds).padStart(2, '0');
+            document.getElementById('pomo-time').innerText = `${minStr}:${secStr}`;
+
+            // Liczenie proporcji koła postępu SVG
+            const totalSeconds = (pomoCurrentMode === 'work' ? state.pomodoro.workMin : state.pomodoro.breakMin) * 60;
+            const currentSeconds = pomoMinutes * 60 + pomoSeconds;
+            const fraction = currentSeconds / totalSeconds;
+            const dashoffset = 722 - (fraction * 722);
+            document.getElementById('pomo-progress-ring').style.strokeDashoffset = dashoffset;
+        }
+
+        function setPomodoroMode(mode) {
+            if (pomoIsRunning) {
+                if (!confirm("Czasomierz działa! Czy chcesz zatrzymać i zmienić tryb?")) return;
+                togglePomodoro();
+            }
+            pomoCurrentMode = mode;
+            
+            const workBtn = document.getElementById('pomo-mode-work');
+            const breakBtn = document.getElementById('pomo-mode-break');
+            const ring = document.getElementById('pomo-progress-ring');
+            const label = document.getElementById('pomo-status-label');
+
+            if (mode === 'work') {
+                workBtn.className = "flex-1 px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/25 transition-all";
+                breakBtn.className = "flex-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white transition-all";
+                ring.style.stroke = "#f43f5e";
+                label.innerText = "Czas na skupienie";
+                label.className = "text-xs text-rose-400 font-bold tracking-widest uppercase mt-1";
+            } else {
+                breakBtn.className = "flex-1 px-4 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 transition-all";
+                workBtn.className = "flex-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white transition-all";
+                ring.style.stroke = "#10b981";
+                label.innerText = "Czas na odpoczynek";
+                label.className = "text-xs text-emerald-400 font-bold tracking-widest uppercase mt-1";
+            }
+            resetPomodoroUI();
+        }
+
+        function togglePomodoro() {
+            const startBtnText = document.getElementById('pomo-start-text');
+            const startIcon = document.getElementById('pomo-start-icon');
+
+            if (pomoIsRunning) {
+                // Pauza
+                clearInterval(pomoInterval);
+                pomoIsRunning = false;
+                startBtnText.innerText = "Wznów";
+                startIcon.setAttribute('data-lucide', 'play');
+            } else {
+                // Start
+                pomoIsRunning = true;
+                startBtnText.innerText = "Pauza";
+                startIcon.setAttribute('data-lucide', 'pause');
+
+                pomoInterval = setInterval(() => {
+                    if (pomoSeconds === 0) {
+                        if (pomoMinutes === 0) {
+                            // Koniec czasu!
+                            clearInterval(pomoInterval);
+                            pomoIsRunning = false;
+                            playAlertSound();
+                            
+                            if (pomoCurrentMode === 'work') {
+                                state.pomodoro.completedSessions++;
+                                saveState();
+                                addNotification("Pomodoro ukończone! Czas na zasłużoną przerwę.");
+                                alert("Świetna robota! Czas na przerwę.");
+                                setPomodoroMode('break');
+                            } else {
+                                addNotification("Przerwa dobiegła końca. Powrót do pracy!");
+                                alert("Koniec przerwy. Czas wracać do skupienia!");
+                                setPomodoroMode('work');
+                            }
+                            return;
+                        }
+                        pomoMinutes--;
+                        pomoSeconds = 59;
+                    } else {
+                        pomoSeconds--;
+                    }
+                    updateTimerDisplay();
+                }, 1000);
+            }
+            lucide.createIcons();
+        }
+
+        function resetPomodoro() {
+            clearInterval(pomoInterval);
+            pomoIsRunning = false;
+            document.getElementById('pomo-start-text').innerText = "Rozpocznij";
+            document.getElementById('pomo-start-icon').setAttribute('data-lucide', 'play');
+            resetPomodoroUI();
+            lucide.createIcons();
+        }
+
+        function openTimerSettings() {
+            const panel = document.getElementById('pomo-settings-modal');
+            panel.classList.toggle('hidden');
+        }
+
+        function savePomodoroSettings() {
+            const work = parseInt(document.getElementById('pomo-set-work').value);
+            const brk = parseInt(document.getElementById('pomo-set-break').value);
+
+            if (work > 0 && brk > 0) {
+                state.pomodoro.workMin = work;
+                state.pomodoro.breakMin = brk;
+                saveState();
+                resetPomodoro();
+                document.getElementById('pomo-settings-modal').classList.add('hidden');
+                addNotification("Zaktualizowano domyślne limity czasu Pomodoro.");
+            } else {
+                alert("Wartości muszą być większe od 0!");
+            }
         }
     </script>
 </body>
