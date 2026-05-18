@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexusHub Ultimate Workspace</title>
+    <title>NexusHub Ultimate Workspace Pro v2.0</title>
     <!-- Tailwind CSS dla nowoczesnego designu -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Ikony Lucide -->
@@ -34,7 +34,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #090d16;
+            background-color: #060913;
         }
         /* Płynne przewijanie i customowy scrollbar */
         ::-webkit-scrollbar {
@@ -42,10 +42,10 @@
             height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #0f172a;
+            background: #090d16;
         }
         ::-webkit-scrollbar-thumb {
-            background: #334155;
+            background: #1e293b;
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
@@ -53,34 +53,41 @@
         }
         /* Efekt szklanej tafli (Glassmorphism) */
         .glass {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(10, 15, 30, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
-        /* Animacje dla przejść między zakładkami */
+        /* Animacje dla przejść */
         .tab-content {
-            animation: fadeIn 0.25s ease-out forwards;
+            animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        /* Styl świecenia neonów */
+        .neon-glow-indigo {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+        }
+        .neon-glow-fuchsia {
+            box-shadow: 0 0 20px rgba(217, 70, 239, 0.15);
         }
     </style>
 </head>
 <body class="text-slate-100 min-h-screen flex flex-col md:flex-row overflow-x-hidden">
 
     <!-- 1. BOCZNE MENU (SIDEBAR) -->
-    <aside class="w-full md:w-64 bg-slate-950 border-b md:border-b-0 md:border-r border-slate-800/60 p-5 flex flex-col justify-between shrink-0 z-20">
+    <aside class="w-full md:w-64 bg-slate-950 border-b md:border-b-0 md:border-r border-slate-900/80 p-5 flex flex-col justify-between shrink-0 z-20">
         <div class="flex flex-col h-full">
             <!-- Logo -->
             <div class="flex items-center gap-3 mb-8 justify-between md:justify-start">
                 <div class="flex items-center gap-3">
-                    <div class="bg-gradient-to-tr from-indigo-500 to-fuchsia-500 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/25">
+                    <div class="bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/20">
                         <i data-lucide="layout" class="w-5 h-5"></i>
                     </div>
                     <div>
                         <span class="text-lg font-extrabold tracking-wider bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">NEXUSHUB</span>
-                        <span class="block text-[9px] text-slate-500 font-bold uppercase tracking-widest">PRO WORKSPACE</span>
+                        <span class="block text-[9px] text-indigo-400 font-bold uppercase tracking-widest">v2.0 PRO WORKSPACE</span>
                     </div>
                 </div>
                 <!-- Przycisk mobilny -->
@@ -91,52 +98,69 @@
             
             <!-- Nawigacja główna -->
             <nav id="nav-links" class="hidden md:flex flex-col gap-1.5 flex-1">
-                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl bg-indigo-600 text-white font-semibold transition-all text-left group">
-                    <span class="flex items-center gap-3">
-                        <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Panel Główny
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold transition-all text-left">
+                    <span class="flex items-center gap-2.5">
+                        <i data-lucide="layout-dashboard" class="w-4.5 h-4.5"></i> Panel Główny
                     </span>
-                    <i data-lucide="chevron-right" class="w-4 h-4 opacity-60"></i>
+                    <i data-lucide="chevron-right" class="w-4 h-4 opacity-55"></i>
                 </button>
-                <button onclick="switchTab('tasks')" id="btn-tasks" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
-                    <span class="flex items-center gap-3">
-                        <i data-lucide="trello" class="w-5 h-5"></i> Kanban Zadania
+                <button onclick="switchTab('tasks')" id="btn-tasks" class="nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
+                    <span class="flex items-center gap-2.5">
+                        <i data-lucide="trello" class="w-4.5 h-4.5"></i> Kanban Zadania
                     </span>
                     <span id="badge-tasks" class="bg-indigo-500/10 text-indigo-400 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
                 </button>
-                <button onclick="switchTab('notes')" id="btn-notes" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
-                    <span class="flex items-center gap-3">
-                        <i data-lucide="sticky-note" class="w-5 h-5"></i> Notatnik Live
+                <button onclick="switchTab('notes')" id="btn-notes" class="nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
+                    <span class="flex items-center gap-2.5">
+                        <i data-lucide="sticky-note" class="w-4.5 h-4.5"></i> Notatnik Live
                     </span>
                     <span id="badge-notes" class="bg-fuchsia-500/10 text-fuchsia-400 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
                 </button>
-                <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
-                    <span class="flex items-center gap-3">
-                        <i data-lucide="calendar" class="w-5 h-5"></i> Kalendarz dnia
+                <button onclick="switchTab('habits')" id="btn-habits" class="nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
+                    <span class="flex items-center gap-2.5">
+                        <i data-lucide="sparkles" class="w-4.5 h-4.5"></i> Nawyki Pro
+                    </span>
+                    <span id="badge-habits" class="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </button>
+                <button onclick="switchTab('finance')" id="btn-finance" class="nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
+                    <span class="flex items-center gap-2.5">
+                        <i data-lucide="wallet" class="w-4.5 h-4.5"></i> Budżet & Finanse
                     </span>
                 </button>
-                <button onclick="switchTab('pomodoro')" id="btn-pomodoro" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
-                    <span class="flex items-center gap-3">
-                        <i data-lucide="timer" class="w-5 h-5"></i> Pomodoro Timer
+                <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
+                    <span class="flex items-center gap-2.5">
+                        <i data-lucide="calendar" class="w-4.5 h-4.5"></i> Kalendarz dnia
                     </span>
+                </button>
+                <button onclick="switchTab('pomodoro')" id="btn-pomodoro" class="nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left">
+                    <span class="flex items-center gap-2.5">
+                        <i data-lucide="timer" class="w-4.5 h-4.5"></i> Pomodoro & Ambient
+                    </span>
+                </button>
+                <button onclick="switchTab('ai')" id="btn-ai" class="nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-400 hover:bg-indigo-950/30 hover:text-indigo-300 border border-transparent hover:border-indigo-500/20 transition-all text-left">
+                    <span class="flex items-center gap-2.5">
+                        <i data-lucide="bot" class="w-4.5 h-4.5 text-indigo-400"></i> NexusAI Copilot
+                    </span>
+                    <span class="bg-indigo-500/20 text-indigo-300 text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase">LIVE</span>
                 </button>
             </nav>
         </div>
         
         <!-- Stopka profilu -->
-        <div class="hidden md:flex border-t border-slate-800/60 pt-4 items-center justify-between mt-auto">
+        <div class="hidden md:flex border-t border-slate-900 pt-4 items-center justify-between mt-auto">
             <div class="flex items-center gap-3">
                 <div class="relative">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-500/10">
-                        PL
+                        N
                     </div>
                     <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-950 rounded-full"></span>
                 </div>
                 <div>
-                    <p class="text-sm font-semibold text-slate-200">User Developer</p>
-                    <p class="text-xs text-slate-500">Premium Account</p>
+                    <p class="text-sm font-semibold text-slate-200">User Elite</p>
+                    <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Moc Produktywności</p>
                 </div>
             </div>
-            <button onclick="resetAllData()" class="p-2 text-slate-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-all" title="Resetuj wszystkie dane aplikacji">
+            <button onclick="triggerResetConfirmation()" class="p-2 text-slate-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-all" title="Resetuj dane">
                 <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             </button>
         </div>
@@ -145,14 +169,14 @@
     <!-- 2. GŁÓWNA TREŚĆ -->
     <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <!-- Pasek górny (Top Header) -->
-        <header class="h-16 border-b border-slate-800/60 flex items-center justify-between px-6 md:px-8 bg-slate-950/40 backdrop-blur-md sticky top-0 z-10 shrink-0">
+        <header class="h-16 border-b border-slate-900/80 flex items-center justify-between px-6 md:px-8 bg-slate-950/40 backdrop-blur-md sticky top-0 z-10 shrink-0">
             <div class="flex items-center gap-4">
-                <h1 id="page-title" class="text-lg md:text-xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Panel Główny</h1>
-                <span id="live-clock" class="hidden md:inline text-xs text-slate-500 font-medium bg-slate-900 border border-slate-850 px-2.5 py-1 rounded-full"></span>
+                <h1 id="page-title" class="text-lg md:text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Panel Główny</h1>
+                <span id="live-clock" class="hidden lg:inline text-xs text-slate-400 font-medium bg-slate-900 border border-slate-800 px-3 py-1 rounded-full"></span>
             </div>
             <div class="flex items-center gap-3">
                 <div class="relative">
-                    <button onclick="toggleNotifications()" class="p-2 text-slate-400 hover:text-white bg-slate-900 border border-slate-800/60 rounded-xl relative transition-all">
+                    <button onclick="toggleNotifications()" class="p-2 text-slate-400 hover:text-white bg-slate-900 border border-slate-800 rounded-xl relative transition-all">
                         <i data-lucide="bell" class="w-4 h-4"></i>
                         <span id="notif-badge" class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full hidden"></span>
                     </button>
@@ -169,71 +193,71 @@
                 </div>
                 
                 <button onclick="openQuickTaskModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95">
-                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Nowe Zadanie</span>
+                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Dodaj Zadanie</span>
                 </button>
             </div>
         </header>
 
         <!-- Dynamiczny kontener na sekcje (Tabs) -->
-        <div class="p-6 md:p-8 max-w-7xl w-full mx-auto flex-1">
+        <div class="p-4 md:p-8 max-w-7xl w-full mx-auto flex-1">
             
             <!-- SECTION A: DASHBOARD -->
             <section id="tab-dashboard" class="tab-content space-y-6">
                 <!-- Witacz & Podsumowanie -->
-                <div class="p-6 md:p-8 rounded-2xl bg-gradient-to-r from-indigo-950/60 via-purple-950/20 to-slate-950 border border-indigo-500/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="p-6 md:p-8 rounded-2xl bg-gradient-to-r from-indigo-950/40 via-purple-950/10 to-slate-950 border border-indigo-500/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 neon-glow-indigo">
                     <div>
-                        <h2 class="text-2xl font-extrabold text-white">Witaj ponownie, User! 👋</h2>
-                        <p class="text-slate-400 text-sm mt-1">Oto podsumowanie Twoich dzisiejszych celów i produktywności.</p>
+                        <h2 class="text-2xl font-extrabold text-white">Witaj w przyszłości produktywności! 🚀</h2>
+                        <p class="text-slate-400 text-sm mt-1">NexusHub integruje zadania, finanse, nawyki i moc AI w jednym płynnym ekosystemie.</p>
                     </div>
                     <div class="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-4 py-2.5 rounded-xl">
                         <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
-                        <span id="dashboard-status-text" class="text-xs font-semibold text-indigo-300">Wszystko pod kontrolą!</span>
+                        <span id="dashboard-status-text" class="text-xs font-semibold text-indigo-300">Gotowy do działania!</span>
                     </div>
                 </div>
 
                 <!-- Liczniki (KPI) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="glass p-5 rounded-2xl border border-slate-800/60 shadow-sm flex items-center justify-between">
                         <div>
                             <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Wszystkie Zadania</span>
                             <h3 id="stat-total-tasks" class="text-2xl font-bold mt-1 text-white">0</h3>
-                            <span class="text-[10px] text-slate-500 block mt-1">Aktywne w bazie danych</span>
+                            <span class="text-[10px] text-slate-500 block mt-1">Zadania aktywne</span>
                         </div>
-                        <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl"><i data-lucide="list-todo" class="w-6 h-6"></i></div>
+                        <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl"><i data-lucide="list-todo" class="w-5 h-5"></i></div>
                     </div>
                     <div class="glass p-5 rounded-2xl border border-slate-800/60 shadow-sm flex items-center justify-between">
                         <div>
-                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Ukończone</span>
-                            <h3 id="stat-done-tasks" class="text-2xl font-bold mt-1 text-emerald-400">0</h3>
-                            <span id="stat-done-percentage" class="text-[10px] text-emerald-500 font-semibold block mt-1">0% ukończenia</span>
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Nawyki dziś</span>
+                            <h3 id="stat-habits-done" class="text-2xl font-bold mt-1 text-emerald-400">0/0</h3>
+                            <span class="text-[10px] text-slate-500 block mt-1">Ukończone dzisiaj</span>
                         </div>
-                        <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl"><i data-lucide="check-circle" class="w-6 h-6"></i></div>
+                        <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl"><i data-lucide="award" class="w-5 h-5"></i></div>
                     </div>
                     <div class="glass p-5 rounded-2xl border border-slate-800/60 shadow-sm flex items-center justify-between">
                         <div>
-                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Aktywne Notatki</span>
-                            <h3 id="stat-total-notes" class="text-2xl font-bold mt-1 text-fuchsia-400">0</h3>
-                            <span class="text-[10px] text-slate-500 block mt-1">Zapisane pomysły i szkice</span>
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Bilans Budżetu</span>
+                            <h3 id="stat-finance-balance" class="text-2xl font-bold mt-1 text-fuchsia-400">0.00 zł</h3>
+                            <span class="text-[10px] text-slate-500 block mt-1">Saldo z tego miesiąca</span>
                         </div>
-                        <div class="p-3 bg-fuchsia-500/10 text-fuchsia-400 rounded-xl"><i data-lucide="book-open" class="w-6 h-6"></i></div>
+                        <div class="p-3 bg-fuchsia-500/10 text-fuchsia-400 rounded-xl"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
                     </div>
                     <div class="glass p-5 rounded-2xl border border-slate-800/60 shadow-sm flex items-center justify-between">
                         <div>
                             <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Sesje Pomodoro</span>
                             <h3 id="stat-pomodoros" class="text-2xl font-bold mt-1 text-rose-400">0</h3>
-                            <span class="text-[10px] text-slate-500 block mt-1">Zrealizowane interwały skupienia</span>
+                            <span class="text-[10px] text-slate-500 block mt-1">Ukończone cykle</span>
                         </div>
-                        <div class="p-3 bg-rose-500/10 text-rose-400 rounded-xl"><i data-lucide="flame" class="w-6 h-6"></i></div>
+                        <div class="p-3 bg-rose-500/10 text-rose-400 rounded-xl"><i data-lucide="flame" class="w-5 h-5"></i></div>
                     </div>
                 </div>
 
                 <!-- Wykresy i Ostatnie zadania (Grid) -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Wykres podziału zadań -->
+                    <!-- Wykres podziału zadań i finansów -->
                     <div class="glass p-5 rounded-2xl border border-slate-800/60 lg:col-span-2 flex flex-col justify-between">
                         <div class="flex items-center justify-between mb-4">
-                            <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Statystyki Zadań & Katedry</h4>
-                            <span class="text-xs text-slate-500 font-medium">Aktualizacja na żywo</span>
+                            <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Statystyki Zadań & Finansów</h4>
+                            <span class="text-xs text-slate-500 font-medium">Baza zsynchronizowana</span>
                         </div>
                         <div class="relative w-full h-64 flex items-center justify-center">
                             <canvas id="tasksChart"></canvas>
@@ -245,7 +269,7 @@
                         <div>
                             <div class="flex items-center justify-between mb-4">
                                 <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Harmonogram Dnia</h4>
-                                <button onclick="switchTab('calendar')" class="text-xs text-indigo-400 hover:underline">Zobacz wszystko</button>
+                                <button onclick="switchTab('calendar')" class="text-xs text-indigo-400 hover:underline">Kalendarz</button>
                             </div>
                             <div id="dashboard-agenda-list" class="space-y-3 max-h-[220px] overflow-y-auto pr-1">
                                 <!-- Generowane dynamicznie -->
@@ -279,35 +303,35 @@
                 <!-- Tablice Kanban -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Do zrobienia -->
-                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/40 flex flex-col h-[600px]">
+                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/40 flex flex-col h-[550px]">
                         <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800/40 shrink-0">
                             <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse"></span>
                                 <h4 class="font-bold text-sm text-slate-200">Do zrobienia</h4>
                             </div>
                             <span id="count-todo" class="bg-slate-900 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-lg border border-slate-800/60">0</span>
                         </div>
                         <div id="col-todo" ondragover="allowDrop(event)" ondrop="drop(event, 'todo')" class="flex-1 overflow-y-auto space-y-3 pb-4">
-                            <!-- Zadania generowane JS -->
+                            <!-- Zadania JS -->
                         </div>
                     </div>
 
                     <!-- W trakcie -->
-                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/40 flex flex-col h-[600px]">
+                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/40 flex flex-col h-[550px]">
                         <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800/40 shrink-0">
                             <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
                                 <h4 class="font-bold text-sm text-slate-200">W trakcie</h4>
                             </div>
                             <span id="count-progress" class="bg-slate-900 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-lg border border-slate-800/60">0</span>
                         </div>
                         <div id="col-progress" ondragover="allowDrop(event)" ondrop="drop(event, 'progress')" class="flex-1 overflow-y-auto space-y-3 pb-4">
-                            <!-- Zadania generowane JS -->
+                            <!-- Zadania JS -->
                         </div>
                     </div>
 
                     <!-- Zrobione -->
-                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/40 flex flex-col h-[600px]">
+                    <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800/40 flex flex-col h-[550px]">
                         <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800/40 shrink-0">
                             <div class="flex items-center gap-2">
                                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
@@ -316,7 +340,7 @@
                             <span id="count-done" class="bg-slate-900 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-lg border border-slate-800/60">0</span>
                         </div>
                         <div id="col-done" ondragover="allowDrop(event)" ondrop="drop(event, 'done')" class="flex-1 overflow-y-auto space-y-3 pb-4">
-                            <!-- Zadania generowane JS -->
+                            <!-- Zadania JS -->
                         </div>
                     </div>
                 </div>
@@ -325,8 +349,8 @@
             <!-- SECTION C: NOTATNIK -->
             <section id="tab-notes" class="tab-content hidden space-y-6">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-                    <!-- Lewy panel: Lista notatek i wyszukiwarka -->
-                    <div class="glass p-5 rounded-2xl border border-slate-800/60 flex flex-col h-[600px]">
+                    <!-- Lewy panel -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 flex flex-col h-[550px]">
                         <div class="space-y-3 mb-4 shrink-0">
                             <div class="relative">
                                 <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-slate-500"></i>
@@ -336,59 +360,148 @@
                                 <i data-lucide="plus" class="w-4 h-4"></i> Nowa Notatka
                             </button>
                         </div>
-
-                        <!-- Lista notatek -->
                         <div id="notes-sidebar-list" class="flex-1 overflow-y-auto space-y-2 pr-1">
-                            <!-- Generowane przez JS -->
+                            <!-- Zasilane z JS -->
                         </div>
                     </div>
 
-                    <!-- Prawy panel: Edytor wybranej notatki -->
-                    <div class="glass p-5 rounded-2xl border border-slate-800/60 lg:col-span-2 flex flex-col h-[600px]">
+                    <!-- Edytor -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 lg:col-span-2 flex flex-col h-[550px]">
                         <div id="editor-placeholder" class="flex-1 flex flex-col items-center justify-center text-center text-slate-500 p-8 space-y-3">
                             <div class="p-4 bg-slate-900 border border-slate-800 rounded-full text-indigo-400"><i data-lucide="edit-3" class="w-8 h-8"></i></div>
                             <h4 class="font-bold text-slate-300">Wybierz lub utwórz notatkę</h4>
-                            <p class="text-xs max-w-xs">Zarządzaj swoimi pomysłami, szkicami lub informacjami. Zmiany zapisują się automatycznie na bieżąco.</p>
+                            <p class="text-xs max-w-xs">Twoje pomysły są bezpieczne i zapisywane automatycznie.</p>
                         </div>
 
                         <div id="note-editor" class="flex-1 flex flex-col hidden space-y-4">
                             <div class="flex items-center justify-between gap-4 border-b border-slate-800 pb-3">
                                 <input id="editor-note-title" oninput="saveCurrentNote()" type="text" class="bg-transparent text-lg md:text-xl font-bold focus:outline-none text-white w-full border-b border-transparent focus:border-indigo-500/30" placeholder="Bez tytułu">
-                                
                                 <div class="flex items-center gap-2 shrink-0">
-                                    <!-- Wybór koloru -->
                                     <div class="flex items-center gap-1.5 mr-2">
-                                        <button onclick="changeNoteColor('indigo')" class="w-5 h-5 rounded-full bg-indigo-500 ring-2 ring-offset-2 ring-offset-slate-905 ring-transparent hover:scale-110 transition-all" title="Fioletowy"></button>
-                                        <button onclick="changeNoteColor('rose')" class="w-5 h-5 rounded-full bg-rose-500 ring-2 ring-offset-2 ring-offset-slate-905 ring-transparent hover:scale-110 transition-all" title="Różowy"></button>
-                                        <button onclick="changeNoteColor('emerald')" class="w-5 h-5 rounded-full bg-emerald-500 ring-2 ring-offset-2 ring-offset-slate-905 ring-transparent hover:scale-110 transition-all" title="Zielony"></button>
-                                        <button onclick="changeNoteColor('amber')" class="w-5 h-5 rounded-full bg-amber-500 ring-2 ring-offset-2 ring-offset-slate-905 ring-transparent hover:scale-110 transition-all" title="Pomarańczowy"></button>
+                                        <button onclick="changeNoteColor('indigo')" class="w-4 h-4 rounded-full bg-indigo-500 ring-2 ring-offset-2 ring-offset-slate-900 hover:scale-110 transition-all"></button>
+                                        <button onclick="changeNoteColor('rose')" class="w-4 h-4 rounded-full bg-rose-500 ring-2 ring-offset-2 ring-offset-slate-900 hover:scale-110 transition-all"></button>
+                                        <button onclick="changeNoteColor('emerald')" class="w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-offset-2 ring-offset-slate-900 hover:scale-110 transition-all"></button>
+                                        <button onclick="changeNoteColor('amber')" class="w-4 h-4 rounded-full bg-amber-500 ring-2 ring-offset-2 ring-offset-slate-900 hover:scale-110 transition-all"></button>
                                     </div>
-                                    <button onclick="deleteCurrentNote()" class="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all" title="Usuń notatkę">
+                                    <button onclick="triggerNoteDeletion()" class="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 </div>
                             </div>
-
                             <textarea id="editor-note-content" oninput="saveCurrentNote()" class="flex-1 bg-transparent text-slate-300 focus:outline-none resize-none leading-relaxed text-sm" placeholder="Zacznij pisać tutaj..."></textarea>
-                            
                             <div class="text-right text-[10px] text-slate-500 italic mt-auto pt-2 border-t border-slate-800">
-                                Zapisano automatycznie: <span id="editor-note-date">Nigdy</span>
+                                Ostatni zapis: <span id="editor-note-date">Nigdy</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION D: KALENDARZ -->
+            <!-- SECTION D: HABITS (NEW!) -->
+            <section id="tab-habits" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Dodawanie nawyku -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 space-y-4 h-fit">
+                        <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Nowy Nawyk</h4>
+                        <div class="space-y-3 text-xs">
+                            <div class="space-y-1">
+                                <label class="text-slate-400 font-semibold">Nazwa nawyku</label>
+                                <input id="habit-name" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200" placeholder="np. 30 minut czytania">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-slate-400 font-semibold">Częstotliwość</label>
+                                <select id="habit-frequency" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200">
+                                    <option value="daily">Codziennie</option>
+                                    <option value="weekly">3 razy w tygodniu</option>
+                                </select>
+                            </div>
+                            <button onclick="addHabit()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all">
+                                Dodaj do trackeru
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lista nawyków -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 lg:col-span-2 space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                            <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Moje Nawykowe Dyscypliny</h4>
+                            <span class="text-xs text-emerald-400 font-medium">Buduj codzienne pasmo sukcesów</span>
+                        </div>
+                        <div id="habits-list" class="space-y-4 max-h-[480px] overflow-y-auto pr-1">
+                            <!-- Dynamicznie ładowane przez JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION E: BUDGET & FINANCE (NEW!) -->
+            <section id="tab-finance" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Dodaj transakcję -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 space-y-4 h-fit">
+                        <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Nowa Transakcja</h4>
+                        <div class="space-y-3 text-xs">
+                            <div class="space-y-1">
+                                <label class="text-slate-400 font-semibold">Tytuł transakcji</label>
+                                <input id="fin-title" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200" placeholder="np. Zakup kursu React">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-1">
+                                    <label class="text-slate-400 font-semibold">Kwota (zł)</label>
+                                    <input id="fin-amount" type="number" step="0.01" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200" placeholder="0.00">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-slate-400 font-semibold">Typ</label>
+                                    <select id="fin-type" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200">
+                                        <option value="expense">Wydatek</option>
+                                        <option value="income">Przychód</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-slate-400 font-semibold">Kategoria</label>
+                                <select id="fin-category" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200">
+                                    <option value="Edukacja">Edukacja & Rozwój</option>
+                                    <option value="Rozrywka">Rozrywka & Hobby</option>
+                                    <option value="Jedzenie">Jedzenie & Kawiarnie</option>
+                                    <option value="Technologia">Subskrypcje & Technologie</option>
+                                    <option value="Praca">Wypłata & Zlecenia</option>
+                                    <option value="Inne">Inne</option>
+                                </select>
+                            </div>
+                            <button onclick="addTransaction()" class="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-lg shadow-fuchsia-600/20">
+                                Zarejestruj Transakcję
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Historia transakcji -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 lg:col-span-2 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                                <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Historia i Przepływy</h4>
+                                <div class="text-xs text-slate-400">
+                                    Suma przychodów: <span id="fin-total-income" class="text-emerald-400 font-bold">0.00 zł</span> | 
+                                    Wydatki: <span id="fin-total-expense" class="text-rose-400 font-bold">0.00 zł</span>
+                                </div>
+                            </div>
+                            <div id="finance-list" class="space-y-3 max-h-[400px] overflow-y-auto pr-1 mt-4">
+                                <!-- Generowane dynamicznie -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION F: CALENDAR -->
             <section id="tab-calendar" class="tab-content hidden space-y-6">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                    <!-- Formularz dodawania wydarzenia -->
                     <div class="glass p-5 rounded-2xl border border-slate-800/60 space-y-4">
                         <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Dodaj Wydarzenie</h4>
                         <div class="space-y-3 text-xs">
                             <div class="space-y-1">
                                 <label class="text-slate-400 font-semibold">Nazwa wydarzenia</label>
-                                <input id="event-title" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200" placeholder="np. Spotkanie z klientem">
+                                <input id="event-title" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200" placeholder="np. Call z klientem">
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="space-y-1">
@@ -402,81 +515,147 @@
                             </div>
                             <div class="space-y-1">
                                 <label class="text-slate-400 font-semibold">Opis (opcjonalnie)</label>
-                                <textarea id="event-desc" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 text-slate-200 h-16 resize-none" placeholder="Szczegóły..."></textarea>
+                                <textarea id="event-desc" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 text-slate-200 h-16 resize-none" placeholder="Dodatkowe uwagi..."></textarea>
                             </div>
                             <button onclick="addCalendarEvent()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all">
-                                Zapisz w harmonogramie
+                                Zapisz w kalendarzu
                             </button>
                         </div>
                     </div>
 
-                    <!-- Agenda / Nadchodzące wydarzenia -->
                     <div class="glass p-5 rounded-2xl border border-slate-800/60 lg:col-span-2 space-y-4">
-                        <div class="flex items-center justify-between pb-3 border-b border-slate-800/80">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
                             <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Lista Wydarzeń Chronologicznie</h4>
                             <span class="text-xs text-slate-500">Auto-sortowanie po dacie</span>
                         </div>
-                        
-                        <div id="full-calendar-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-                            <!-- Generowane przez JS -->
+                        <div id="full-calendar-list" class="space-y-3 max-h-[450px] overflow-y-auto pr-1">
+                            <!-- JS gen -->
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION E: POMODORO -->
-            <section id="tab-pomodoro" class="tab-content hidden flex items-center justify-center">
-                <div class="glass p-8 rounded-3xl border border-slate-800/60 text-center max-w-md w-full space-y-8 py-10 relative overflow-hidden">
+            <!-- SECTION G: POMODORO & AMBIENT (ENHANCED!) -->
+            <section id="tab-pomodoro" class="tab-content hidden flex flex-col lg:flex-row gap-6 justify-center items-start">
+                <!-- Pomodoro Timer -->
+                <div class="glass p-8 rounded-3xl border border-slate-800/60 text-center max-w-md w-full space-y-6 py-8 relative overflow-hidden flex-1">
                     <div class="absolute -top-10 -left-10 w-40 h-40 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                    
-                    <!-- Selektor Praca / Przerwa -->
                     <div class="flex items-center justify-center gap-2 bg-slate-900 border border-slate-800 p-1.5 rounded-2xl max-w-xs mx-auto text-xs font-semibold relative z-10">
-                        <button id="pomo-mode-work" onclick="setPomodoroMode('work')" class="flex-1 px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/25 transition-all">Praca</button>
-                        <button id="pomo-mode-break" onclick="setPomodoroMode('break')" class="flex-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white transition-all">Przerwa</button>
+                        <button id="pomo-mode-work" onclick="setPomodoroMode('work')" class="flex-1 px-4 py-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/25 transition-all">Praca</button>
+                        <button id="pomo-mode-break" onclick="setPomodoroMode('break')" class="flex-1 px-4 py-2 rounded-xl text-slate-400 hover:text-white transition-all">Przerwa</button>
                     </div>
-
-                    <!-- Okrągły Zegar (SVG Progress Ring) -->
-                    <div class="relative w-64 h-64 mx-auto flex items-center justify-center">
+                    <div class="relative w-56 h-56 mx-auto flex items-center justify-center">
                         <svg class="w-full h-full transform -rotate-90">
-                            <circle cx="128" cy="128" r="115" stroke-width="6" stroke="#1e293b" fill="transparent" />
-                            <circle id="pomo-progress-ring" cx="128" cy="128" r="115" stroke-width="8" stroke="#f43f5e" fill="transparent" 
-                                    stroke-dasharray="722" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-300" />
+                            <circle cx="112" cy="112" r="95" stroke-width="6" stroke="#101524" fill="transparent" />
+                            <circle id="pomo-progress-ring" cx="112" cy="112" r="95" stroke-width="8" stroke="#f43f5e" fill="transparent" 
+                                    stroke-dasharray="597" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-300" />
                         </svg>
                         <div class="absolute inset-0 flex flex-col items-center justify-center">
                             <span id="pomo-time" class="text-5xl font-extrabold tracking-tighter text-white">25:00</span>
-                            <span id="pomo-status-label" class="text-xs text-rose-400 font-bold tracking-widest uppercase mt-1">Czas na skupienie</span>
+                            <span id="pomo-status-label" class="text-[10px] text-rose-400 font-bold tracking-widest uppercase mt-1">Czas na skupienie</span>
                         </div>
                     </div>
-
-                    <!-- Przyciski Kontroli -->
                     <div class="flex items-center justify-center gap-4">
                         <button onclick="resetPomodoro()" class="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all">
-                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                         </button>
-                        <button id="pomo-start-btn" onclick="togglePomodoro()" class="px-8 py-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-2xl shadow-lg shadow-rose-600/20 flex items-center gap-2 transition-all">
+                        <button id="pomo-start-btn" onclick="togglePomodoro()" class="px-8 py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-2xl shadow-lg shadow-rose-600/20 flex items-center gap-2 transition-all">
                             <i data-lucide="play" id="pomo-start-icon"></i> <span id="pomo-start-text">Rozpocznij</span>
                         </button>
                         <button onclick="openTimerSettings()" class="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all">
-                            <i data-lucide="settings" class="w-5 h-5"></i>
+                            <i data-lucide="settings" class="w-4 h-4"></i>
                         </button>
                     </div>
-
-                    <!-- Modal Ustawień Pomodoro (inline) -->
-                    <div id="pomo-settings-modal" class="hidden border-t border-slate-800 pt-6 mt-6 text-left space-y-4">
-                        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400">Ustawienia Długości</h4>
+                    <div id="pomo-settings-modal" class="hidden border-t border-slate-850 pt-4 mt-4 text-left space-y-3">
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400">Interwały</h4>
                         <div class="grid grid-cols-2 gap-4 text-xs">
                             <div class="space-y-1">
-                                <label class="text-slate-400 font-semibold">Praca (minuty)</label>
-                                <input id="pomo-set-work" type="number" value="25" min="1" max="99" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-rose-500 text-slate-200">
+                                <label class="text-slate-400 font-semibold">Praca (min)</label>
+                                <input id="pomo-set-work" type="number" value="25" min="1" max="99" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 focus:outline-none focus:border-rose-500 text-slate-200">
                             </div>
                             <div class="space-y-1">
-                                <label class="text-slate-400 font-semibold">Przerwa (minuty)</label>
-                                <input id="pomo-set-break" type="number" value="5" min="1" max="99" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-rose-500 text-slate-200">
+                                <label class="text-slate-400 font-semibold">Przerwa (min)</label>
+                                <input id="pomo-set-break" type="number" value="5" min="1" max="99" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 focus:outline-none focus:border-rose-500 text-slate-200">
                             </div>
                         </div>
-                        <button onclick="savePomodoroSettings()" class="w-full bg-slate-800 hover:bg-rose-600 text-white py-2 rounded-xl font-bold transition-all text-xs">
-                            Zastosuj Zmiany
-                        </button>
+                        <button onclick="savePomodoroSettings()" class="w-full bg-slate-800 hover:bg-rose-600 text-white py-2 rounded-xl font-bold transition-all text-xs">Zastosuj</button>
+                    </div>
+                </div>
+
+                <!-- Ambient Generator panel -->
+                <div class="glass p-6 rounded-3xl border border-slate-800/60 max-w-md w-full space-y-5 flex-1">
+                    <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="music" class="text-indigo-400"></i> Syntezator Szumów Focusa
+                    </h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">System generuje naturalny, kojący szum prosto w Twojej przeglądarce za pomocą Web Audio API. Pomaga w wejściu w stan głębokiej koncentracji.</p>
+                    <div class="space-y-4 pt-2">
+                        <!-- Rain noise -->
+                        <div class="bg-slate-900 p-4 border border-slate-800 rounded-2xl space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-300 flex items-center gap-2"><i data-lucide="cloud-rain" class="w-4 h-4 text-blue-400"></i> Kojący Deszcz</span>
+                                <button onclick="toggleAmbient('rain')" id="btn-ambient-rain" class="text-[10px] bg-slate-800 hover:bg-slate-750 px-3 py-1 rounded-xl text-slate-300 font-semibold transition-all">Graj</button>
+                            </div>
+                            <input type="range" id="vol-rain" min="0" max="100" value="50" oninput="changeAmbientVolume('rain', this.value)" class="w-full accent-indigo-500">
+                        </div>
+                        <!-- Space drone -->
+                        <div class="bg-slate-900 p-4 border border-slate-800 rounded-2xl space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-300 flex items-center gap-2"><i data-lucide="moon" class="w-4 h-4 text-purple-400"></i> Głęboki Kosmos</span>
+                                <button onclick="toggleAmbient('space')" id="btn-ambient-space" class="text-[10px] bg-slate-800 hover:bg-slate-750 px-3 py-1 rounded-xl text-slate-300 font-semibold transition-all">Graj</button>
+                            </div>
+                            <input type="range" id="vol-space" min="0" max="100" value="40" oninput="changeAmbientVolume('space', this.value)" class="w-full accent-indigo-500">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION H: NEXUSAI COPILOT (NEW!) -->
+            <section id="tab-ai" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+                    <!-- Szybkie polecenia AI -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 flex flex-col gap-4 h-fit">
+                        <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                            <i data-lucide="zap" class="text-amber-400"></i> Autogenerator Planu
+                        </h4>
+                        <p class="text-xs text-slate-400 leading-relaxed">AI potrafi wygenerować zarys kroków dla dowolnego celu, który przed nim postawisz i jednym przyciskiem osadzić go jako zadania na Twojej tablicy Kanban!</p>
+                        
+                        <div class="space-y-3 pt-2">
+                            <button onclick="triggerQuickAIQuery('Stwórz harmonogram nauki TypeScriptu w 5 krokach')" class="w-full text-left bg-slate-900 hover:bg-slate-800 border border-slate-800 p-3 rounded-xl transition-all text-xs group">
+                                <p class="font-bold text-indigo-400">TypeScript w 5 krokach</p>
+                                <p class="text-[10px] text-slate-500 mt-1">Generuje precyzyjną listę zadań do Kanbanu</p>
+                            </button>
+                            <button onclick="triggerQuickAIQuery('Napisz plan redukcji stresu w pracy programisty')" class="w-full text-left bg-slate-900 hover:bg-slate-800 border border-slate-800 p-3 rounded-xl transition-all text-xs group">
+                                <p class="font-bold text-fuchsia-400">Zwalczanie stresu w IT</p>
+                                <p class="text-[10px] text-slate-500 mt-1">Szybkie zadania regeneracyjne i focusowe</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Okno czatu AI -->
+                    <div class="glass p-5 rounded-2xl border border-slate-800/60 lg:col-span-2 flex flex-col h-[520px]">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-3 h-3 bg-indigo-500 rounded-full animate-ping"></div>
+                                <h4 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Rozmowa z NexusAI</h4>
+                            </div>
+                            <span class="text-[10px] bg-indigo-500/10 text-indigo-400 font-bold px-2 py-0.5 rounded uppercase">Gemini 3.1 Live</span>
+                        </div>
+                        
+                        <!-- Okno wiadomości -->
+                        <div id="ai-chat-window" class="flex-1 overflow-y-auto space-y-4 py-4 pr-1 text-xs">
+                            <div class="bg-indigo-950/20 border border-indigo-900/30 p-3.5 rounded-2xl max-w-[85%]">
+                                <p class="font-bold text-indigo-300">NexusAI:</p>
+                                <p class="mt-1 leading-relaxed text-slate-300">Cześć! Jestem Twoim osobistym asystentem produktywności. Możesz poprosić mnie o cokolwiek: zaplanowanie projektu, sformatowanie notatek lub stworzenie planu zadań. Napisz mi co chcesz dzisiaj osiągnąć!</p>
+                            </div>
+                        </div>
+
+                        <!-- Panel wysyłania -->
+                        <div class="flex gap-2 pt-3 border-t border-slate-800">
+                            <input id="ai-input" type="text" onkeydown="if(event.key === 'Enter') sendAICopilotMessage()" placeholder="Zadaj pytanie lub poproś o plan działania..." class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-indigo-500 text-slate-200">
+                            <button onclick="sendAICopilotMessage()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 rounded-xl transition-all flex items-center justify-center">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -484,7 +663,7 @@
         </div>
     </main>
 
-    <!-- ==================== MODALS ==================== -->
+    <!-- ==================== SYSTEMOWE OKNA MODALNE (CUSTOM MODALS) ==================== -->
     <!-- MODAL: SZYBKIE DODAWANIE ZADANIA -->
     <div id="task-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="glass max-w-md w-full p-6 rounded-2xl border border-slate-800 shadow-2xl space-y-4 tab-content">
@@ -496,21 +675,22 @@
             <div class="space-y-3 text-xs">
                 <div class="space-y-1">
                     <label class="text-slate-400 font-semibold">Nazwa zadania</label>
-                    <input id="modal-task-title" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200" placeholder="np. Przeprowadzić code review">
+                    <input id="modal-task-title" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200" placeholder="np. Zaimplementować bazy danych">
                 </div>
                 
                 <div class="space-y-1">
                     <label class="text-slate-400 font-semibold">Opis</label>
-                    <textarea id="modal-task-desc" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 text-slate-200 h-20 resize-none" placeholder="Dodaj więcej szczegółów..."></textarea>
+                    <textarea id="modal-task-desc" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 text-slate-200 h-20 resize-none" placeholder="Co dokładnie należy zrobić..."></textarea>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1">
-                        <label class="text-slate-400 font-semibold">Kategoria / Tag</label>
+                        <label class="text-slate-400 font-semibold">Tag</label>
                         <select id="modal-task-tag" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 text-slate-200">
                             <option value="Frontend">Frontend</option>
                             <option value="Backend">Backend</option>
                             <option value="Design">Design</option>
+                            <option value="Finanse">Finanse</option>
                             <option value="Inne">Inne</option>
                         </select>
                     </div>
@@ -532,10 +712,20 @@
         </div>
     </div>
 
+    <!-- MODAL: POTWIERDZENIA I ALERTY (CUSTOM NOTIFICATION MODALS) -->
+    <div id="system-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden z-[60] flex items-center justify-center p-4">
+        <div class="glass max-w-sm w-full p-6 rounded-2xl border border-slate-800 shadow-2xl space-y-4 text-center">
+            <div id="sys-modal-icon" class="w-12 h-12 rounded-full flex items-center justify-center mx-auto"></div>
+            <h3 id="sys-modal-title" class="font-bold text-base text-white"></h3>
+            <p id="sys-modal-desc" class="text-xs text-slate-400 leading-relaxed"></p>
+            <div class="flex justify-center gap-3 pt-2" id="sys-modal-actions"></div>
+        </div>
+    </div>
+
 
     <!-- ==================== LOGIKA JAVASCRIPT ==================== -->
     <script>
-        // GLOBAL STATE
+        // GLOBAL STATE (Z rozszerzeniem o nowe funkcje: Nawyki, Finanse, Chat AI)
         let state = {
             tasks: [],
             notes: [],
@@ -545,28 +735,40 @@
                 workMin: 25,
                 breakMin: 5,
                 completedSessions: 0
-            }
+            },
+            habits: [],     // { id, name, frequency, streak, lastCompletedDate }
+            finance: [],    // { id, title, amount, type, category, date }
+            aiHistory: []   // { role: 'user' | 'model', text }
         };
 
-        // Zmienne tymczasowe dla filtrów i edytora
         let currentNoteId = null;
         let searchTaskQuery = "";
         let filterPriorityVal = "all";
         let activeTab = 'dashboard';
         let chartInstance = null;
 
-        // Pomodoro state
+        // Pomodoro State
         let pomoInterval = null;
         let pomoMinutes = 25;
         let pomoSeconds = 0;
         let pomoIsRunning = false;
-        let pomoCurrentMode = 'work'; // 'work' lub 'break'
+        let pomoCurrentMode = 'work'; // 'work' / 'break'
+
+        // Web Audio Context for Focus Ambient Noise and Alert Sound
+        let audioCtx = null;
+        let ambientNodes = {
+            rain: null,
+            space: null
+        };
+        let ambientGains = {
+            rain: null,
+            space: null
+        };
 
         // INICJALIZACJA APLIKACJI
         window.onload = function() {
             loadState();
-            // Jeśli baza jest pusta, ładujemy przykładowe dane
-            if (state.tasks.length === 0 && state.notes.length === 0 && state.events.length === 0) {
+            if (state.tasks.length === 0 && state.notes.length === 0 && state.events.length === 0 && state.habits.length === 0) {
                 loadMockData();
             }
             lucide.createIcons();
@@ -576,47 +778,59 @@
             renderTasks();
             renderNotes();
             renderCalendar();
+            renderHabits();
+            renderFinance();
             renderNotifications();
             resetPomodoroUI();
         }
 
-        // AUTO-SAVE SYSTEM
+        // AUTO-SAVE SYSTEM (Trwałość danych w LocalStorage)
         function saveState() {
-            localStorage.setItem('nexushub_state', JSON.stringify(state));
+            localStorage.setItem('nexushub_state_pro', JSON.stringify(state));
             updateBadges();
         }
 
         function loadState() {
-            const saved = localStorage.getItem('nexushub_state');
+            const saved = localStorage.getItem('nexushub_state_pro');
             if (saved) {
                 state = JSON.parse(saved);
             }
         }
 
-        function resetAllData() {
-            if (confirm("Czy na pewno chcesz zresetować wszystkie dane? Spowoduje to bezpowrotne usunięcie zadań, kalendarza i notatek.")) {
-                localStorage.removeItem('nexushub_state');
-                location.reload();
-            }
+        function triggerResetConfirmation() {
+            showCustomConfirm(
+                "Resetowanie Danych",
+                "Czy na pewno chcesz bezpowrotnie zresetować całą bazę NexusHub? Spowoduje to usunięcie wszystkich Twoich zadań, notatek, nawyków i transakcji.",
+                () => {
+                    localStorage.removeItem('nexushub_state_pro');
+                    location.reload();
+                }
+            );
         }
 
-        // ŁADOWANIE PRZYKŁADOWYCH DANYCH NA START
+        // ŁADOWANIE MOCKÓW NA START
         function loadMockData() {
             state.tasks = [
-                { id: "t1", title: "Zaimplementować system autoryzacji", desc: "Użyć JWT i bezpiecznego przechowywania tokenów.", tag: "Backend", priority: "high", status: "todo" },
-                { id: "t2", title: "Refaktoryzacja komponentów UI", desc: "Zoptymalizować czas renderowania tablic i list na urządzeniach mobilnych.", tag: "Frontend", priority: "medium", status: "progress" },
-                { id: "t3", title: "Zaprojektować logo dla nowego SaaS-a", desc: "Szkice koncepcyjne i wybór palety barw.", tag: "Design", priority: "low", status: "done" }
+                { id: "t1", title: "Nauka systemu state w React", desc: "Przećwiczyć hooki useState, useEffect i useContext.", tag: "Frontend", priority: "high", status: "todo" },
+                { id: "t2", title: "Wdrożenie integracji API NexusAI", desc: "Przetestować przesyłanie planów działań z Gemini 3.1", tag: "Backend", priority: "medium", status: "progress" },
+                { id: "t3", title: "Codzienne planowanie budżetu", desc: "Zoptymalizować finanse osobiste za kwiecień.", tag: "Finanse", priority: "low", status: "done" }
             ];
             state.notes = [
-                { id: "n1", title: "💡 Pomysły na rozwój projektu", content: "1. Integracja z GPT-4 do auto-generowania zadań.\n2. Wersja mobilna dedykowana jako PWA.\n3. Możliwość eksportu raportów analitycznych do plików PDF.", color: "indigo", date: new Date().toLocaleString() },
-                { id: "n2", title: "📋 Lista zakupów sprzętu", content: "- Nowy mikrofon pojemnościowy\n- Podkładka na biurko XL\n- Monitor 4K IPS do pracy", color: "emerald", date: new Date().toLocaleString() }
+                { id: "n1", title: "💡 Pomysły na Startup", content: "1. Serwis do analizy nawyków zintegrowany z AI.\n2. Kosmiczne dźwięki ambientowe ułatwiające pracę w głębokim skupieniu.", color: "indigo", date: new Date().toLocaleString() }
             ];
             state.events = [
-                { id: "e1", title: "🚀 Premiera wersji beta", date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], time: "12:00", desc: "Publikacja na serwerze produkcyjnym i powiadomienie zapisanych użytkowników." },
-                { id: "e2", title: "📅 Spotkanie strategiczne", date: new Date().toISOString().split('T')[0], time: "10:30", desc: "Omówienie celów i budżetu na kolejny kwartał." }
+                { id: "e1", title: "🎯 Przegląd celów tygodnia", date: new Date().toISOString().split('T')[0], time: "18:00", desc: "Analiza postępów w nauce, finansach i nawykach." }
+            ];
+            state.habits = [
+                { id: "h1", name: "Zimny prysznic rano", frequency: "daily", streak: 5, lastCompletedDate: "2026-05-17" },
+                { id: "h2", name: "Picie 2.5l wody", frequency: "daily", streak: 2, lastCompletedDate: "" }
+            ];
+            state.finance = [
+                { id: "f1", title: "Wypłata za zlecenie", amount: 1500.00, type: "income", category: "Praca", date: new Date().toISOString().split('T')[0] },
+                { id: "f2", title: "Subskrypcja chmury", amount: 49.99, type: "expense", category: "Technologia", date: new Date().toISOString().split('T')[0] }
             ];
             state.notifications = [
-                { text: "Zainicjowano bazę danych NexusHub.", time: "Właśnie teraz" }
+                { text: "Zainicjowano bazę NexusHub Ultimate Pro.", time: "Teraz" }
             ];
             saveState();
         }
@@ -626,59 +840,129 @@
             const now = new Date();
             const timeStr = now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             const dateStr = now.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
-            document.getElementById('live-clock').innerText = `${dateStr} | ${timeStr}`;
+            const element = document.getElementById('live-clock');
+            if (element) {
+                element.innerText = `${dateStr} | ${timeStr}`;
+            }
         }
 
-        // TABS NAVIGATION (Przełączanie zakładek)
+
+        // CUSTOM ALERT & CONFIRM DIALOG SYSTEM (No alert(), no confirm()!)
+        function showCustomAlert(title, desc, type = 'info') {
+            const modal = document.getElementById('system-modal');
+            const iconDiv = document.getElementById('sys-modal-icon');
+            const titleEl = document.getElementById('sys-modal-title');
+            const descEl = document.getElementById('sys-modal-desc');
+            const actionsEl = document.getElementById('sys-modal-actions');
+
+            titleEl.innerText = title;
+            descEl.innerText = desc;
+
+            if (type === 'success') {
+                iconDiv.className = "w-12 h-12 rounded-full flex items-center justify-center mx-auto bg-emerald-500/10 text-emerald-400";
+                iconDiv.innerHTML = '<i data-lucide="check-circle" class="w-6 h-6"></i>';
+            } else if (type === 'error') {
+                iconDiv.className = "w-12 h-12 rounded-full flex items-center justify-center mx-auto bg-rose-500/10 text-rose-400";
+                iconDiv.innerHTML = '<i data-lucide="x-circle" class="w-6 h-6"></i>';
+            } else {
+                iconDiv.className = "w-12 h-12 rounded-full flex items-center justify-center mx-auto bg-indigo-500/10 text-indigo-400";
+                iconDiv.innerHTML = '<i data-lucide="info" class="w-6 h-6"></i>';
+            }
+
+            actionsEl.innerHTML = `
+                <button onclick="closeSystemModal()" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs">Ok</button>
+            `;
+
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function showCustomConfirm(title, desc, onConfirm) {
+            const modal = document.getElementById('system-modal');
+            const iconDiv = document.getElementById('sys-modal-icon');
+            const titleEl = document.getElementById('sys-modal-title');
+            const descEl = document.getElementById('sys-modal-desc');
+            const actionsEl = document.getElementById('sys-modal-actions');
+
+            titleEl.innerText = title;
+            descEl.innerText = desc;
+
+            iconDiv.className = "w-12 h-12 rounded-full flex items-center justify-center mx-auto bg-amber-500/10 text-amber-400";
+            iconDiv.innerHTML = '<i data-lucide="alert-triangle" class="w-6 h-6"></i>';
+
+            actionsEl.innerHTML = `
+                <button onclick="closeSystemModal()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-400 font-semibold rounded-xl text-xs">Anuluj</button>
+                <button id="sys-confirm-ok-btn" class="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-xl text-xs shadow-lg shadow-rose-600/20">Potwierdzam</button>
+            `;
+
+            document.getElementById('sys-confirm-ok-btn').onclick = () => {
+                onConfirm();
+                closeSystemModal();
+            };
+
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeSystemModal() {
+            document.getElementById('system-modal').classList.add('hidden');
+        }
+
+
+        // TABS NAVIGATION
         function switchTab(tabId) {
             activeTab = tabId;
-            // Ukryj wszystkie sekcje
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             
-            // Usuń aktywne klasy z nawigacji
             document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.className = "nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left";
+                btn.className = "nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-400 hover:bg-slate-900/50 hover:text-white transition-all text-left";
             });
 
-            // Pokaż wybraną sekcję
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const element = document.getElementById(`tab-${tabId}`);
+            if (element) {
+                element.classList.remove('hidden');
+            }
 
-            // Aktywuj wizualnie właściwy przycisk
             const activeBtn = document.getElementById(`btn-${tabId}`);
             if (activeBtn) {
                 const colorMap = {
                     dashboard: 'bg-indigo-600 hover:bg-indigo-500 text-white',
                     tasks: 'bg-indigo-600 hover:bg-indigo-500 text-white',
                     notes: 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white',
-                    calendar: 'bg-emerald-600 hover:bg-emerald-500 text-white',
-                    pomodoro: 'bg-rose-600 hover:bg-rose-500 text-white'
+                    habits: 'bg-emerald-600 hover:bg-emerald-500 text-white',
+                    finance: 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white',
+                    calendar: 'bg-indigo-600 hover:bg-indigo-500 text-white',
+                    pomodoro: 'bg-rose-600 hover:bg-rose-500 text-white',
+                    ai: 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 text-white shadow-md shadow-indigo-500/10'
                 };
                 const classToApply = colorMap[tabId] || 'bg-indigo-600 text-white';
-                activeBtn.className = `nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl ${classToApply} font-semibold transition-all text-left`;
+                activeBtn.className = `nav-btn w-full flex items-center justify-between px-4 py-2.5 rounded-xl ${classToApply} font-semibold transition-all text-left`;
             }
 
-            // Nagłówek dynamiczny
             const pageTitles = {
                 dashboard: 'Panel Główny i Statystyki',
                 tasks: 'Zadania i Tablica Kanban',
                 notes: 'Twój Notatnik Live',
+                habits: 'Dyscyplina & Śledzenie Nawyków',
+                finance: 'Budżet Domowy & Przepływy',
                 calendar: 'Harmonogram i Kalendarz Dnia',
-                pomodoro: 'Pomodoro Timer - Skupienie'
+                pomodoro: 'Pomodoro Timer & Szumy Ambient',
+                ai: 'Asystent NexusAI Copilot'
             };
             document.getElementById('page-title').innerText = pageTitles[tabId] || 'NexusHub';
 
-            // Odśwież widoki, które mogą wymagać załadowania nowych stanów
             if (tabId === 'dashboard') renderDashboard();
             if (tabId === 'tasks') renderTasks();
             if (tabId === 'calendar') renderCalendar();
+            if (tabId === 'habits') renderHabits();
+            if (tabId === 'finance') renderFinance();
 
-            // Automatyczne zamykanie menu mobilnego po kliknięciu
             if (window.innerWidth < 768) {
                 toggleMobileMenu(true);
             }
         }
 
-        // MOBILNE MENU
+        // MOBILE MENU
         function toggleMobileMenu(forceClose = false) {
             const nav = document.getElementById('nav-links');
             const icon = document.getElementById('menu-icon');
@@ -694,23 +978,22 @@
             lucide.createIcons();
         }
 
-        // UPDATE BADGES (Wskaźniki liczbowe)
         function updateBadges() {
             document.getElementById('badge-tasks').innerText = state.tasks.filter(t => t.status !== 'done').length;
             document.getElementById('badge-notes').innerText = state.notes.length;
+            document.getElementById('badge-habits').innerText = state.habits.length;
         }
 
-        // SYSTEM POWIADOMIEŃ
+        // NOTIFICATIONS
         function addNotification(text) {
             state.notifications.unshift({ text, time: new Date().toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'}) });
-            if (state.notifications.length > 20) state.notifications.pop(); // limit 20 powiadomień
+            if (state.notifications.length > 20) state.notifications.pop();
             saveState();
             renderNotifications();
         }
 
         function toggleNotifications() {
-            const dropdown = document.getElementById('notif-dropdown');
-            dropdown.classList.toggle('hidden');
+            document.getElementById('notif-dropdown').classList.toggle('hidden');
         }
 
         function clearNotifications() {
@@ -740,31 +1023,35 @@
 
         // ==================== A: LOGIKA DASHBOARDU & CHART ====================
         function renderDashboard() {
-            // Statystyki
             const total = state.tasks.length;
             const done = state.tasks.filter(t => t.status === 'done').length;
-            const percent = total > 0 ? Math.round((done / total) * 100) : 0;
-
+            
             document.getElementById('stat-total-tasks').innerText = total;
-            document.getElementById('stat-done-tasks').innerText = done;
-            document.getElementById('stat-done-percentage').innerText = `${percent}% ukończenia`;
-            document.getElementById('stat-total-notes').innerText = state.notes.length;
-            document.getElementById('stat-pomodoros').innerText = state.pomodoro.completedSessions;
+            
+            // Licznik nawyków na dziś
+            const todayStr = new Date().toISOString().split('T')[0];
+            const habitsDoneToday = state.habits.filter(h => h.lastCompletedDate === todayStr).length;
+            document.getElementById('stat-habits-done').innerText = `${habitsDoneToday}/${state.habits.length}`;
 
-            // Zmień status dynamiczny
-            const statusText = document.getElementById('dashboard-status-text');
-            if (percent === 100 && total > 0) {
-                statusText.innerText = "Świetna robota! Wszystkie zadania ukończone!";
-            } else if (percent > 50) {
-                statusText.innerText = "Więcej niż połowa za Tobą! Tak trzymaj!";
+            // Bilans finansowy
+            let balance = 0;
+            state.finance.forEach(f => {
+                if (f.type === 'income') balance += f.amount;
+                else balance -= f.amount;
+            });
+            document.getElementById('stat-finance-balance').innerText = `${balance.toFixed(2)} zł`;
+            const balanceText = document.getElementById('stat-finance-balance');
+            if (balance >= 0) {
+                balanceText.className = "text-2xl font-bold mt-1 text-emerald-400";
             } else {
-                statusText.innerText = "Zacznij dzień od małych celów!";
+                balanceText.className = "text-2xl font-bold mt-1 text-rose-400";
             }
+
+            document.getElementById('stat-pomodoros').innerText = state.pomodoro.completedSessions;
 
             // Agenda na dashboardzie
             const agendaList = document.getElementById('dashboard-agenda-list');
             const sortedEvents = [...state.events].sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
-            const todayStr = new Date().toISOString().split('T')[0];
             const upcoming = sortedEvents.filter(e => e.date >= todayStr).slice(0, 3);
 
             if (upcoming.length === 0) {
@@ -782,7 +1069,6 @@
                 lucide.createIcons();
             }
 
-            // Inicjalizacja wykresu Chart.js
             initDashboardChart();
         }
 
@@ -790,15 +1076,21 @@
             const ctx = document.getElementById('tasksChart');
             if (!ctx) return;
 
-            // Zliczanie zadań wg kategorii
-            const tags = { Frontend: 0, Backend: 0, Design: 0, Inne: 0 };
-            state.tasks.forEach(t => {
-                if (tags[t.tag] !== undefined) tags[t.tag]++;
-                else tags.Inne++;
-            });
+            // Zliczanie zadań wg statusów
+            const todoCount = state.tasks.filter(t => t.status === 'todo').length;
+            const progressCount = state.tasks.filter(t => t.status === 'progress').length;
+            const doneCount = state.tasks.filter(t => t.status === 'done').length;
 
-            const completedTasks = state.tasks.filter(t => t.status === 'done').length;
-            const ongoingTasks = state.tasks.filter(t => t.status !== 'done').length;
+            // Wydatki wg kategorii
+            let totalEduc = 0, totalEntert = 0, totalFood = 0, totalTech = 0;
+            state.finance.forEach(f => {
+                if (f.type === 'expense') {
+                    if (f.category === 'Edukacja') totalEduc += f.amount;
+                    if (f.category === 'Rozrywka') totalEntert += f.amount;
+                    if (f.category === 'Jedzenie') totalFood += f.amount;
+                    if (f.category === 'Technologia') totalTech += f.amount;
+                }
+            });
 
             if (chartInstance) {
                 chartInstance.destroy();
@@ -807,23 +1099,25 @@
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['Skończone', 'W Toku', 'Frontend', 'Backend', 'Design'],
+                    labels: ['Do zrobienia', 'W toku', 'Skończone', 'Edu. Wydatki', 'Rozrywka', 'Technologie'],
                     datasets: [{
-                        label: 'Liczba elementów',
-                        data: [completedTasks, ongoingTasks, tags.Frontend, tags.Backend, tags.Design],
+                        label: 'Zadania & Koszty (zł)',
+                        data: [todoCount, progressCount, doneCount, totalEduc, totalEntert, totalTech],
                         backgroundColor: [
-                            'rgba(16, 185, 129, 0.4)', // zielony
-                            'rgba(99, 102, 241, 0.4)',  // indygo
-                            'rgba(139, 92, 246, 0.3)',  // fioletowy
-                            'rgba(236, 72, 153, 0.3)',  // fuksja
-                            'rgba(245, 158, 11, 0.3)'   // amber
+                            'rgba(99, 102, 241, 0.4)', // Todo (ind)
+                            'rgba(245, 158, 11, 0.4)', // Progress (amber)
+                            'rgba(16, 185, 129, 0.4)', // Done (emerald)
+                            'rgba(236, 72, 153, 0.4)', // Edu (pink)
+                            'rgba(168, 85, 247, 0.4)', // Ent (purple)
+                            'rgba(6, 182, 212, 0.4)'   // Tech (cyan)
                         ],
                         borderColor: [
-                            'rgb(16, 185, 129)',
                             'rgb(99, 102, 241)',
-                            'rgb(139, 92, 246)',
+                            'rgb(245, 158, 11)',
+                            'rgb(16, 185, 129)',
                             'rgb(236, 72, 153)',
-                            'rgb(245, 158, 11)'
+                            'rgb(168, 85, 247)',
+                            'rgb(6, 182, 212)'
                         ],
                         borderWidth: 1.5,
                         borderRadius: 8
@@ -851,7 +1145,7 @@
         }
 
 
-        // ==================== B: LOGIKA KANBAN (DRAG & DROP + FILTRY) ====================
+        // ==================== B: LOGIKA KANBAN ====================
         function renderTasks() {
             const columns = {
                 todo: document.getElementById('col-todo'),
@@ -859,15 +1153,12 @@
                 done: document.getElementById('col-done')
             };
 
-            // Wyczyszczenie kolumn
             for (let c in columns) {
-                columns[c].innerHTML = "";
+                if (columns[c]) columns[c].innerHTML = "";
             }
 
-            // Zliczenia
             let counters = { todo: 0, progress: 0, done: 0 };
 
-            // Filtracja
             const filtered = state.tasks.filter(t => {
                 const matchSearch = t.title.toLowerCase().includes(searchTaskQuery.toLowerCase()) || 
                                     t.desc.toLowerCase().includes(searchTaskQuery.toLowerCase());
@@ -883,7 +1174,6 @@
                 card.ondragstart = (e) => drag(e);
                 card.className = "bg-slate-900/80 hover:bg-slate-900 border border-slate-800 hover:border-indigo-500/50 p-4 rounded-xl shadow-lg transition-all cursor-grab active:cursor-grabbing group space-y-3 relative";
                 
-                // Klasa priorytetu
                 const priorityColors = {
                     high: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
                     medium: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
@@ -893,9 +1183,9 @@
 
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
-                        <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">${t.tag}</span>
+                        <span class="text-[9px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">${t.tag}</span>
                         <div class="flex items-center gap-1.5">
-                            <span class="text-[9px] border px-2 py-0.5 rounded-md font-extrabold uppercase ${priorityClass}">${t.priority === 'high' ? 'Wysoki' : t.priority === 'medium' ? 'Średni' : 'Niski'}</span>
+                            <span class="text-[9px] border px-2 py-0.5 rounded font-extrabold uppercase ${priorityClass}">${t.priority === 'high' ? 'Wysoki' : t.priority === 'medium' ? 'Średni' : 'Niski'}</span>
                             <button onclick="deleteTask('${t.id}')" class="text-slate-500 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100 p-0.5">
                                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                             </button>
@@ -905,17 +1195,17 @@
                         <h5 class="text-xs font-bold text-slate-100">${t.title}</h5>
                         <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">${t.desc || 'Brak opisu.'}</p>
                     </div>
-                    <!-- Szybkie przyciski przechodzenia dla urządzeń mobilnych/bez myszki -->
                     <div class="flex justify-end gap-1.5 pt-2 border-t border-slate-850 opacity-0 group-hover:opacity-100 lg:opacity-0 transition-opacity">
                         ${t.status !== 'todo' ? `<button onclick="moveTask('${t.id}', 'todo')" class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded hover:text-white" title="Przenieś do: Do zrobienia">←</button>` : ''}
                         ${t.status !== 'progress' ? `<button onclick="moveTask('${t.id}', 'progress')" class="text-[9px] bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded hover:bg-indigo-500/20" title="Przenieś do: W toku">W toku</button>` : ''}
                         ${t.status !== 'done' ? `<button onclick="moveTask('${t.id}', 'done')" class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded hover:bg-emerald-500/20" title="Ukończ">✓</button>` : ''}
                     </div>
                 `;
-                columns[t.status].appendChild(card);
+                if (columns[t.status]) {
+                    columns[t.status].appendChild(card);
+                }
             });
 
-            // Aktualizacja liczników kolumn
             document.getElementById('count-todo').innerText = counters.todo;
             document.getElementById('count-progress').innerText = counters.progress;
             document.getElementById('count-done').innerText = counters.done;
@@ -924,7 +1214,6 @@
             updateBadges();
         }
 
-        // Wsparcie Drag & Drop
         function allowDrop(ev) {
             ev.preventDefault();
         }
@@ -962,14 +1251,12 @@
             renderTasks();
         }
 
-        // Dodawanie z Modala
         function openQuickTaskModal() {
             document.getElementById('task-modal').classList.remove('hidden');
         }
 
         function closeQuickTaskModal() {
             document.getElementById('task-modal').classList.add('hidden');
-            // Wyczyszczenie pól
             document.getElementById('modal-task-title').value = "";
             document.getElementById('modal-task-desc').value = "";
         }
@@ -981,7 +1268,7 @@
             const priority = document.getElementById('modal-task-priority').value;
 
             if (!title) {
-                alert("Tytuł zadania jest wymagany!");
+                showCustomAlert("Brak Tytułu", "Tytuł zadania jest wymagany!", "error");
                 return;
             }
 
@@ -1018,6 +1305,7 @@
 
         function renderNotes() {
             const sidebarList = document.getElementById('notes-sidebar-list');
+            if (!sidebarList) return;
             sidebarList.innerHTML = "";
 
             const filtered = state.notes.filter(n => 
@@ -1034,7 +1322,6 @@
                 const item = document.createElement('button');
                 item.onclick = () => selectNote(n.id);
                 
-                // Mapowanie kolorów krawędzi
                 const borderColors = {
                     indigo: 'border-l-indigo-500',
                     rose: 'border-l-rose-500',
@@ -1066,7 +1353,7 @@
                 document.getElementById('editor-note-title').value = note.title;
                 document.getElementById('editor-note-content').value = note.content;
                 document.getElementById('editor-note-date').innerText = note.date;
-                renderNotes(); // Do aktualizacji podświetlenia aktywnej notatki
+                renderNotes();
             }
         }
 
@@ -1093,12 +1380,8 @@
                 note.title = document.getElementById('editor-note-title').value;
                 note.content = document.getElementById('editor-note-content').value;
                 note.date = new Date().toLocaleString('pl-PL', {day: 'numeric', month: 'short', hour:'2-digit', minute:'2-digit'});
-                
                 document.getElementById('editor-note-date').innerText = note.date;
                 saveState();
-                
-                // Odśwież listę po lewej stronie płynnie
-                const activeItem = state.notes.findIndex(n => n.id === currentNoteId);
                 renderNotes();
             }
         }
@@ -1113,19 +1396,24 @@
             }
         }
 
-        function deleteCurrentNote() {
+        function triggerNoteDeletion() {
             if (!currentNoteId) return;
-            const idx = state.notes.findIndex(n => n.id === currentNoteId);
-            if (idx !== -1) {
-                state.notes.splice(idx, 1);
-                currentNoteId = null;
-                saveState();
-                renderNotes();
-                
-                document.getElementById('note-editor').classList.add('hidden');
-                document.getElementById('editor-placeholder').classList.remove('hidden');
-                addNotification("Usunięto notatkę.");
-            }
+            showCustomConfirm(
+                "Usuwanie Notatki",
+                "Czy na pewno chcesz usunąć tę notatkę? Zmiany są nieodwracalne.",
+                () => {
+                    const idx = state.notes.findIndex(n => n.id === currentNoteId);
+                    if (idx !== -1) {
+                        state.notes.splice(idx, 1);
+                        currentNoteId = null;
+                        saveState();
+                        renderNotes();
+                        document.getElementById('note-editor').classList.add('hidden');
+                        document.getElementById('editor-placeholder').classList.remove('hidden');
+                        addNotification("Usunięto notatkę.");
+                    }
+                }
+            );
         }
 
         function filterNotes(val) {
@@ -1134,9 +1422,193 @@
         }
 
 
-        // ==================== D: LOGIKA KALENDARZA / AGENDA ====================
+        // ==================== D: LOGIKA ŚLEDZENIA NAWYKÓW ====================
+        function renderHabits() {
+            const list = document.getElementById('habits-list');
+            if (!list) return;
+            list.innerHTML = "";
+
+            if (state.habits.length === 0) {
+                list.innerHTML = `<p class="text-xs text-slate-500 text-center py-8">Twój tracker nawyków jest pusty. Zbuduj zdrowe dyscypliny!</p>`;
+                return;
+            }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            state.habits.forEach(h => {
+                const card = document.createElement('div');
+                const isCompletedToday = h.lastCompletedDate === todayStr;
+
+                card.className = `p-4 rounded-xl border transition-all flex justify-between items-center gap-4 ${isCompletedToday ? 'bg-emerald-950/20 border-emerald-500/30' : 'bg-slate-900/40 border-slate-800'}`;
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <h5 class="text-xs font-bold ${isCompletedToday ? 'text-emerald-400 line-through opacity-70' : 'text-slate-100'}">${h.name}</h5>
+                            <span class="text-[9px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded uppercase font-bold">${h.frequency === 'daily' ? 'Codziennie' : '3x Tydzień'}</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 flex items-center gap-1">
+                            <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400 fill-amber-400/20"></i> Seria: <span class="font-bold text-amber-400">${h.streak} dni</span>
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleHabit('${h.id}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${isCompletedToday ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/10'}">
+                            ${isCompletedToday ? 'Wykonane' : 'Oznacz jako zrobione'}
+                        </button>
+                        <button onclick="deleteHabit('${h.id}')" class="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+            lucide.createIcons();
+            updateBadges();
+        }
+
+        function addHabit() {
+            const name = document.getElementById('habit-name').value.trim();
+            const freq = document.getElementById('habit-frequency').value;
+
+            if (!name) {
+                showCustomAlert("Pusta Nazwa", "Podaj nazwę nawyku, który chcesz wyrobić!", "error");
+                return;
+            }
+
+            const newHabit = {
+                id: "habit_" + Date.now(),
+                name,
+                frequency: freq,
+                streak: 0,
+                lastCompletedDate: ""
+            };
+
+            state.habits.push(newHabit);
+            saveState();
+            renderHabits();
+            document.getElementById('habit-name').value = "";
+            addNotification(`Zainicjowano nawyk: "${name}"`);
+        }
+
+        function toggleHabit(id) {
+            const habit = state.habits.find(h => h.id === id);
+            if (!habit) return;
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            if (habit.lastCompletedDate === todayStr) {
+                // Cofnięcie dzisiejszego zaliczenia
+                habit.lastCompletedDate = "";
+                if (habit.streak > 0) habit.streak--;
+            } else {
+                // Zaliczanie
+                habit.lastCompletedDate = todayStr;
+                habit.streak++;
+                playAlertSound();
+            }
+
+            saveState();
+            renderHabits();
+            addNotification(`Zaktualizowano nawyk: "${habit.name}"`);
+        }
+
+        function deleteHabit(id) {
+            const idx = state.habits.findIndex(h => h.id === id);
+            if (idx !== -1) {
+                const name = state.habits[idx].name;
+                state.habits.splice(idx, 1);
+                saveState();
+                renderHabits();
+                addNotification(`Usunięto nawyk: "${name}"`);
+            }
+        }
+
+
+        // ==================== E: LOGIKA MODUŁU FINANSÓW ====================
+        function renderFinance() {
+            const list = document.getElementById('finance-list');
+            if (!list) return;
+            list.innerHTML = "";
+
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            state.finance.forEach(f => {
+                if (f.type === 'income') totalIncome += f.amount;
+                else totalExpense += f.amount;
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/40 p-3.5 rounded-xl border border-slate-805 flex justify-between items-center gap-4 hover:border-slate-800 transition-all";
+                
+                const isIncome = f.type === 'income';
+                
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <span class="text-[9px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded uppercase font-bold">${f.category}</span>
+                        <h5 class="text-xs font-bold text-slate-200">${f.title}</h5>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-bold ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">
+                            ${isIncome ? '+' : '-'}${f.amount.toFixed(2)} zł
+                        </span>
+                        <button onclick="deleteTransaction('${f.id}')" class="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            document.getElementById('fin-total-income').innerText = `${totalIncome.toFixed(2)} zł`;
+            document.getElementById('fin-total-expense').innerText = `${totalExpense.toFixed(2)} zł`;
+            
+            lucide.createIcons();
+        }
+
+        function addTransaction() {
+            const title = document.getElementById('fin-title').value.trim();
+            const amount = parseFloat(document.getElementById('fin-amount').value);
+            const type = document.getElementById('fin-type').value;
+            const category = document.getElementById('fin-category').value;
+
+            if (!title || isNaN(amount) || amount <= 0) {
+                showCustomAlert("Niepoprawne Dane", "Uzupełnij poprawny tytuł oraz kwotę transakcji!", "error");
+                return;
+            }
+
+            const newTransaction = {
+                id: "fin_" + Date.now(),
+                title,
+                amount,
+                type,
+                category,
+                date: new Date().toISOString().split('T')[0]
+            };
+
+            state.finance.unshift(newTransaction);
+            saveState();
+            renderFinance();
+
+            document.getElementById('fin-title').value = "";
+            document.getElementById('fin-amount').value = "";
+            addNotification(`Zarejestrowano transakcję: "${title}" (${amount.toFixed(2)} zł)`);
+        }
+
+        function deleteTransaction(id) {
+            const idx = state.finance.findIndex(f => f.id === id);
+            if (idx !== -1) {
+                const title = state.finance[idx].title;
+                state.finance.splice(idx, 1);
+                saveState();
+                renderFinance();
+                addNotification(`Usunięto transakcję: "${title}"`);
+            }
+        }
+
+
+        // ==================== F: LOGIKA KALENDARZA ====================
         function renderCalendar() {
             const list = document.getElementById('full-calendar-list');
+            if (!list) return;
             list.innerHTML = "";
 
             if (state.events.length === 0) {
@@ -1144,7 +1616,6 @@
                 return;
             }
 
-            // Sortowanie wydarzeń od najbliższych chronologicznie
             const sorted = [...state.events].sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
 
             sorted.forEach(e => {
@@ -1153,12 +1624,12 @@
                 card.innerHTML = `
                     <div class="space-y-1">
                         <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">${e.date} | ${e.time}</span>
+                            <span class="text-xs font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md">${e.date} | ${e.time}</span>
                         </div>
                         <h5 class="text-sm font-bold text-slate-100">${e.title}</h5>
-                        <p class="text-xs text-slate-400">${e.desc || 'Brak dodatkowego opisu.'}</p>
+                        <p class="text-xs text-slate-400">${e.desc || 'Brak opisu.'}</p>
                     </div>
-                    <button onclick="deleteEvent('${e.id}')" class="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all" title="Usuń wydarzenie">
+                    <button onclick="deleteEvent('${e.id}')" class="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 `;
@@ -1174,7 +1645,7 @@
             const desc = document.getElementById('event-desc').value.trim();
 
             if (!title || !date || !time) {
-                alert("Wypełnij przynajmniej pola: Nazwa, Data i Godzina!");
+                showCustomAlert("Wymagane Pola", "Uzupełnij przynajmniej Nazwę, Datę i Godzinę wydarzenia!", "error");
                 return;
             }
 
@@ -1190,7 +1661,6 @@
             saveState();
             renderCalendar();
 
-            // Reset pól formularza
             document.getElementById('event-title').value = "";
             document.getElementById('event-date').value = "";
             document.getElementById('event-time').value = "";
@@ -1211,29 +1681,36 @@
         }
 
 
-        // ==================== E: LOGIKA POMODORO TIMER ====================
-        // System powiadamiania dźwiękowego wykorzystujący natywny syntezator przeglądarki (Web Audio API)
+        // ==================== G: LOGIKA POMODORO & SYNTEZY AMBIENTÓW ====================
         function playAlertSound() {
             try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
+                initAudioContext();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
                 osc.connect(gain);
-                gain.connect(ctx.destination);
+                gain.connect(audioCtx.destination);
                 osc.type = 'sine';
                 
-                // Miły, potrójny dźwięk
-                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.15); // E5
-                osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.3); // G5
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); 
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.3); 
                 
-                gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.55);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.55);
                 
                 osc.start();
-                osc.stop(ctx.currentTime + 0.6);
+                osc.stop(audioCtx.currentTime + 0.6);
             } catch (e) {
-                console.log("AudioContext nie mógł zostać uruchomiony ze względu na brak interakcji.", e);
+                console.log("AudioContext blocked or uninitialized.", e);
+            }
+        }
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
             }
         }
 
@@ -1248,38 +1725,47 @@
             const secStr = String(pomoSeconds).padStart(2, '0');
             document.getElementById('pomo-time').innerText = `${minStr}:${secStr}`;
 
-            // Liczenie proporcji koła postępu SVG
             const totalSeconds = (pomoCurrentMode === 'work' ? state.pomodoro.workMin : state.pomodoro.breakMin) * 60;
             const currentSeconds = pomoMinutes * 60 + pomoSeconds;
             const fraction = currentSeconds / totalSeconds;
-            const dashoffset = 722 - (fraction * 722);
+            const dashoffset = 597 - (fraction * 597);
             document.getElementById('pomo-progress-ring').style.strokeDashoffset = dashoffset;
         }
 
         function setPomodoroMode(mode) {
             if (pomoIsRunning) {
-                if (!confirm("Czasomierz działa! Czy chcesz zatrzymać i zmienić tryb?")) return;
-                togglePomodoro();
+                showCustomConfirm(
+                    "Timer w Toku",
+                    "Czy chcesz zatrzymać pracujący czasomierz i zmienić tryb?",
+                    () => {
+                        togglePomodoro();
+                        executeModeChange(mode);
+                    }
+                );
+            } else {
+                executeModeChange(mode);
             }
+        }
+
+        function executeModeChange(mode) {
             pomoCurrentMode = mode;
-            
             const workBtn = document.getElementById('pomo-mode-work');
             const breakBtn = document.getElementById('pomo-mode-break');
             const ring = document.getElementById('pomo-progress-ring');
             const label = document.getElementById('pomo-status-label');
 
             if (mode === 'work') {
-                workBtn.className = "flex-1 px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/25 transition-all";
-                breakBtn.className = "flex-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white transition-all";
+                workBtn.className = "flex-1 px-4 py-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/25 transition-all";
+                breakBtn.className = "flex-1 px-4 py-2 rounded-xl text-slate-400 hover:text-white transition-all";
                 ring.style.stroke = "#f43f5e";
                 label.innerText = "Czas na skupienie";
-                label.className = "text-xs text-rose-400 font-bold tracking-widest uppercase mt-1";
+                label.className = "text-[10px] text-rose-400 font-bold tracking-widest uppercase mt-1";
             } else {
-                breakBtn.className = "flex-1 px-4 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 transition-all";
-                workBtn.className = "flex-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white transition-all";
+                breakBtn.className = "flex-1 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 transition-all";
+                workBtn.className = "flex-1 px-4 py-2 rounded-xl text-slate-400 hover:text-white transition-all";
                 ring.style.stroke = "#10b981";
                 label.innerText = "Czas na odpoczynek";
-                label.className = "text-xs text-emerald-400 font-bold tracking-widest uppercase mt-1";
+                label.className = "text-[10px] text-emerald-400 font-bold tracking-widest uppercase mt-1";
             }
             resetPomodoroUI();
         }
@@ -1289,13 +1775,12 @@
             const startIcon = document.getElementById('pomo-start-icon');
 
             if (pomoIsRunning) {
-                // Pauza
                 clearInterval(pomoInterval);
                 pomoIsRunning = false;
                 startBtnText.innerText = "Wznów";
                 startIcon.setAttribute('data-lucide', 'play');
             } else {
-                // Start
+                initAudioContext();
                 pomoIsRunning = true;
                 startBtnText.innerText = "Pauza";
                 startIcon.setAttribute('data-lucide', 'pause');
@@ -1303,7 +1788,6 @@
                 pomoInterval = setInterval(() => {
                     if (pomoSeconds === 0) {
                         if (pomoMinutes === 0) {
-                            // Koniec czasu!
                             clearInterval(pomoInterval);
                             pomoIsRunning = false;
                             playAlertSound();
@@ -1311,13 +1795,11 @@
                             if (pomoCurrentMode === 'work') {
                                 state.pomodoro.completedSessions++;
                                 saveState();
-                                addNotification("Pomodoro ukończone! Czas na zasłużoną przerwę.");
-                                alert("Świetna robota! Czas na przerwę.");
-                                setPomodoroMode('break');
+                                showCustomAlert("Znakomita Sesja!", "Ukończyłeś cykl Pomodoro! Czas na przerwę.", "success");
+                                executeModeChange('break');
                             } else {
-                                addNotification("Przerwa dobiegła końca. Powrót do pracy!");
-                                alert("Koniec przerwy. Czas wracać do skupienia!");
-                                setPomodoroMode('work');
+                                showCustomAlert("Koniec Przerwy", "Czas wrócić do pełnego skupienia!", "info");
+                                executeModeChange('work');
                             }
                             return;
                         }
@@ -1342,8 +1824,7 @@
         }
 
         function openTimerSettings() {
-            const panel = document.getElementById('pomo-settings-modal');
-            panel.classList.toggle('hidden');
+            document.getElementById('pomo-settings-modal').classList.toggle('hidden');
         }
 
         function savePomodoroSettings() {
@@ -1356,9 +1837,260 @@
                 saveState();
                 resetPomodoro();
                 document.getElementById('pomo-settings-modal').classList.add('hidden');
-                addNotification("Zaktualizowano domyślne limity czasu Pomodoro.");
+                addNotification("Ustawienia timera zaktualizowane.");
             } else {
-                alert("Wartości muszą być większe od 0!");
+                showCustomAlert("Błędny Limit", "Wartości muszą być większe od 0!", "error");
+            }
+        }
+
+        // AMBIENT SOUND GENERATOR ENGINE (Pure Web Audio Synthesis - No external downloads)
+        function toggleAmbient(type) {
+            initAudioContext();
+            const btn = document.getElementById(`btn-ambient-${type}`);
+
+            if (ambientNodes[type]) {
+                // Stop sound
+                ambientNodes[type].stop();
+                ambientNodes[type] = null;
+                btn.innerText = "Graj";
+                btn.className = "text-[10px] bg-slate-800 hover:bg-slate-750 px-3 py-1 rounded-xl text-slate-300 font-semibold transition-all";
+            } else {
+                // Play Sound
+                btn.innerText = "Zatrzymaj";
+                btn.className = "text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-xl font-bold transition-all";
+                
+                if (type === 'rain') {
+                    playRainSynth();
+                } else if (type === 'space') {
+                    playSpaceSynth();
+                }
+            }
+        }
+
+        function playRainSynth() {
+            // White Noise generation for Rain (Modulated to sound like soft droplets)
+            const bufferSize = 2 * audioCtx.sampleRate;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+
+            const whiteNoise = audioCtx.createBufferSource();
+            whiteNoise.buffer = noiseBuffer;
+            whiteNoise.loop = true;
+
+            // Filter out highs to create a warm rainfall effect
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(450, audioCtx.currentTime);
+
+            const gainNode = audioCtx.createGain();
+            const userVol = parseInt(document.getElementById('vol-rain').value) / 100;
+            gainNode.gain.setValueAtTime(userVol * 0.15, audioCtx.currentTime);
+
+            whiteNoise.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            whiteNoise.start();
+            ambientNodes.rain = whiteNoise;
+            ambientGains.rain = gainNode;
+        }
+
+        function playSpaceSynth() {
+            // Low Frequency Oscillators detuned to create a cosmic, deep synth drone
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const osc3 = audioCtx.createOscillator();
+            
+            osc1.type = 'sawtooth';
+            osc2.type = 'triangle';
+            osc3.type = 'sine';
+
+            osc1.frequency.setValueAtTime(55, audioCtx.currentTime); // A1
+            osc2.frequency.setValueAtTime(55.2, audioCtx.currentTime); 
+            osc3.frequency.setValueAtTime(110, audioCtx.currentTime); // A2
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(120, audioCtx.currentTime);
+
+            const gainNode = audioCtx.createGain();
+            const userVol = parseInt(document.getElementById('vol-space').value) / 100;
+            gainNode.gain.setValueAtTime(userVol * 0.25, audioCtx.currentTime);
+
+            osc1.connect(filter);
+            osc2.connect(filter);
+            osc3.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc1.start();
+            osc2.start();
+            osc3.start();
+
+            ambientNodes.space = {
+                stop: () => {
+                    osc1.stop();
+                    osc2.stop();
+                    osc3.stop();
+                }
+            };
+            ambientGains.space = gainNode;
+        }
+
+        function changeAmbientVolume(type, val) {
+            if (ambientGains[type]) {
+                const multiplier = type === 'rain' ? 0.15 : 0.25;
+                ambientGains[type].gain.setValueAtTime((val / 100) * multiplier, audioCtx.currentTime);
+            }
+        }
+
+
+        // ==================== H: SILNIK AI ASSISTANT (NEXUSAI) ====================
+        async function sendAICopilotMessage() {
+            const input = document.getElementById('ai-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            appendAIMessage('user', text);
+            input.value = "";
+
+            const loadingId = appendAIMessage('model', 'Generuję odpowiedź...');
+            
+            try {
+                // Call Gemini Model
+                const apiKey = ""; // Canvas injects it at runtime
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const systemPrompt = "Jesteś asystentem produktywności o nazwie NexusAI. Twoim zadaniem jest motywowanie użytkownika, odpowiadanie na pytania i pomoc w planowaniu. Zachowuj zwięzły, niezwykle inspirujący i profesjonalny ton w języku polskim.";
+                
+                const payload = {
+                    contents: [{ parts: [{ text: text }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const aiResponseText = result.candidates?.[0]?.content?.parts?.[0]?.text || "Przepraszam, nie mogłem przetworzyć tego żądania.";
+
+                updateAIMessage(loadingId, aiResponseText);
+                addNotification("Odebrano odpowiedź od NexusAI");
+
+            } catch (err) {
+                updateAIMessage(loadingId, "Wystąpił błąd podczas łączenia z silnikiem AI. Spróbuj ponownie za chwilę.");
+            }
+        }
+
+        async function triggerQuickAIQuery(queryText) {
+            switchTab('ai');
+            appendAIMessage('user', `${queryText}`);
+            const loadingId = appendAIMessage('model', 'Generuję ustrukturyzowany plan zadań do Twojej tablicy Kanban...');
+
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const systemPrompt = "Wygeneruj ustrukturyzowany plan działania w formacie JSON składający się dokładnie z 5 zadań. Użyj formatu JSON jako tablicy obiektów z polami: title (krótki tytuł po polsku), desc (szczegółowy opis po polsku), tag (kategoria, np: Frontend, Backend, Design, Finanse), priority (low, medium lub high). Zwróć WYŁĄCZNIE czysty JSON.";
+
+                const payload = {
+                    contents: [{ parts: [{ text: queryText }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    title: { type: "STRING" },
+                                    desc: { type: "STRING" },
+                                    tag: { type: "STRING" },
+                                    priority: { type: "STRING", enum: ["low", "medium", "high"] }
+                                },
+                                required: ["title", "desc", "tag", "priority"]
+                            }
+                        }
+                    },
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (jsonText) {
+                    const parsedTasks = JSON.parse(jsonText);
+                    
+                    // Automatyczne wstrzykiwanie do bazy danych zadań
+                    parsedTasks.forEach(pt => {
+                        state.tasks.push({
+                            id: "task_ai_" + Date.now() + Math.random(),
+                            title: pt.title,
+                            desc: pt.desc,
+                            tag: pt.tag || "AI",
+                            priority: pt.priority || "medium",
+                            status: "todo"
+                        });
+                    });
+
+                    saveState();
+                    renderTasks();
+                    updateAIMessage(loadingId, `✨ **Sukces!** Twój spersonalizowany plan został pomyślnie wygenerowany i **wstrzyknięty bezpośrednio do tablicy Kanban** jako nowe zadania do zrobienia! Przejdź do zakładki "Kanban Zadania", aby rozpocząć realizację.`);
+                    addNotification("NexusAI Copilot dodał nowe zadania");
+                    playAlertSound();
+                } else {
+                    updateAIMessage(loadingId, "Nie udało się sparsować odpowiedzi JSON od AI. Spróbuj ponownie.");
+                }
+
+            } catch (err) {
+                updateAIMessage(loadingId, "Wystąpił błąd sieciowy przy budowie planu AI.");
+            }
+        }
+
+        function appendAIMessage(role, text) {
+            const chatWin = document.getElementById('ai-chat-window');
+            if (!chatWin) return;
+
+            const msgId = "ai_msg_" + Date.now();
+            const div = document.createElement('div');
+            
+            if (role === 'user') {
+                div.className = "bg-slate-900 border border-slate-800 p-3.5 rounded-2xl max-w-[85%] ml-auto text-right text-slate-100";
+                div.innerHTML = `
+                    <p class="font-bold text-slate-400">Ty:</p>
+                    <p class="mt-1 leading-relaxed">${text}</p>
+                `;
+            } else {
+                div.className = "bg-indigo-950/20 border border-indigo-900/30 p-3.5 rounded-2xl max-w-[85%] text-slate-300";
+                div.innerHTML = `
+                    <p class="font-bold text-indigo-300">NexusAI:</p>
+                    <p id="${msgId}" class="mt-1 leading-relaxed whitespace-pre-line">${text}</p>
+                `;
+            }
+
+            chatWin.appendChild(div);
+            chatWin.scrollTop = chatWin.scrollHeight;
+            return msgId;
+        }
+
+        function updateAIMessage(msgId, newText) {
+            const el = document.getElementById(msgId);
+            if (el) {
+                el.innerText = newText;
+                const chatWin = document.getElementById('ai-chat-window');
+                chatWin.scrollTop = chatWin.scrollHeight;
             }
         }
     </script>
