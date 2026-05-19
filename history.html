@@ -3,750 +3,801 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HabitQuest: Obrońca Świtu</title>
+    <title>HabitQuest 2.0: Cyber-Fantasy RPG</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
+
         :root {
-            --bg-dark: #0f111a;
-            --panel-bg: #1e2235;
-            --accent-glow: #00ffcc;
-            --accent-red: #ff4757;
-            --accent-gold: #ffa502;
-            --text-light: #f5f6fa;
-            --text-muted: #a4b0be;
+            --bg-main: #060814;
+            --panel-bg: rgba(15, 18, 36, 0.85);
+            --panel-border: rgba(0, 255, 204, 0.15);
+            --neon-cyan: #00ffcc;
+            --neon-blue: #0077ff;
+            --neon-purple: #9b51e0;
+            --neon-red: #ff3838;
+            --neon-gold: #ffd32a;
+            --text-main: #e2e8f0;
+            --text-muted: #747d8c;
+            
+            /* Rzadkość przedmiotów */
+            --common: #ffffff;
+            --rare: #00a8ff;
+            --epic: #9b51e0;
+            --legendary: #ff9f43;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Rajdhani', sans-serif;
             user-select: none;
         }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-light);
+            background: radial-gradient(circle at center, #111625 0%, var(--bg-main) 100%);
+            color: var(--text-main);
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            font-size: 18px;
         }
 
-        /* NAGŁÓWEK I STATYSTYKI GŁÓWNE */
+        /* NAGŁÓWEK */
         header {
-            background: linear-gradient(135deg, #141824, var(--panel-bg));
-            padding: 15px 30px;
-            border-bottom: 2px solid rgba(0, 255, 204, 0.2);
+            background: rgba(6, 8, 20, 0.9);
+            padding: 10px 40px;
+            border-bottom: 3px solid transparent;
+            border-image: linear-gradient(90deg, var(--neon-cyan), var(--neon-blue), transparent) 1;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            z-index: 10;
         }
 
         .logo h1 {
-            font-size: 24px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--accent-glow);
-            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            background: linear-gradient(45deg, var(--neon-cyan), var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 8px rgba(0,255,204,0.3));
         }
 
-        .global-stats {
+        .currency-container {
             display: flex;
-            gap: 25px;
-        }
-
-        .stat-bubble {
-            background: rgba(0,0,0,0.4);
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: bold;
-        }
-
-        .stat-bubble span { color: var(--accent-gold); }
-
-        /* GŁÓWNY UKŁAD PANELU */
-        .game-container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            padding: 20px;
             gap: 20px;
         }
 
-        .panel {
+        .currency-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 8px 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 19px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .currency-box.gold span { color: var(--neon-gold); text-shadow: 0 0 10px rgba(255,211,42,0.3); }
+        .currency-box.gems span { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0,255,204,0.3); }
+
+        /* KONTENER GŁÓWNY */
+        .game-layout {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        .glass-panel {
             background: var(--panel-bg);
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
             display: flex;
             flex-direction: column;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            overflow: hidden;
+            transition: border-color 0.3s;
         }
+        .glass-panel:hover { border-color: rgba(0,255,204,0.3); }
 
-        .panel-header {
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
             padding: 15px 20px;
-            background: rgba(0,0,0,0.2);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-weight: bold;
+            font-size: 15px;
+            letter-spacing: 2px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: #fff;
             display: flex;
             justify-content: space-between;
-            align-items: center;
         }
 
-        /* PANEL LEWY: NAWYKI */
-        #habits-panel { flex: 1.2; }
-        
-        .habit-controls {
+        /* NAWYKI */
+        #left-panel { flex: 1.2; }
+        .creator-row {
             padding: 15px;
             display: flex;
             gap: 10px;
-            background: rgba(0,0,0,0.1);
+            background: rgba(0,0,0,0.2);
         }
-
-        .habit-controls input, .habit-controls select {
-            background: #10121a;
+        .creator-row input, .creator-row select {
+            background: #090c15;
             border: 1px solid rgba(255,255,255,0.1);
-            color: white;
-            padding: 10px;
-            border-radius: 6px;
+            color: #fff;
+            padding: 12px;
+            border-radius: 8px;
             outline: none;
+            font-size: 16px;
         }
-        .habit-controls input { flex: 1; }
-
-        .btn {
-            background: linear-gradient(135deg, #00ffcc, #00a8ff);
-            color: #0f111a;
+        .creator-row input { flex: 1; }
+        
+        .btn-action {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
+            color: #000;
+            font-weight: 700;
             border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: bold;
+            padding: 0 20px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s;
         }
-        .btn:hover {
+        .btn-action:hover {
             transform: translateY(-2px);
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+            box-shadow: 0 0 15px rgba(0,255,204,0.5);
         }
 
-        .habit-list {
+        .scrollable-list {
             padding: 15px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
+            flex: 1;
         }
 
-        .habit-item {
-            background: #141824;
+        .habit-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-left: 5px solid var(--neon-cyan);
             border-radius: 8px;
             padding: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-left: 5px solid var(--accent-glow);
-            transition: 0.3s;
+            animation: fadeIn 0.3s ease;
         }
-        .habit-item.bad { border-left-color: var(--accent-red); }
+        .habit-card.bad-habit { border-left-color: var(--neon-red); }
+        .habit-name-tag { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .habit-streak-tag { font-size: 14px; color: var(--text-muted); }
 
-        .habit-info h4 { margin-bottom: 5px; }
-        .habit-info span { font-size: 12px; color: var(--text-muted); }
-
-        .habit-actions { display: flex; gap: 8px; }
-        .action-btn {
-            width: 35px;
-            height: 35px;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        .btn-plus { background: #2ed573; color: white; }
-        .btn-minus { background: #ff4757; color: white; }
-        .btn-delete { background: rgba(255,255,255,0.05); color: var(--text-muted); }
-        .btn-delete:hover { background: var(--accent-red); color: white; }
-
-        /* PANEL ŚRODKOWY: BOHATER I WALKA */
-        #hero-panel { flex: 1.5; }
-        
-        .battle-arena {
-            height: 220px;
-            background: linear-gradient(to bottom, rgba(15, 17, 26, 0.8), rgba(30, 34, 53, 0.9)), url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80');
-            background-size: cover;
-            background-position: center;
-            position: relative;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 2px solid #10121a;
-        }
-
-        .fighter {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            position: relative;
-            width: 120px;
-        }
-
-        .avatar {
-            width: 80px;
-            height: 80px;
+        .circle-btn {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: #2f3542;
-            border: 3px solid var(--accent-glow);
+            border: none;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
-            box-shadow: 0 0 20px rgba(0,255,204,0.2);
-            transition: transform 0.1s;
+            transition: 0.2s;
         }
-        #enemy-avatar { border-color: var(--accent-red); box-shadow: 0 0 20px rgba(255,71,87,0.2); }
+        .btn-good { background: rgba(0, 255, 204, 0.2); color: var(--neon-cyan); border: 1px solid var(--neon-cyan); }
+        .btn-good:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 10px var(--neon-cyan); }
+        .btn-bad { background: rgba(255, 56, 56, 0.2); color: var(--neon-red); border: 1px solid var(--neon-red); }
+        .btn-bad:hover { background: var(--neon-red); color: #fff; box-shadow: 0 0 10px var(--neon-red); }
+        .btn-del { background: transparent; color: var(--text-muted); margin-left: 10px; }
+        .btn-del:hover { color: #fff; }
 
-        .hp-bar-container {
+        /* WALKA I ARENA */
+        #center-panel { flex: 1.6; }
+        .arena {
+            height: 250px;
+            background: linear-gradient(to top, rgba(6,8,20,1), rgba(6,8,20,0.4)), url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=800&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            position: relative;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .char-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 140px;
+            position: relative;
+        }
+
+        .circle-avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: #090c15;
+            border: 3px solid var(--neon-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            box-shadow: 0 0 25px rgba(0,119,255,0.4);
+            transition: transform 0.1s ease;
+        }
+        #enemy-avatar-node { border-color: var(--neon-red); box-shadow: 0 0 25px rgba(255,56,56,0.4); }
+
+        .bar-wrap {
             width: 100%;
-            height: 12px;
-            background: #2f3542;
-            border-radius: 6px;
+            height: 10px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 5px;
+            margin-top: 8px;
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.1);
         }
-        .hp-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #ff4757, #ff6b81);
-            width: 100%;
-            transition: width 0.3s ease;
-        }
-        #hero-hp-bar { background: linear-gradient(90deg, #2ed573, #7bed9f); }
+        .bar-fill { height: 100%; width: 100%; transition: width 0.2s ease; }
+        .hp-fill { background: linear-gradient(90deg, #2ed573, #7bed9f); }
+        .mp-fill { background: linear-gradient(90deg, #0077ff, #00d2ff); }
+        .enemy-hp-fill { background: linear-gradient(90deg, #ff3838, #ff6b6b); }
 
-        .damage-pop {
-            position: absolute;
-            top: -20px;
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--accent-red);
-            animation: floatUp 0.8s forwards;
-            opacity: 0;
-        }
-        @keyframes floatUp {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-40px); opacity: 0; }
-        }
+        .sub-text { font-size: 13px; color: var(--text-muted); margin-top: 2px; font-weight: 700; }
 
-        /* STATYSTYKI BOHATERA */
-        .hero-details {
-            padding: 20px;
+        /* SKILLE (ZDOLNOŚCI) */
+        .skills-grid {
+            padding: 10px 20px;
             display: flex;
-            flex-direction: column;
-            gap: 15px;
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(0,0,0,0.1);
-            padding: 10px 15px;
-            border-radius: 6px;
-        }
-        .stat-value { font-weight: bold; color: var(--accent-glow); }
-
-        /* PANEL PRAWY: SKLEP I EKWIPUNEK */
-        #shop-panel { flex: 1.2; }
-
-        .tabs {
-            display: flex;
-            background: rgba(0,0,0,0.2);
-        }
-        .tab {
-            flex: 1;
-            text-align: center;
-            padding: 12px;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            color: var(--text-muted);
-            font-weight: bold;
-        }
-        .tab.active {
-            border-bottom-color: var(--accent-glow);
-            color: white;
-            background: rgba(255,255,255,0.02);
-        }
-
-        .shop-content, .inventory-content {
-            padding: 15px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
             gap: 10px;
-            flex: 1;
+            background: rgba(0,0,0,0.4);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .hidden { display: none !important; }
-
-        .shop-item {
-            background: #141824;
-            border: 1px solid rgba(255,255,255,0.05);
+        .skill-btn {
+            flex: 1;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
             border-radius: 8px;
-            padding: 12px;
+            padding: 8px;
+            cursor: pointer;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
             transition: 0.2s;
         }
-        .shop-item:hover { border-color: rgba(0, 255, 204, 0.3); }
+        .skill-btn:hover:not(:disabled) {
+            background: rgba(155, 81, 224, 0.15);
+            border-color: var(--neon-purple);
+        }
+        .skill-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        .item-info h5 { font-size: 15px; margin-bottom: 2px; }
-        .item-info p { font-size: 12px; color: var(--text-muted); }
+        /* STATYSTYKI DETALE */
+        .stats-book {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .grid-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .stat-badge {
+            background: rgba(0,0,0,0.2);
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+        .stat-lbl { color: var(--text-muted); font-size: 15px; }
+        .stat-val { font-weight: 700; color: var(--neon-cyan); }
 
-        /* ANIMACJE WALKI */
-        .attack-right { transform: translateX(30px) scale(1.1); }
-        .attack-left { transform: translateX(-30px) scale(1.1); }
-
-        /* DZIENNIK ZDARZEŃ */
-        #combat-log {
-            background: rgba(0,0,0,0.3);
-            border-radius: 6px;
+        /* LOGI */
+        #terminal-log {
+            background: #04060c;
+            border-radius: 8px;
             padding: 10px;
-            height: 100px;
+            height: 90px;
             overflow-y: auto;
             font-family: monospace;
-            font-size: 12px;
-            color: #7bed9f;
+            font-size: 13px;
+            color: #a4b0be;
+            border: 1px solid rgba(255,255,255,0.05);
             margin-top: auto;
         }
+
+        /* SKLEP I INWENTARZ */
+        #right-panel { flex: 1.2; }
+        .tab-box { display: flex; background: rgba(0,0,0,0.4); }
+        .tab-node {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+        }
+        .tab-node.active-tab {
+            color: #fff;
+            border-bottom-color: var(--neon-cyan);
+            background: rgba(255,255,255,0.02);
+        }
+
+        .market-list {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .market-item {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .rarity-common { border-right: 4px solid var(--common); }
+        .rarity-rare { border-right: 4px solid var(--rare); }
+        .rarity-epic { border-right: 4px solid var(--epic); }
+        .rarity-legendary { border-right: 4px solid var(--legendary); }
+
+        /* ANIMACJE */
+        .hit-effect { animation: shake 0.2s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        .hero-dash { transform: translateX(40px) scale(1.05); }
+        .enemy-dash { transform: translateX(-40px) scale(1.05); }
+
+        .floating-dmg {
+            position: absolute;
+            top: -10px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 26px;
+            text-shadow: 0 0 8px #000;
+            animation: floatUp 0.8s forwards;
+            opacity: 0;
+            pointer-events: none;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+
+        .hidden { display: none !important; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <!-- GŁÓWNY NAGŁÓWEK Z POZIOMEM I WALUTĄ -->
     <header>
         <div class="logo">
-            <h1>HabitQuest</h1>
+            <h1>HABITQUEST // PRO</h1>
         </div>
-        <div class="global-stats">
-            <div class="stat-bubble">POZIOM: <span id="global-level">1</span></div>
-            <div class="stat-bubble">ZŁOTO: <span id="global-gold">0</span> szt.</div>
-            <div class="stat-bubble">KRYSZTAŁY: <span id="global-gems">5</span> szt.</div>
+        <div class="currency-container">
+            <div class="currency-box gold">ZŁOTO: <span id="m-gold">0</span></div>
+            <div class="currency-box gems">KRYSZTAŁY: <span id="m-gems">0</span></div>
         </div>
     </header>
 
-    <!-- KONTENER GRY -->
-    <div class="game-container">
+    <div class="game-layout">
 
-        <!-- PANEL LEWY: SYSTEM NAWYKÓW -->
-        <div class="panel" id="habits-panel">
-            <div class="panel-header">Twoje Nawyki & Zadania</div>
-            <div class="habit-controls">
-                <input type="text" id="habit-name" placeholder="Np. 30 min programowania, trening, fastfood...">
-                <select id="habit-type">
-                    <option value="good">Dobry Nawyk (+HP/+Złoto)</option>
-                    <option value="bad">Zły Nawyk (Atak Wroga)</option>
+        <!-- LEWY PANEL -->
+        <div class="glass-panel" id="left-panel">
+            <div class="panel-title">Kreator Nawyków</div>
+            <div class="creator-row">
+                <input type="text" id="in-name" placeholder="Wpisz nowe zadanie lub nawyk...">
+                <select id="in-type">
+                    <option value="good">Dobry nawyk</option>
+                    <option value="bad">Zły nawyk</option>
                 </select>
-                <button class="btn" onclick="addHabit()">Dodaj</button>
+                <button class="btn-action" onclick="addNewHabit()">+</button>
             </div>
-            <div class="habit-list" id="habit-list-container">
-                <!-- Nawyki generowane dynamicznie -->
-            </div>
+            <div class="scrollable-list" id="habit-box"></div>
         </div>
 
-        <!-- PANEL ŚRODKOWY: ARENA WALKI I STATYSTYKI POSTACI -->
-        <div class="panel" id="hero-panel">
-            <div class="panel-header">
-                <span>Wymiar Walki</span>
-                <span id="monster-name" style="color: var(--accent-red);">Cień Prokrastynacji</span>
+        <!-- ŚRODKOWY PANEL -->
+        <div class="glass-panel" id="center-panel">
+            <div class="panel-title">
+                <span>Strefa Starcia</span>
+                <span id="enemy-title" style="color: var(--neon-red)">Łowca Myśli</span>
             </div>
-            
-            <div class="battle-arena">
-                <!-- Bohater -->
-                <div class="fighter" id="hero-fighter">
-                    <div class="avatar" id="hero-avatar">⚔️</div>
-                    <div class="hp-bar-container">
-                        <div class="hp-bar" id="hero-hp-bar"></div>
-                    </div>
-                    <div style="font-size: 12px;" id="hero-hp-text">HP: 100/100</div>
-                    <div class="damage-pop" id="hero-damage-pop"></div>
-                </div>
 
-                <div style="font-size: 28px; font-weight: bold; color: rgba(255,255,255,0.2)">VS</div>
+            <div class="arena" id="battle-field">
+                <!-- Bohater -->
+                <div class="char-node">
+                    <div class="circle-avatar" id="hero-avatar-node">🥷</div>
+                    <div class="bar-wrap"><div class="bar-fill hp-fill" id="h-hp-bar"></div></div>
+                    <div class="sub-text" id="h-hp-lbl">HP: 100/100</div>
+                    <div class="bar-wrap" style="height:6px; margin-top:3px;"><div class="bar-fill mp-fill" id="h-mp-bar"></div></div>
+                    <div class="sub-text" style="font-size:11px;" id="h-mp-lbl">MP: 20/20</div>
+                    <div class="floating-dmg" id="h-dmg-pop" style="color: var(--neon-red);"></div>
+                </div>
 
                 <!-- Przeciwnik -->
-                <div class="fighter" id="enemy-fighter">
-                    <div class="avatar" id="enemy-avatar">👾</div>
-                    <div class="hp-bar-container">
-                        <div class="hp-bar" id="enemy-hp-bar"></div>
-                    </div>
-                    <div style="font-size: 12px;" id="enemy-hp-text">HP: 50/50</div>
-                    <div class="damage-pop" id="enemy-damage-pop"></div>
+                <div class="char-node">
+                    <div class="circle-avatar" id="enemy-avatar-node">👾</div>
+                    <div class="bar-wrap"><div class="bar-fill enemy-hp-fill" id="e-hp-bar"></div></div>
+                    <div class="sub-text" id="e-hp-lbl">HP: 60/60</div>
+                    <div class="floating-dmg" id="e-dmg-pop" style="color: var(--neon-gold);"></div>
                 </div>
             </div>
 
-            <div class="hero-details">
-                <div style="font-weight: bold; color: var(--text-muted); font-size: 14px;">STATYSTYKI BOHATERA:</div>
-                <div class="stat-row"><span>Doświadczenie (XP):</span> <span class="stat-value" id="stat-xp">0 / 100</span></div>
-                <div class="stat-row"><span>Siła Ataku (ATK):</span> <span class="stat-value" id="stat-atk">10</span></div>
-                <div class="stat-row"><span>Obrona (DEF):</span> <span class="stat-value" id="stat-def">0</span></div>
-                <div class="stat-row"><span>Pokonane potwory:</span> <span class="stat-value" id="stat-kills">0</span></div>
-                
-                <div id="combat-log">System: Witaj w świecie HabitQuest. Wykonuj dobre nawyki, aby atakować potwory! Złe nawyki ranią Ciebie.</div>
+            <!-- Panel Zdolności Aktywnych -->
+            <div class="skills-grid">
+                <button class="skill-btn" id="sk-1" onclick="useSpell('fire')">
+                    <span style="color:var(--neon-purple); font-weight:700;">Płomień Skupienia</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Koszt: 10 MP | Zadaje dmg x2</span>
+                </button>
+                <button class="skill-btn" id="sk-2" onclick="useSpell('heal')">
+                    <span style="color:var(--neon-cyan); font-weight:700;">Błogosławieństwo Odpoczynku</span>
+                    <span style="font-size:12px; color:var(--text-muted);">Koszt: 15 MP | Leczy 40 HP</span>
+                </button>
+            </div>
+
+            <!-- Statystyki Szczegółowe -->
+            <div class="stats-book">
+                <div class="bar-wrap" style="height:14px;"><div class="bar-fill" id="h-xp-bar" style="background: linear-gradient(90deg, #9b51e0, #00ffcc);"></div></div>
+                <div class="sub-text" id="h-xp-lbl" style="text-align:center; margin-bottom:10px;">XP: 0 / 100 (Poziom 1)</div>
+
+                <div class="grid-stats">
+                    <div class="stat-badge"><span class="stat-lbl">Atak (ATK)</span><span class="stat-val" id="st-atk">10</span></div>
+                    <div class="stat-badge"><span class="stat-lbl">Obrona (DEF)</span><span class="stat-val" id="st-def">2</span></div>
+                    <div class="stat-badge"><span class="stat-lbl">Kryt (CRIT)</span><span class="stat-val" id="st-crit">10%</span></div>
+                    <div class="stat-badge"><span class="stat-lbl">Zabójstwa</span><span class="stat-val" id="st-kills">0</span></div>
+                </div>
+
+                <div id="terminal-log"></div>
             </div>
         </div>
 
-        <!-- PANEL PRAWY: SKLEP I EKWIPUNEK -->
-        <div class="panel" id="shop-panel">
-            <div class="tabs">
-                <div class="tab active" id="tab-shop" onclick="switchTab('shop')">Zbrojownia</div>
-                <div class="tab" id="tab-inv" onclick="switchTab('inv')">Ekwipunek</div>
+        <!-- PRAWY PANEL -->
+        <div class="glass-panel" id="right-panel">
+            <div class="tab-box">
+                <div class="tab-node active-tab" id="t-shop" onclick="toggleTabs('shop')">Zbrojownia</div>
+                <div class="tab-node" id="t-inv" onclick="toggleTabs('inv')">Ekwipunek</div>
             </div>
-
-            <!-- Zawartość Sklepu -->
-            <div class="shop-content" id="shop-content-view">
-                <!-- Przedmioty generowane dynamicznie -->
-            </div>
-
-            <!-- Zawartość Ekwipunku -->
-            <div class="inventory-content hidden" id="inv-content-view">
-                <!-- Posiadane przedmioty -->
-            </div>
+            <div class="market-list" id="shop-view"></div>
+            <div class="market-list hidden" id="inv-view"></div>
         </div>
 
     </div>
 
     <script>
-        // STAN GRY (Zapisywany w localStorage)
-        let state = {
-            level: 1,
-            xp: 0,
-            xpNeeded: 100,
-            gold: 50,
-            gems: 5,
-            heroHp: 100,
-            heroMaxHp: 100,
-            atk: 10,
-            def: 2,
-            kills: 0,
-            enemyHp: 50,
-            enemyMaxHp: 50,
-            enemyName: "Cień Prokrastynacji",
-            enemyIcon: "👾",
+        // SYSTEM OPERACYJNY GRY
+        let db = {
+            level: 1, xp: 0, xpNeed: 100, gold: 80, gems: 2,
+            hp: 120, maxHp: 120, mp: 30, maxMp: 30,
+            baseAtk: 12, baseDef: 3, crit: 10, kills: 0,
+            eHp: 60, eMaxHp: 60, eName: "Cień Prokrastynacji",
             habits: [
-                { id: 1, name: "30 minut czytania książki", type: "good", streak: 0 },
-                { id: 2, name: "Zjedzenie czegoś niezdrowego", type: "bad", streak: 0 }
+                { id: 1, name: "Poranny rozruch / Trening", type: "good", streak: 0 },
+                { id: 2, name: "Przeglądanie TikToka bez celu", type: "bad", streak: 0 }
             ],
-            inventory: []
+            ownedItems: []
         };
 
-        const itemsDatabase = [
-            { id: 'sword_1', name: 'Miecz Koncentracji', type: 'weapon', stat: 5, price: 40, icon: '⚔️', desc: '+5 do Ataku' },
-            { id: 'sword_2', name: 'Ostrze Samodyscypliny', type: 'weapon', stat: 15, price: 120, icon: '🔥', desc: '+15 do Ataku' },
-            { id: 'armor_1', name: 'Pancerz Rutyny', type: 'armor', stat: 4, price: 35, icon: '🛡️', desc: '+4 do Obrony' },
-            { id: 'potion_1', name: 'Eliksir Motywacji', type: 'potion', stat: 50, price: 15, icon: '🧪', desc:_=> 'Leczy 50 HP natychmiast' }
+        const itemShop = [
+            { id: 'w1', name: 'Katana Koncentracji', type: 'weapon', stat: 8, price: 50, rarity: 'rare', icon: '⚔️', desc: '+8 Ataku' },
+            { id: 'w2', name: 'Rdzeń Hiper-Skupienia', type: 'weapon', stat: 22, price: 160, rarity: 'legendary', icon: '🔮', desc: '+22 Ataku' },
+            { id: 'a1', name: 'Kurtka z Nano-Splotu', type: 'armor', stat: 5, price: 45, rarity: 'common', icon: '🧥', desc: '+5 Obrony' },
+            { id: 'a2', name: 'Pancerz Niezłomnej Woli', type: 'armor', stat: 14, price: 130, rarity: 'epic', icon: '🛡️', desc: '+14 Obrony' }
         ];
 
-        const monsterNames = ["Demon Social Mediów", "Władca Kanapowego Lenia", "Bestia Słodkich Przekąsek", "Smok Snu do Południa"];
-        const monsterIcons = ["👹", "🛸", "🪰", "🐉"];
+        const monsters = ["Demon Rutyny", "Algorytm Zjadania Czasu", "Lord Słodkiego Lenia", "Cyborg Prokrastynator"];
 
-        // INICJALIZACJA GRY
-        window.onload = function() {
-            if(localStorage.getItem('habitQuest_state')) {
-                state = JSON.parse(localStorage.getItem('habitQuest_state'));
+        window.onload = () => {
+            if(localStorage.getItem('hq_pro_save')) {
+                db = JSON.parse(localStorage.getItem('hq_pro_save'));
             }
-            renderAll();
+            refreshEngine();
         };
 
-        function saveGame() {
-            localStorage.setItem('habitQuest_state', JSON.stringify(state));
+        function save() { localStorage.setItem('hq_pro_save', JSON.stringify(db)); }
+
+        function refreshEngine() {
+            // Waluty
+            document.getElementById('m-gold').innerText = db.gold;
+            document.getElementById('m-gems').innerText = db.gems;
+
+            // Liczniki statystyk
+            let eqAtk = getEqBonus('weapon');
+            let eqDef = getEqBonus('armor');
+            document.getElementById('st-atk').innerText = db.baseAtk + eqAtk;
+            document.getElementById('st-def').innerText = db.baseDef + eqDef;
+            document.getElementById('st-crit').innerText = db.crit + "%";
+            document.getElementById('st-kills').innerText = db.kills;
+
+            // Bary gracza
+            document.getElementById('h-hp-lbl').innerText = `HP: ${db.hp}/${db.maxHp}`;
+            document.getElementById('h-hp-bar').style.width = `${(db.hp / db.maxHp)*100}%`;
+            document.getElementById('h-mp-lbl').innerText = `MP: ${db.mp}/${db.maxMp}`;
+            document.getElementById('h-mp-bar').style.width = `${(db.mp / db.maxMp)*100}%`;
+            
+            // Bar XP
+            document.getElementById('h-xp-lbl').innerText = `XP: ${db.xp} / ${db.xpNeed} (Poziom ${db.level})`;
+            document.getElementById('h-xp-bar').style.width = `${(db.xp / db.xpNeed)*100}%`;
+
+            // Przeciwnik
+            document.getElementById('enemy-title').innerText = db.eName;
+            document.getElementById('e-hp-lbl').innerText = `HP: ${db.eHp}/${db.eMaxHp}`;
+            document.getElementById('e-hp-bar').style.width = `${(db.eHp / db.eMaxHp)*100}%`;
+
+            // Przyciski skilli
+            document.getElementById('sk-1').disabled = db.mp < 10;
+            document.getElementById('sk-2').disabled = db.mp < 15;
+
+            buildLists();
         }
 
-        // RENDEROWANIE INTERFEJSU
-        function renderAll() {
-            // Nagłówek
-            document.getElementById('global-level').innerText = state.level;
-            document.getElementById('global-gold').innerText = state.gold;
-            document.getElementById('global-gems').innerText = state.gems;
-
-            // Statystyki
-            document.getElementById('stat-xp').innerText = `${state.xp} / ${state.xpNeeded}`;
-            document.getElementById('stat-atk').innerText = state.atk + getEquippedStat('weapon');
-            document.getElementById('stat-def').innerText = state.def + getEquippedStat('armor');
-            document.getElementById('stat-kills').innerText = state.kills;
-
-            // Walka / HP
-            document.getElementById('hero-hp-text').innerText = `HP: ${state.heroHp}/${state.heroMaxHp}`;
-            document.getElementById('hero-hp-bar').style.width = `${(state.heroHp / state.heroMaxHp) * 100}%`;
-            
-            document.getElementById('monster-name').innerText = state.enemyName;
-            document.getElementById('enemy-avatar').innerText = state.enemyIcon;
-            document.getElementById('enemy-hp-text').innerText = `HP: ${state.enemyHp}/${state.enemyMaxHp}`;
-            document.getElementById('enemy-hp-bar').style.width = `${(state.enemyHp / state.enemyMaxHp) * 100}%`;
-
-            renderHabits();
-            renderShop();
-            renderInventory();
-        }
-
-        // OBSŁUGA NAWYKÓW
-        function renderHabits() {
-            const container = document.getElementById('habit-list-container');
-            container.innerHTML = '';
-            
-            state.habits.forEach(habit => {
-                const item = document.createElement('div');
-                item.className = `habit-item ${habit.type === 'bad' ? 'bad' : ''}`;
-                
-                item.innerHTML = `
-                    <div class="habit-info">
-                        <h4>${habit.name}</h4>
-                        <span>Seria: ${habit.streak || 0} dni</span>
+        function buildLists() {
+            // Buduj nawyki
+            const hBox = document.getElementById('habit-box');
+            hBox.innerHTML = '';
+            db.habits.forEach(h => {
+                const div = document.createElement('div');
+                div.className = `habit-card ${h.type === 'bad' ? 'bad-habit' : ''}`;
+                div.innerHTML = `
+                    <div>
+                        <div class="habit-name-tag">${h.name}</div>
+                        <div class="habit-streak-tag">Seria sukcesów: ${h.streak || 0}</div>
                     </div>
-                    <div class="habit-actions">
-                        ${habit.type === 'good' 
-                            ? `<button class="action-btn btn-plus" onclick="triggerHabit(${habit.id}, true)">✓</button>`
-                            : `<button class="action-btn btn-minus" onclick="triggerHabit(${habit.id}, false)">✗</button>`
+                    <div style="display:flex; align-items:center;">
+                        ${h.type === 'good' 
+                            ? `<button class="circle-btn btn-good" onclick="hitHabit(${h.id}, true)">✓</button>`
+                            : `<button class="circle-btn btn-bad" onclick="hitHabit(${h.id}, false)">✗</button>`
                         }
-                        <button class="action-btn btn-delete" onclick="deleteHabit(${habit.id})">🗑</button>
+                        <button class="circle-btn btn-del" onclick="removeHabit(${h.id})">🗑</button>
                     </div>
                 `;
-                container.appendChild(item);
-            });
-        }
-
-        function addHabit() {
-            const nameInput = document.getElementById('habit-name');
-            const typeInput = document.getElementById('habit-type');
-            
-            if(!nameInput.value.trim()) return;
-
-            state.habits.push({
-                id: Date.now(),
-                name: nameInput.value,
-                type: typeInput.value,
-                streak: 0
+                hBox.appendChild(div);
             });
 
-            nameInput.value = '';
-            saveGame();
-            renderHabits();
-        }
-
-        function deleteHabit(id) {
-            state.habits = state.habits.filter(h => h.id !== id);
-            saveGame();
-            renderHabits();
-        }
-
-        // AKTYWACJA NAWYKU (WALKA I INTERAKCJA)
-        function triggerHabit(id, isPositive) {
-            const habit = state.habits.find(h => h.id === id);
-            if(!habit) return;
-
-            if(isPositive) {
-                // Dobry nawyk -> Atakujesz potwora
-                habit.streak++;
-                let totalAtk = state.atk + getEquippedStat('weapon');
-                state.enemyHp -= totalAtk;
-                
-                // Animacja ataku
-                animateFighter('hero-avatar', 'attack-right');
-                showDamagePop('enemy-damage-pop', `-${totalAtk}`);
-                logMessage(`Wykonałeś dobry nawyk! Atakujesz ${state.enemyName} za ${totalAtk} pkt.`);
-
-                // Zdobywanie waluty za działanie
-                state.gold += Math.floor(Math.random() * 5) + 3;
-
-                if(state.enemyHp <= 0) {
-                    monsterDefeated();
-                }
-            } else {
-                // Zły nawyk -> Potwór atakuje Ciebie
-                habit.streak = 0; // reset serii
-                let actualDef = state.def + getEquippedStat('armor');
-                let monsterDmg = Math.max(5, 15 - actualDef);
-                
-                state.heroHp -= monsterDmg;
-
-                // Animacja otrzymania obrażeń
-                animateFighter('enemy-avatar', 'attack-left');
-                showDamagePop('hero-damage-pop', `-${monsterDmg}`);
-                logMessage(`Uległeś złemu nawykowi! ${state.enemyName} zadaje Ci ${monsterDmg} obrażeń!`, true);
-
-                if(state.heroHp <= 0) {
-                    playerDefeated();
-                }
-            }
-
-            saveGame();
-            renderAll();
-        }
-
-        // MECHANIKA WALKI
-        function monsterDefeated() {
-            state.kills++;
-            let xpGained = 30 + (state.level * 5);
-            let goldGained = 20 + (state.level * 10);
-            state.xp += xpGained;
-            state.gold += goldGained;
-
-            logMessage(`⚔️ Pokonałeś ${state.enemyName}! Zyskujesz +${xpGained} XP i +${goldGained} Złota!`);
-
-            // Sprawdzenie Level Up
-            if(state.xp >= state.xpNeeded) {
-                state.level++;
-                state.xp -= state.xpNeeded;
-                state.xpNeeded = Math.floor(state.xpNeeded * 1.5);
-                state.heroMaxHp += 20;
-                state.heroHp = state.heroMaxHp;
-                state.atk += 3;
-                state.def += 1;
-                state.gems += 2;
-                logMessage(`🎉 AWANSOWAŁEŚ NA POZIOM ${state.level}! Twoje statystyki rosną! (+2 Kryształy)`, false);
-            }
-
-            // Generowanie nowego potwora
-            state.enemyMaxHp = Math.floor(50 * Math.pow(1.2, state.level));
-            state.enemyHp = state.enemyMaxHp;
-            state.enemyName = monsterNames[Math.floor(Math.random() * monsterNames.length)] + ` (Lvl ${state.level})`;
-            state.enemyIcon = monsterIcons[Math.floor(Math.random() * monsterIcons.length)];
-        }
-
-        function playerDefeated() {
-            logMessage(`💀 Zostałeś pokonany! Tracisz część złota. Czas wstać, otrzepać się i wrócić do dobrych nawyków!`, true);
-            state.gold = Math.max(0, state.gold - 30);
-            state.heroHp = state.heroMaxHp; // Pełne uleczenie po porażce jako nowa szansa
-        }
-
-        // ZBROJOWNIA / SKLEP / SKLEP I EKWIPUNEK
-        function renderShop() {
-            const container = document.getElementById('shop-content-view');
-            container.innerHTML = '';
-
-            itemsDatabase.forEach(item => {
-                const row = document.createElement('div');
-                row.className = 'shop-item';
-                row.innerHTML = `
-                    <div class="item-info">
-                        <h5>${item.icon} ${item.name}</h5>
-                        <p>${typeof item.desc === 'function' ? item.desc() : item.desc}</p>
+            // Buduj Sklep
+            const sBox = document.getElementById('shop-view');
+            sBox.innerHTML = '';
+            itemShop.forEach(item => {
+                const div = document.createElement('div');
+                div.className = `market-item rarity-${item.rarity}`;
+                div.innerHTML = `
+                    <div>
+                        <div style="font-weight:bold; color:var(--neon-${item.rarity === 'legendary'?'gold':item.rarity === 'epic'?'purple':'cyan'})">${item.icon} ${item.name}</div>
+                        <div style="font-size:13px; color:var(--text-muted)">${item.desc}</div>
                     </div>
-                    <button class="btn" style="padding: 5px 10px; font-size:12px;" onclick="buyItem('${item.id}')">${item.price} Złota</button>
+                    <button class="btn-action" style="padding:6px 12px; font-size:13px;" onclick="buyItem('${item.id}')">${item.price} G</button>
                 `;
-                container.appendChild(row);
+                sBox.appendChild(div);
             });
-        }
 
-        function buyItem(itemId) {
-            const item = itemsDatabase.find(i => i.id === itemId);
-            if(state.gold >= item.price) {
-                state.gold -= item.price;
-                
-                if(item.type === 'potion') {
-                    state.heroHp = Math.min(state.heroMaxHp, state.heroHp + 50);
-                    logMessage(`🧪 Wypisłeś ${item.name}. Odzyskujesz 50 HP!`);
-                } else {
-                    state.inventory.push({ ...item, equipped: false, invId: Date.now() });
-                    logMessage(`🛍️ Kupiłeś przedmiot: ${item.name}! Załóż go w Ekwipunku.`);
-                }
-                saveGame();
-                renderAll();
-            } else {
-                alert("Masz za mało złota! Zrób coś pożytecznego ze swojej listy nawyków!");
+            // Buduj Ekwipunek
+            const iBox = document.getElementById('inv-view');
+            iBox.innerHTML = '';
+            if(db.ownedItems.length === 0) {
+                iBox.innerHTML = `<div style="text-align:center; color:var(--text-muted); margin-top:20px;">Ekwipunek jest pusty</div>`;
             }
-        }
-
-        function renderInventory() {
-            const container = document.getElementById('inv-content-view');
-            container.innerHTML = '';
-
-            if(state.inventory.length === 0) {
-                container.innerHTML = `<p style="color:var(--text-muted); text-align:center;">Twój ekwipunek jest pusty.</p>`;
-                return;
-            }
-
-            state.inventory.forEach(item => {
-                const row = document.createElement('div');
-                row.className = 'shop-item';
-                row.innerHTML = `
-                    <div class="item-info">
-                        <h5>${item.icon} ${item.name} ${item.equipped ? '<span style="color:var(--accent-glow)">(Założony)</span>' : ''}</h5>
-                        <p>${item.desc}</p>
+            db.ownedItems.forEach(eq => {
+                const div = document.createElement('div');
+                div.className = `market-item rarity-${eq.rarity}`;
+                div.innerHTML = `
+                    <div>
+                        <div style="font-weight:bold;">${eq.icon} ${eq.name} ${eq.active ? '<span style="color:var(--neon-cyan)">[Założony]</span>':''}</div>
+                        <div style="font-size:13px; color:var(--text-muted)">${eq.desc}</div>
                     </div>
-                    <button class="btn" style="padding: 5px 10px; font-size:12px; background:${item.equipped ? '#ff4757':'#2ed573'}" onclick="toggleEquip(${item.invId})">
-                        ${item.equipped ? 'Zdejmij' : 'Załóż'}
+                    <button class="btn-action" style="padding:6px 12px; font-size:13px; background:${eq.active?'var(--neon-red)':'var(--neon-blue)'}" onclick="equipItem(${eq.instId})">
+                        ${eq.active ? 'Zdejmij' : 'Załóż'}
                     </button>
                 `;
-                container.appendChild(row);
+                iBox.appendChild(div);
             });
         }
 
-        function toggleEquip(invId) {
-            const item = state.inventory.find(i => i.invId === invId);
+        // AKCJA NAWYKU
+        function hitHabit(id, positive) {
+            const h = db.habits.find(x => x.id === id);
+            if(!h) return;
+
+            if(positive) {
+                h.streak++;
+                let dmg = db.baseAtk + getEqBonus('weapon');
+                
+                // Szansa na kryta
+                let isCrit = Math.random() * 100 < db.crit;
+                if(isCrit) { dmg *= 2; }
+
+                db.eHp -= dmg;
+                db.gold += Math.floor(Math.random() * 6) + 4;
+                db.mp = Math.min(db.maxMp, db.mp + 4); // Regeneracja many przy dobrym nawyku
+
+                triggerVisual('hero-avatar-node', 'hero-dash');
+                popDmg('e-dmg-pop', isCrit ? `🔥 ${dmg} CRIT!` : `-${dmg}`);
+                writeLog(`Wykonano: "${h.name}". Zadajesz ${dmg} obrażeń wrogowi! (+Złoto, +Mana)`);
+
+                if(db.eHp <= 0) { enemyDie(); }
+            } else {
+                h.streak = 0;
+                let def = db.baseDef + getEqBonus('armor');
+                let incoming = Math.max(6, 18 - def);
+                
+                db.hp -= incoming;
+                triggerVisual('battle-field', 'hit-effect');
+                popDmg('h-dmg-pop', `-${incoming}`);
+                writeLog(`Złamanie dyscypliny: "${h.name}". Otrzymujesz ${incoming} obrażeń!`, true);
+
+                if(db.hp <= 0) { playerDie(); }
+            }
+            save();
+            refreshEngine();
+        }
+
+        // SPELL SYSTEM
+        function useSpell(type) {
+            if(type === 'fire' && db.mp >= 10) {
+                db.mp -= 10;
+                let dmg = (db.baseAtk + getEqBonus('weapon')) * 2;
+                db.eHp -= dmg;
+                popDmg('e-dmg-pop', `💥 ${dmg}`);
+                writeLog(`Rzucasz Płomień Skupienia! Potężne uderzenie za ${dmg}!`);
+                if(db.eHp <= 0) enemyDie();
+            } else if(type === 'heal' && db.mp >= 15) {
+                db.mp -= 15;
+                db.hp = Math.min(db.maxHp, db.hp + 40);
+                writeLog(`Używasz Błogosławieństwa Odpoczynku. Odnawiasz 40 punktów życia.`);
+            }
+            save();
+            refreshEngine();
+        }
+
+        // ŚMIERĆ I AWANS
+        function enemyDie() {
+            db.kills++;
+            let rewardXp = 35 + (db.level * 4);
+            let rewardGold = 25 + (db.level * 8);
+            db.xp += rewardXp;
+            db.gold += rewardGold;
+
+            // Szansa na kryształ (gem)
+            if(Math.random() > 0.7) { db.gems += 1; writeLog("💎 Znalazłeś rzadki Kryształ we wraku potwora!"); }
+
+            writeLog(`⚔️ Pokonałeś ${db.eName}! Zyskujesz +${rewardXp} XP oraz +${rewardGold} Złota.`);
+
+            if(db.xp >= db.xpNeed) {
+                db.level++;
+                db.xp -= db.xpNeed;
+                db.xpNeed = Math.floor(db.xpNeed * 1.45);
+                db.maxHp += 15;
+                db.maxMp += 5;
+                db.hp = db.maxHp;
+                db.mp = db.maxMp;
+                db.baseAtk += 4;
+                db.baseDef += 2;
+                db.crit += 1;
+                writeLog(`🌟 AWANS! Osiągasz Poziom ${db.level}! Twoje siły rosną.`, false);
+            }
+
+            db.eMaxHp = Math.floor(60 * Math.pow(1.25, db.level));
+            db.eHp = db.eMaxHp;
+            db.eName = monsters[Math.floor(Math.random() * monsters.length)] + ` V.${db.level}`;
+        }
+
+        function playerDie() {
+            writeLog(`💀 Zostałeś unicestwiony przez swoje nawyki. Tracisz 40 sztuk złota. Zregeneruj siły!`, true);
+            db.gold = Math.max(0, db.gold - 40);
+            db.hp = db.maxHp;
+            db.mp = db.maxMp;
+        }
+
+        // SKLEP I MANAGMENT EQ
+        function buyItem(id) {
+            const item = itemShop.find(x => x.id === id);
+            if(db.gold >= item.price) {
+                db.gold -= item.price;
+                db.ownedItems.push({ ...item, active: false, instId: Date.now() });
+                writeLog(`Kupiono: ${item.name}. Otwórz Ekwipunek, aby wyposażyć postać.`);
+                save();
+                refreshEngine();
+            } else {
+                alert("Niewystarczająca ilość złota! Wykonaj nawyki, aby zarobić.");
+            }
+        }
+
+        function equipItem(instId) {
+            const item = db.ownedItems.find(x => x.instId === instId);
             if(!item) return;
 
-            if(item.equipped) {
-                item.equipped = false;
+            if(item.active) {
+                item.active = false;
             } else {
-                // Zdejmij inne przedmioty tego samego typu przed założeniem
-                state.inventory.forEach(i => {
-                    if(i.type === item.type) i.equipped = false;
-                });
-                item.equipped = true;
+                db.ownedItems.forEach(x => { if(x.type === item.type) x.active = false; });
+                item.active = true;
             }
-            saveGame();
-            renderAll();
+            save();
+            refreshEngine();
         }
 
-        function getEquippedStat(type) {
-            let total = 0;
-            state.inventory.forEach(i => {
-                if(i.type === type && i.equipped) total += i.stat;
-            });
-            return total;
+        function getEqBonus(type) {
+            let res = 0;
+            db.ownedItems.forEach(x => { if(x.type === type && x.active) res += x.stat; });
+            return res;
         }
 
-        // WIZUALNE I POMOCNICZE FUNKCJE
-        function switchTab(tab) {
-            if(tab === 'shop') {
-                document.getElementById('tab-shop').classList.add('active');
-                document.getElementById('tab-inv').classList.remove('active');
-                document.getElementById('shop-content-view').classList.remove('hidden');
-                document.getElementById('inv-content-view').classList.add('hidden');
+        // POMOCNICZE WIZUALNE
+        function addNewHabit() {
+            const name = document.getElementById('in-name').value.trim();
+            const type = document.getElementById('in-type').value;
+            if(!name) return;
+            db.habits.push({ id: Date.now(), name: name, type: type, streak: 0 });
+            document.getElementById('in-name').value = '';
+            save();
+            refreshEngine();
+        }
+
+        function removeHabit(id) {
+            db.habits = db.habits.filter(x => x.id !== id);
+            save();
+            refreshEngine();
+        }
+
+        function toggleTabs(mode) {
+            if(mode === 'shop') {
+                document.getElementById('t-shop').classList.add('active-tab');
+                document.getElementById('t-inv').classList.remove('active-tab');
+                document.getElementById('shop-view').classList.remove('hidden');
+                document.getElementById('inv-view').classList.add('hidden');
             } else {
-                document.getElementById('tab-shop').classList.remove('active');
-                document.getElementById('tab-inv').classList.add('active');
-                document.getElementById('shop-content-view').classList.add('hidden');
-                document.getElementById('inv-content-view').classList.remove('hidden');
+                document.getElementById('t-shop').classList.remove('active-tab');
+                document.getElementById('t-inv').classList.add('active-tab');
+                document.getElementById('shop-view').classList.add('hidden');
+                document.getElementById('inv-view').classList.remove('hidden');
             }
         }
 
-        function animateFighter(id, className) {
+        function triggerVisual(id, className) {
             const el = document.getElementById(id);
             el.classList.add(className);
-            setTimeout(() => el.classList.remove(className), 100);
+            setTimeout(() => el.classList.remove(className), 150);
         }
 
-        function showDamagePop(id, text) {
+        function popDmg(id, text) {
             const el = document.getElementById(id);
             el.innerText = text;
             el.style.animation = 'none';
-            el.offsetHeight; /* trigger reflow */
-            el.style.animation = null; 
+            el.offsetHeight;
+            el.style.animation = null;
         }
 
-        function logMessage(msg, isNegative = false) {
-            const log = document.getElementById('combat-log');
-            const color = isNegative ? 'var(--accent-red)' : '#7bed9f';
-            log.innerHTML = `<span style="color: ${color}">> ${msg}</span><br>` + log.innerHTML;
+        function writeLog(text, isBad = false) {
+            const log = document.getElementById('terminal-log');
+            const color = isBad ? 'var(--neon-red)' : '#00ffcc';
+            log.innerHTML = `<span style="color:${color}">> ${text}</span><br>` + log.innerHTML;
         }
     </script>
 </body>
