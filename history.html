@@ -2,14 +2,14 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HabitQuest 2.0: Cyber-Fantasy RPG</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HabitQuest 2.0 Mobile RPG</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
 
         :root {
             --bg-main: #060814;
-            --panel-bg: rgba(15, 18, 36, 0.85);
+            --panel-bg: rgba(15, 18, 36, 0.9);
             --panel-border: rgba(0, 255, 204, 0.15);
             --neon-cyan: #00ffcc;
             --neon-blue: #0077ff;
@@ -19,7 +19,6 @@
             --text-main: #e2e8f0;
             --text-muted: #747d8c;
             
-            /* Rzadkość przedmiotów */
             --common: #ffffff;
             --rare: #00a8ff;
             --epic: #9b51e0;
@@ -32,6 +31,7 @@
             padding: 0;
             font-family: 'Rajdhani', sans-serif;
             user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -40,81 +40,111 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
+            height: -webkit-fill-available;
             overflow: hidden;
             font-size: 18px;
         }
 
         /* NAGŁÓWEK */
         header {
-            background: rgba(6, 8, 20, 0.9);
-            padding: 10px 40px;
-            border-bottom: 3px solid transparent;
-            border-image: linear-gradient(90deg, var(--neon-cyan), var(--neon-blue), transparent) 1;
+            background: rgba(6, 8, 20, 0.95);
+            padding: 10px 15px;
+            border-bottom: 2px solid var(--neon-cyan);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            backdrop-filter: blur(10px);
             z-index: 10;
         }
 
         .logo h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: 26px;
+            font-size: 20px;
             font-weight: 700;
-            letter-spacing: 3px;
+            letter-spacing: 1px;
             background: linear-gradient(45deg, var(--neon-cyan), var(--neon-blue));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 8px rgba(0,255,204,0.3));
         }
 
         .currency-container {
             display: flex;
-            gap: 20px;
+            gap: 10px;
         }
 
         .currency-box {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 8px 20px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            padding: 5px 10px;
+            border-radius: 6px;
             font-weight: 700;
-            font-size: 19px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            font-size: 15px;
         }
-        .currency-box.gold span { color: var(--neon-gold); text-shadow: 0 0 10px rgba(255,211,42,0.3); }
-        .currency-box.gems span { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0,255,204,0.3); }
+        .currency-box.gold span { color: var(--neon-gold); }
+        .currency-box.gems span { color: var(--neon-cyan); }
 
-        /* KONTENER GŁÓWNY */
+        /* DOLNA NAWIGACJA MOBILNA */
+        .mobile-nav {
+            display: none;
+            background: #090c15;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .nav-item.active-nav {
+            color: var(--neon-cyan);
+            background: rgba(255,255,255,0.02);
+            box-shadow: inset 0 3px 0 var(--neon-cyan);
+        }
+
+        .nav-icon {
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+
+        /* RESPONSYWNY LAYOUT GRY */
         .game-layout {
             display: flex;
             flex: 1;
-            padding: 20px;
-            gap: 20px;
+            padding: 15px;
+            gap: 15px;
             overflow: hidden;
+            margin-bottom: 0;
         }
 
         .glass-panel {
             background: var(--panel-bg);
             border: 1px solid var(--panel-border);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(12px);
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            transition: border-color 0.3s;
+            flex: 1;
         }
-        .glass-panel:hover { border-color: rgba(0,255,204,0.3); }
 
         .panel-title {
             font-family: 'Orbitron', sans-serif;
-            padding: 15px 20px;
-            font-size: 15px;
-            letter-spacing: 2px;
+            padding: 12px 15px;
+            font-size: 14px;
+            letter-spacing: 1px;
             font-weight: 700;
             text-transform: uppercase;
             background: rgba(0,0,0,0.3);
@@ -124,22 +154,21 @@
             justify-content: space-between;
         }
 
-        /* NAWYKI */
-        #left-panel { flex: 1.2; }
+        /* KREATOR NAWYKÓW */
         .creator-row {
-            padding: 15px;
+            padding: 12px;
             display: flex;
-            gap: 10px;
+            gap: 8px;
             background: rgba(0,0,0,0.2);
         }
         .creator-row input, .creator-row select {
             background: #090c15;
             border: 1px solid rgba(255,255,255,0.1);
             color: #fff;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 10px;
+            border-radius: 6px;
             outline: none;
-            font-size: 16px;
+            font-size: 15px;
         }
         .creator-row input { flex: 1; }
         
@@ -148,144 +177,123 @@
             color: #000;
             font-weight: 700;
             border: none;
-            padding: 0 20px;
-            border-radius: 8px;
+            padding: 0 15px;
+            border-radius: 6px;
             cursor: pointer;
             font-family: 'Orbitron', sans-serif;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-        .btn-action:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 15px rgba(0,255,204,0.5);
+            font-size: 13px;
         }
 
         .scrollable-list {
-            padding: 15px;
+            padding: 12px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             flex: 1;
         }
 
         .habit-card {
             background: rgba(255,255,255,0.02);
             border: 1px solid rgba(255,255,255,0.05);
-            border-left: 5px solid var(--neon-cyan);
+            border-left: 4px solid var(--neon-cyan);
             border-radius: 8px;
-            padding: 15px;
+            padding: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            animation: fadeIn 0.3s ease;
         }
         .habit-card.bad-habit { border-left-color: var(--neon-red); }
-        .habit-name-tag { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-        .habit-streak-tag { font-size: 14px; color: var(--text-muted); }
+        .habit-name-tag { font-size: 16px; font-weight: 700; word-break: break-word; }
+        .habit-streak-tag { font-size: 13px; color: var(--text-muted); }
 
         .circle-btn {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             border: none;
-            font-size: 20px;
-            font-weight: bold;
+            font-size: 22px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: 0.2s;
         }
-        .btn-good { background: rgba(0, 255, 204, 0.2); color: var(--neon-cyan); border: 1px solid var(--neon-cyan); }
-        .btn-good:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 10px var(--neon-cyan); }
-        .btn-bad { background: rgba(255, 56, 56, 0.2); color: var(--neon-red); border: 1px solid var(--neon-red); }
-        .btn-bad:hover { background: var(--neon-red); color: #fff; box-shadow: 0 0 10px var(--neon-red); }
-        .btn-del { background: transparent; color: var(--text-muted); margin-left: 10px; }
-        .btn-del:hover { color: #fff; }
+        .btn-good { background: rgba(0, 255, 204, 0.15); color: var(--neon-cyan); border: 1px solid var(--neon-cyan); }
+        .btn-bad { background: rgba(255, 56, 56, 0.15); color: var(--neon-red); border: 1px solid var(--neon-red); }
+        .btn-del { background: transparent; color: var(--text-muted); margin-left: 8px; width: 35px; }
 
-        /* WALKA I ARENA */
-        #center-panel { flex: 1.6; }
+        /* ARENA METRIC */
         .arena {
-            height: 250px;
-            background: linear-gradient(to top, rgba(6,8,20,1), rgba(6,8,20,0.4)), url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=800&q=80');
+            height: 180px;
+            background: linear-gradient(to top, rgba(6,8,20,1), rgba(6,8,20,0.3)), url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=400&q=80');
             background-size: cover;
             background-position: center;
             display: flex;
             justify-content: space-around;
             align-items: center;
             position: relative;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
         .char-node {
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 140px;
+            width: 110px;
             position: relative;
         }
 
         .circle-avatar {
-            width: 90px;
-            height: 90px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             background: #090c15;
             border: 3px solid var(--neon-blue);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 40px;
-            box-shadow: 0 0 25px rgba(0,119,255,0.4);
-            transition: transform 0.1s ease;
+            font-size: 32px;
+            box-shadow: 0 0 15px rgba(0,119,255,0.3);
         }
-        #enemy-avatar-node { border-color: var(--neon-red); box-shadow: 0 0 25px rgba(255,56,56,0.4); }
+        #enemy-avatar-node { border-color: var(--neon-red); box-shadow: 0 0 15px rgba(255,56,56,0.3); }
 
         .bar-wrap {
             width: 100%;
-            height: 10px;
+            height: 8px;
             background: rgba(0,0,0,0.6);
-            border-radius: 5px;
-            margin-top: 8px;
+            border-radius: 4px;
+            margin-top: 6px;
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.1);
         }
         .bar-fill { height: 100%; width: 100%; transition: width 0.2s ease; }
         .hp-fill { background: linear-gradient(90deg, #2ed573, #7bed9f); }
         .mp-fill { background: linear-gradient(90deg, #0077ff, #00d2ff); }
         .enemy-hp-fill { background: linear-gradient(90deg, #ff3838, #ff6b6b); }
 
-        .sub-text { font-size: 13px; color: var(--text-muted); margin-top: 2px; font-weight: 700; }
+        .sub-text { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-weight: 700; }
 
-        /* SKILLE (ZDOLNOŚCI) */
+        /* SKILLE */
         .skills-grid {
-            padding: 10px 20px;
+            padding: 8px 12px;
             display: flex;
-            gap: 10px;
+            gap: 8px;
             background: rgba(0,0,0,0.4);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
         .skill-btn {
             flex: 1;
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            padding: 8px;
+            border-radius: 6px;
+            padding: 6px;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
-            transition: 0.2s;
         }
-        .skill-btn:hover:not(:disabled) {
-            background: rgba(155, 81, 224, 0.15);
-            border-color: var(--neon-purple);
-        }
-        .skill-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .skill-btn:disabled { opacity: 0.3; }
 
         /* STATYSTYKI DETALE */
         .stats-book {
-            padding: 20px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -295,43 +303,40 @@
         .grid-stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 8px;
         }
         .stat-badge {
             background: rgba(0,0,0,0.2);
-            padding: 10px 15px;
-            border-radius: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 1px solid rgba(255,255,255,0.02);
+            font-size: 15px;
         }
-        .stat-lbl { color: var(--text-muted); font-size: 15px; }
+        .stat-lbl { color: var(--text-muted); }
         .stat-val { font-weight: 700; color: var(--neon-cyan); }
 
-        /* LOGI */
         #terminal-log {
             background: #04060c;
-            border-radius: 8px;
-            padding: 10px;
-            height: 90px;
+            border-radius: 6px;
+            padding: 8px;
+            height: 75px;
             overflow-y: auto;
             font-family: monospace;
-            font-size: 13px;
+            font-size: 12px;
             color: #a4b0be;
-            border: 1px solid rgba(255,255,255,0.05);
             margin-top: auto;
         }
 
-        /* SKLEP I INWENTARZ */
-        #right-panel { flex: 1.2; }
+        /* SKLEP / INTERFEJS TABS */
         .tab-box { display: flex; background: rgba(0,0,0,0.4); }
         .tab-node {
             flex: 1;
             text-align: center;
-            padding: 15px;
+            padding: 12px;
             font-family: 'Orbitron', sans-serif;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
             font-weight: 700;
             color: var(--text-muted);
@@ -340,14 +345,13 @@
         .tab-node.active-tab {
             color: #fff;
             border-bottom-color: var(--neon-cyan);
-            background: rgba(255,255,255,0.02);
         }
 
         .market-list {
-            padding: 15px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             overflow-y: auto;
             flex: 1;
         }
@@ -355,46 +359,60 @@
         .market-item {
             background: rgba(255,255,255,0.02);
             border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 10px;
-            padding: 12px;
+            border-radius: 8px;
+            padding: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .rarity-common { border-right: 4px solid var(--common); }
-        .rarity-rare { border-right: 4px solid var(--rare); }
-        .rarity-epic { border-right: 4px solid var(--epic); }
-        .rarity-legendary { border-right: 4px solid var(--legendary); }
-
-        /* ANIMACJE */
-        .hit-effect { animation: shake 0.2s ease-in-out; }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-        .hero-dash { transform: translateX(40px) scale(1.05); }
-        .enemy-dash { transform: translateX(-40px) scale(1.05); }
+        .rarity-common { border-right: 3px solid var(--common); }
+        .rarity-rare { border-right: 3px solid var(--rare); }
+        .rarity-epic { border-right: 3px solid var(--epic); }
+        .rarity-legendary { border-right: 3px solid var(--legendary); }
 
         .floating-dmg {
             position: absolute;
             top: -10px;
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
-            font-size: 26px;
-            text-shadow: 0 0 8px #000;
+            font-size: 22px;
+            text-shadow: 0 0 5px #000;
             animation: floatUp 0.8s forwards;
             opacity: 0;
-            pointer-events: none;
         }
         @keyframes floatUp {
             0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-50px); opacity: 0; }
+            100% { transform: translateY(-40px); opacity: 0; }
         }
 
         .hidden { display: none !important; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+        /* REGUŁY RESPONSYWNOŚCI DLA EKRANÓW MOBILNYCH (TELEFONY) */
+        @media (max-width: 768px) {
+            .game-layout {
+                flex-direction: column;
+                padding-bottom: 75px; /* miejsce na dolne menu */
+            }
+            
+            /* Domyślnie na telefonie ukrywamy boczny i prawy panel, steruje nimi dolna nawigacja */
+            .glass-panel {
+                display: none;
+            }
+            .glass-panel.mobile-visible {
+                display: flex;
+            }
+
+            .mobile-nav {
+                display: flex;
+            }
+        }
+
+        /* Dla komputerów stacjonarnych wymuszamy widoczność wszystkiego naraz */
+        @media (min-width: 769px) {
+            .glass-panel {
+                display: flex !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -405,35 +423,34 @@
         </div>
         <div class="currency-container">
             <div class="currency-box gold">ZŁOTO: <span id="m-gold">0</span></div>
-            <div class="currency-box gems">KRYSZTAŁY: <span id="m-gems">0</span></div>
+            <div class="currency-box gems">💎 <span id="m-gems">0</span></div>
         </div>
     </header>
 
     <div class="game-layout">
 
-        <!-- LEWY PANEL -->
-        <div class="glass-panel" id="left-panel">
+        <!-- PANEL 1: NAWYKI (Domyślnie aktywny na mobile) -->
+        <div class="glass-panel mobile-visible" id="panel-habits">
             <div class="panel-title">Kreator Nawyków</div>
             <div class="creator-row">
-                <input type="text" id="in-name" placeholder="Wpisz nowe zadanie lub nawyk...">
+                <input type="text" id="in-name" placeholder="Nowe zadanie...">
                 <select id="in-type">
-                    <option value="good">Dobry nawyk</option>
-                    <option value="bad">Zły nawyk</option>
+                    <option value="good">Dobry</option>
+                    <option value="bad">Zły</option>
                 </select>
                 <button class="btn-action" onclick="addNewHabit()">+</button>
             </div>
             <div class="scrollable-list" id="habit-box"></div>
         </div>
 
-        <!-- ŚRODKOWY PANEL -->
-        <div class="glass-panel" id="center-panel">
+        <!-- PANEL 2: WALKA / ARENA -->
+        <div class="glass-panel" id="panel-battle">
             <div class="panel-title">
                 <span>Strefa Starcia</span>
                 <span id="enemy-title" style="color: var(--neon-red)">Łowca Myśli</span>
             </div>
 
             <div class="arena" id="battle-field">
-                <!-- Bohater -->
                 <div class="char-node">
                     <div class="circle-avatar" id="hero-avatar-node">🥷</div>
                     <div class="bar-wrap"><div class="bar-fill hp-fill" id="h-hp-bar"></div></div>
@@ -443,7 +460,6 @@
                     <div class="floating-dmg" id="h-dmg-pop" style="color: var(--neon-red);"></div>
                 </div>
 
-                <!-- Przeciwnik -->
                 <div class="char-node">
                     <div class="circle-avatar" id="enemy-avatar-node">👾</div>
                     <div class="bar-wrap"><div class="bar-fill enemy-hp-fill" id="e-hp-bar"></div></div>
@@ -452,39 +468,35 @@
                 </div>
             </div>
 
-            <!-- Panel Zdolności Aktywnych -->
             <div class="skills-grid">
                 <button class="skill-btn" id="sk-1" onclick="useSpell('fire')">
-                    <span style="color:var(--neon-purple); font-weight:700;">Płomień Skupienia</span>
-                    <span style="font-size:12px; color:var(--text-muted);">Koszt: 10 MP | Zadaje dmg x2</span>
+                    <span style="color:var(--neon-purple); font-weight:700; font-size:14px;">Atak Mocy (10 MP)</span>
                 </button>
                 <button class="skill-btn" id="sk-2" onclick="useSpell('heal')">
-                    <span style="color:var(--neon-cyan); font-weight:700;">Błogosławieństwo Odpoczynku</span>
-                    <span style="font-size:12px; color:var(--text-muted);">Koszt: 15 MP | Leczy 40 HP</span>
+                    <span style="color:var(--neon-cyan); font-weight:700; font-size:14px;">Leczenie (15 MP)</span>
                 </button>
             </div>
 
-            <!-- Statystyki Szczegółowe -->
             <div class="stats-book">
-                <div class="bar-wrap" style="height:14px;"><div class="bar-fill" id="h-xp-bar" style="background: linear-gradient(90deg, #9b51e0, #00ffcc);"></div></div>
-                <div class="sub-text" id="h-xp-lbl" style="text-align:center; margin-bottom:10px;">XP: 0 / 100 (Poziom 1)</div>
+                <div class="bar-wrap" style="height:10px;"><div class="bar-fill" id="h-xp-bar" style="background: linear-gradient(90deg, #9b51e0, #00ffcc);"></div></div>
+                <div class="sub-text" id="h-xp-lbl" style="text-align:center; margin-bottom:5px;">XP: 0 / 100 (Poziom 1)</div>
 
                 <div class="grid-stats">
-                    <div class="stat-badge"><span class="stat-lbl">Atak (ATK)</span><span class="stat-val" id="st-atk">10</span></div>
-                    <div class="stat-badge"><span class="stat-lbl">Obrona (DEF)</span><span class="stat-val" id="st-def">2</span></div>
-                    <div class="stat-badge"><span class="stat-lbl">Kryt (CRIT)</span><span class="stat-val" id="st-crit">10%</span></div>
-                    <div class="stat-badge"><span class="stat-lbl">Zabójstwa</span><span class="stat-val" id="st-kills">0</span></div>
+                    <div class="stat-badge"><span class="stat-lbl">ATK</span><span class="stat-val" id="st-atk">12</span></div>
+                    <div class="stat-badge"><span class="stat-lbl">DEF</span><span class="stat-val" id="st-def">3</span></div>
+                    <div class="stat-badge"><span class="stat-lbl">CRIT</span><span class="stat-val" id="st-crit">10%</span></div>
+                    <div class="stat-badge"><span class="stat-lbl">Zabici</span><span class="stat-val" id="st-kills">0</span></div>
                 </div>
 
                 <div id="terminal-log"></div>
             </div>
         </div>
 
-        <!-- PRAWY PANEL -->
-        <div class="glass-panel" id="right-panel">
+        <!-- PANEL 3: SKLEP / ZBROJOWNIA -->
+        <div class="glass-panel" id="panel-shop">
             <div class="tab-box">
-                <div class="tab-node active-tab" id="t-shop" onclick="toggleTabs('shop')">Zbrojownia</div>
-                <div class="tab-node" id="t-inv" onclick="toggleTabs('inv')">Ekwipunek</div>
+                <div class="tab-node active-tab" id="t-shop" onclick="toggleShopTabs('shop')">Sklep</div>
+                <div class="tab-node" id="t-inv" onclick="toggleShopTabs('inv')">Ekwipunek</div>
             </div>
             <div class="market-list" id="shop-view"></div>
             <div class="market-list hidden" id="inv-view"></div>
@@ -492,8 +504,24 @@
 
     </div>
 
+    <!-- DOLNY PANEL NAWIGACYJNY (TYLKO NA TELEFONY) -->
+    <div class="mobile-nav">
+        <div class="nav-item active-nav" id="nv-habits" onclick="switchMobilePanel('habits')">
+            <div class="nav-icon">📝</div>
+            <span>Nawyki</span>
+        </div>
+        <div class="nav-item" id="nv-battle" onclick="switchMobilePanel('battle')">
+            <div class="nav-icon">⚔️</div>
+            <span>Bitwa</span>
+        </div>
+        <div class="nav-item" id="nv-shop" onclick="switchMobilePanel('shop')">
+            <div class="nav-icon">🎒</div>
+            <span>Sklep</span>
+        </div>
+    </div>
+
     <script>
-        // SYSTEM OPERACYJNY GRY
+        // ENGINE GRY (ZAPIS I MECHANIKI)
         let db = {
             level: 1, xp: 0, xpNeed: 100, gold: 80, gems: 2,
             hp: 120, maxHp: 120, mp: 30, maxMp: 30,
@@ -501,35 +529,33 @@
             eHp: 60, eMaxHp: 60, eName: "Cień Prokrastynacji",
             habits: [
                 { id: 1, name: "Poranny rozruch / Trening", type: "good", streak: 0 },
-                { id: 2, name: "Przeglądanie TikToka bez celu", type: "bad", streak: 0 }
+                { id: 2, name: "Przeglądanie Social Mediów", type: "bad", streak: 0 }
             ],
             ownedItems: []
         };
 
         const itemShop = [
             { id: 'w1', name: 'Katana Koncentracji', type: 'weapon', stat: 8, price: 50, rarity: 'rare', icon: '⚔️', desc: '+8 Ataku' },
-            { id: 'w2', name: 'Rdzeń Hiper-Skupienia', type: 'weapon', stat: 22, price: 160, rarity: 'legendary', icon: '🔮', desc: '+22 Ataku' },
+            { id: 'w2', name: 'Ostrze Hiper-Skupienia', type: 'weapon', stat: 22, price: 160, rarity: 'legendary', icon: '🔮', desc: '+22 Ataku' },
             { id: 'a1', name: 'Kurtka z Nano-Splotu', type: 'armor', stat: 5, price: 45, rarity: 'common', icon: '🧥', desc: '+5 Obrony' },
             { id: 'a2', name: 'Pancerz Niezłomnej Woli', type: 'armor', stat: 14, price: 130, rarity: 'epic', icon: '🛡️', desc: '+14 Obrony' }
         ];
 
-        const monsters = ["Demon Rutyny", "Algorytm Zjadania Czasu", "Lord Słodkiego Lenia", "Cyborg Prokrastynator"];
+        const monsters = ["Demon Rutyny", "Algorytm Straty Czasu", "Lord Leniów", "Wirus Słabej Woli"];
 
         window.onload = () => {
-            if(localStorage.getItem('hq_pro_save')) {
-                db = JSON.parse(localStorage.getItem('hq_pro_save'));
+            if(localStorage.getItem('hq_mobile_save')) {
+                db = JSON.parse(localStorage.getItem('hq_mobile_save'));
             }
             refreshEngine();
         };
 
-        function save() { localStorage.setItem('hq_pro_save', JSON.stringify(db)); }
+        function save() { localStorage.setItem('hq_mobile_save', JSON.stringify(db)); }
 
         function refreshEngine() {
-            // Waluty
             document.getElementById('m-gold').innerText = db.gold;
             document.getElementById('m-gems').innerText = db.gems;
 
-            // Liczniki statystyk
             let eqAtk = getEqBonus('weapon');
             let eqDef = getEqBonus('armor');
             document.getElementById('st-atk').innerText = db.baseAtk + eqAtk;
@@ -537,22 +563,18 @@
             document.getElementById('st-crit').innerText = db.crit + "%";
             document.getElementById('st-kills').innerText = db.kills;
 
-            // Bary gracza
             document.getElementById('h-hp-lbl').innerText = `HP: ${db.hp}/${db.maxHp}`;
             document.getElementById('h-hp-bar').style.width = `${(db.hp / db.maxHp)*100}%`;
             document.getElementById('h-mp-lbl').innerText = `MP: ${db.mp}/${db.maxMp}`;
             document.getElementById('h-mp-bar').style.width = `${(db.mp / db.maxMp)*100}%`;
             
-            // Bar XP
-            document.getElementById('h-xp-lbl').innerText = `XP: ${db.xp} / ${db.xpNeed} (Poziom ${db.level})`;
+            document.getElementById('h-xp-lbl').innerText = `XP: ${db.xp}/${db.xpNeed} (Lvl ${db.level})`;
             document.getElementById('h-xp-bar').style.width = `${(db.xp / db.xpNeed)*100}%`;
 
-            // Przeciwnik
             document.getElementById('enemy-title').innerText = db.eName;
             document.getElementById('e-hp-lbl').innerText = `HP: ${db.eHp}/${db.eMaxHp}`;
             document.getElementById('e-hp-bar').style.width = `${(db.eHp / db.eMaxHp)*100}%`;
 
-            // Przyciski skilli
             document.getElementById('sk-1').disabled = db.mp < 10;
             document.getElementById('sk-2').disabled = db.mp < 15;
 
@@ -560,7 +582,6 @@
         }
 
         function buildLists() {
-            // Buduj nawyki
             const hBox = document.getElementById('habit-box');
             hBox.innerHTML = '';
             db.habits.forEach(h => {
@@ -569,7 +590,7 @@
                 div.innerHTML = `
                     <div>
                         <div class="habit-name-tag">${h.name}</div>
-                        <div class="habit-streak-tag">Seria sukcesów: ${h.streak || 0}</div>
+                        <div class="habit-streak-tag">Seria: ${h.streak || 0}</div>
                     </div>
                     <div style="display:flex; align-items:center;">
                         ${h.type === 'good' 
@@ -582,7 +603,6 @@
                 hBox.appendChild(div);
             });
 
-            // Buduj Sklep
             const sBox = document.getElementById('shop-view');
             sBox.innerHTML = '';
             itemShop.forEach(item => {
@@ -590,37 +610,35 @@
                 div.className = `market-item rarity-${item.rarity}`;
                 div.innerHTML = `
                     <div>
-                        <div style="font-weight:bold; color:var(--neon-${item.rarity === 'legendary'?'gold':item.rarity === 'epic'?'purple':'cyan'})">${item.icon} ${item.name}</div>
+                        <div style="font-weight:bold;">${item.icon} ${item.name}</div>
                         <div style="font-size:13px; color:var(--text-muted)">${item.desc}</div>
                     </div>
-                    <button class="btn-action" style="padding:6px 12px; font-size:13px;" onclick="buyItem('${item.id}')">${item.price} G</button>
+                    <button class="btn-action" style="padding:8px; font-size:12px;" onclick="buyItem('${item.id}')">${item.price} G</button>
                 `;
                 sBox.appendChild(div);
             });
 
-            // Buduj Ekwipunek
             const iBox = document.getElementById('inv-view');
             iBox.innerHTML = '';
             if(db.ownedItems.length === 0) {
-                iBox.innerHTML = `<div style="text-align:center; color:var(--text-muted); margin-top:20px;">Ekwipunek jest pusty</div>`;
+                iBox.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px;">Pusto</div>`;
             }
             db.ownedItems.forEach(eq => {
                 const div = document.createElement('div');
                 div.className = `market-item rarity-${eq.rarity}`;
                 div.innerHTML = `
                     <div>
-                        <div style="font-weight:bold;">${eq.icon} ${eq.name} ${eq.active ? '<span style="color:var(--neon-cyan)">[Założony]</span>':''}</div>
+                        <div style="font-weight:bold;">${eq.icon} ${eq.name} ${eq.active ? '[E' : ''}</div>
                         <div style="font-size:13px; color:var(--text-muted)">${eq.desc}</div>
                     </div>
-                    <button class="btn-action" style="padding:6px 12px; font-size:13px; background:${eq.active?'var(--neon-red)':'var(--neon-blue)'}" onclick="equipItem(${eq.instId})">
-                        ${eq.active ? 'Zdejmij' : 'Załóż'}
+                    <button class="btn-action" style="padding:8px; font-size:12px; background:${eq.active?'var(--neon-red)':'var(--neon-blue)'}" onclick="equipItem(${eq.instId})">
+                        ${eq.active ? 'Zdejmij' : 'Założ'}
                     </button>
                 `;
                 iBox.appendChild(div);
             });
         }
 
-        // AKCJA NAWYKU
         function hitHabit(id, positive) {
             const h = db.habits.find(x => x.id === id);
             if(!h) return;
@@ -628,114 +646,90 @@
             if(positive) {
                 h.streak++;
                 let dmg = db.baseAtk + getEqBonus('weapon');
-                
-                // Szansa na kryta
                 let isCrit = Math.random() * 100 < db.crit;
-                if(isCrit) { dmg *= 2; }
+                if(isCrit) dmg *= 2;
 
                 db.eHp -= dmg;
-                db.gold += Math.floor(Math.random() * 6) + 4;
-                db.mp = Math.min(db.maxMp, db.mp + 4); // Regeneracja many przy dobrym nawyku
+                db.gold += Math.floor(Math.random() * 5) + 4;
+                db.mp = Math.min(db.maxMp, db.mp + 5);
 
-                triggerVisual('hero-avatar-node', 'hero-dash');
-                popDmg('e-dmg-pop', isCrit ? `🔥 ${dmg} CRIT!` : `-${dmg}`);
-                writeLog(`Wykonano: "${h.name}". Zadajesz ${dmg} obrażeń wrogowi! (+Złoto, +Mana)`);
-
-                if(db.eHp <= 0) { enemyDie(); }
+                popDmg('e-dmg-pop', isCrit ? `💥 ${dmg}!!` : `-${dmg}`);
+                writeLog(`Wykonano: ${h.name}. Zadajesz ${dmg} obrażeń.`);
+                if(db.eHp <= 0) enemyDie();
             } else {
                 h.streak = 0;
                 let def = db.baseDef + getEqBonus('armor');
-                let incoming = Math.max(6, 18 - def);
-                
+                let incoming = Math.max(5, 16 - def);
                 db.hp -= incoming;
-                triggerVisual('battle-field', 'hit-effect');
-                popDmg('h-dmg-pop', `-${incoming}`);
-                writeLog(`Złamanie dyscypliny: "${h.name}". Otrzymujesz ${incoming} obrażeń!`, true);
 
-                if(db.hp <= 0) { playerDie(); }
+                popDmg('h-dmg-pop', `-${incoming}`);
+                writeLog(`Złamanie dyscypliny! Tracisz ${incoming} HP.`, true);
+                if(db.hp <= 0) playerDie();
             }
             save();
             refreshEngine();
         }
 
-        // SPELL SYSTEM
         function useSpell(type) {
             if(type === 'fire' && db.mp >= 10) {
                 db.mp -= 10;
                 let dmg = (db.baseAtk + getEqBonus('weapon')) * 2;
                 db.eHp -= dmg;
-                popDmg('e-dmg-pop', `💥 ${dmg}`);
-                writeLog(`Rzucasz Płomień Skupienia! Potężne uderzenie za ${dmg}!`);
+                popDmg('e-dmg-pop', `🔥 ${dmg}`);
+                writeLog(`Używasz Ataku Mocy za ${dmg} dmg!`);
                 if(db.eHp <= 0) enemyDie();
             } else if(type === 'heal' && db.mp >= 15) {
                 db.mp -= 15;
                 db.hp = Math.min(db.maxHp, db.hp + 40);
-                writeLog(`Używasz Błogosławieństwa Odpoczynku. Odnawiasz 40 punktów życia.`);
+                writeLog(`Uleczono 40 HP.`);
             }
             save();
             refreshEngine();
         }
 
-        // ŚMIERĆ I AWANS
         function enemyDie() {
             db.kills++;
-            let rewardXp = 35 + (db.level * 4);
-            let rewardGold = 25 + (db.level * 8);
-            db.xp += rewardXp;
-            db.gold += rewardGold;
-
-            // Szansa na kryształ (gem)
-            if(Math.random() > 0.7) { db.gems += 1; writeLog("💎 Znalazłeś rzadki Kryształ we wraku potwora!"); }
-
-            writeLog(`⚔️ Pokonałeś ${db.eName}! Zyskujesz +${rewardXp} XP oraz +${rewardGold} Złota.`);
+            db.xp += 40;
+            db.gold += 30;
+            writeLog(`Pokonałeś potwora! +40 XP, +30 Złota.`);
 
             if(db.xp >= db.xpNeed) {
                 db.level++;
                 db.xp -= db.xpNeed;
-                db.xpNeed = Math.floor(db.xpNeed * 1.45);
                 db.maxHp += 15;
-                db.maxMp += 5;
                 db.hp = db.maxHp;
-                db.mp = db.maxMp;
-                db.baseAtk += 4;
-                db.baseDef += 2;
-                db.crit += 1;
-                writeLog(`🌟 AWANS! Osiągasz Poziom ${db.level}! Twoje siły rosną.`, false);
+                db.baseAtk += 3;
+                writeLog(`AWANS NA LEVEL ${db.level}!`);
             }
-
-            db.eMaxHp = Math.floor(60 * Math.pow(1.25, db.level));
+            db.eMaxHp = Math.floor(60 * Math.pow(1.2, db.level));
             db.eHp = db.eMaxHp;
             db.eName = monsters[Math.floor(Math.random() * monsters.length)] + ` V.${db.level}`;
         }
 
         function playerDie() {
-            writeLog(`💀 Zostałeś unicestwiony przez swoje nawyki. Tracisz 40 sztuk złota. Zregeneruj siły!`, true);
-            db.gold = Math.max(0, db.gold - 40);
+            writeLog(`Porażka! Tracisz 30 sztuk złota.`, true);
+            db.gold = Math.max(0, db.gold - 30);
             db.hp = db.maxHp;
-            db.mp = db.maxMp;
         }
 
-        // SKLEP I MANAGMENT EQ
         function buyItem(id) {
             const item = itemShop.find(x => x.id === id);
             if(db.gold >= item.price) {
                 db.gold -= item.price;
                 db.ownedItems.push({ ...item, active: false, instId: Date.now() });
-                writeLog(`Kupiono: ${item.name}. Otwórz Ekwipunek, aby wyposażyć postać.`);
+                writeLog(`Kupiono przedmiot!`);
                 save();
                 refreshEngine();
             } else {
-                alert("Niewystarczająca ilość złota! Wykonaj nawyki, aby zarobić.");
+                alert("Za mało złota!");
             }
         }
 
         function equipItem(instId) {
             const item = db.ownedItems.find(x => x.instId === instId);
             if(!item) return;
-
-            if(item.active) {
-                item.active = false;
-            } else {
+            if(item.active) { item.active = false; } 
+            else {
                 db.ownedItems.forEach(x => { if(x.type === item.type) x.active = false; });
                 item.active = true;
             }
@@ -749,7 +743,6 @@
             return res;
         }
 
-        // POMOCNICZE WIZUALNE
         function addNewHabit() {
             const name = document.getElementById('in-name').value.trim();
             const type = document.getElementById('in-type').value;
@@ -766,7 +759,29 @@
             refreshEngine();
         }
 
-        function toggleTabs(mode) {
+        // NAWIGACJA MOBILNA (PRZEŁĄCZANIE PANELÓW)
+        function switchMobilePanel(panelName) {
+            document.getElementById('panel-habits').classList.remove('mobile-visible');
+            document.getElementById('panel-battle').classList.remove('mobile-visible');
+            document.getElementById('panel-shop').classList.remove('mobile-visible');
+            
+            document.getElementById('nv-habits').classList.remove('active-nav');
+            document.getElementById('nv-battle').classList.remove('active-nav');
+            document.getElementById('nv-shop').classList.remove('active-nav');
+
+            if(panelName === 'habits') {
+                document.getElementById('panel-habits').classList.add('mobile-visible');
+                document.getElementById('nv-habits').classList.add('active-nav');
+            } else if(panelName === 'battle') {
+                document.getElementById('panel-battle').classList.add('mobile-visible');
+                document.getElementById('nv-battle').classList.add('active-nav');
+            } else if(panelName === 'shop') {
+                document.getElementById('panel-shop').classList.add('mobile-visible');
+                document.getElementById('nv-shop').classList.add('active-nav');
+            }
+        }
+
+        function toggleShopTabs(mode) {
             if(mode === 'shop') {
                 document.getElementById('t-shop').classList.add('active-tab');
                 document.getElementById('t-inv').classList.remove('active-tab');
@@ -778,12 +793,6 @@
                 document.getElementById('shop-view').classList.add('hidden');
                 document.getElementById('inv-view').classList.remove('hidden');
             }
-        }
-
-        function triggerVisual(id, className) {
-            const el = document.getElementById(id);
-            el.classList.add(className);
-            setTimeout(() => el.classList.remove(className), 150);
         }
 
         function popDmg(id, text) {
