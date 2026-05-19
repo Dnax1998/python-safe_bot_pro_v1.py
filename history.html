@@ -3,36 +3,750 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historia - NeoRun</title>
+    <title>HabitQuest: Obrońca Świtu</title>
     <style>
-        body { background: #000; color: white; font-family: 'Segoe UI', sans-serif; padding: 20px; }
-        .btn-back { background: #1a1a1a; color: white; padding: 12px; border-radius: 12px; text-decoration: none; border: 1px solid #333; display: inline-block; margin-bottom: 20px; }
-        .run-item { background: #111; padding: 15px; border-radius: 15px; margin-bottom: 10px; border-left: 4px solid #00ff88; display: flex; justify-content: space-between; align-items: center; }
-        .run-dist { font-size: 1.2rem; font-weight: bold; color: #00ff88; }
-        .run-date { color: #666; font-size: 0.9rem; }
+        :root {
+            --bg-dark: #0f111a;
+            --panel-bg: #1e2235;
+            --accent-glow: #00ffcc;
+            --accent-red: #ff4757;
+            --accent-gold: #ffa502;
+            --text-light: #f5f6fa;
+            --text-muted: #a4b0be;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* NAGŁÓWEK I STATYSTYKI GŁÓWNE */
+        header {
+            background: linear-gradient(135deg, #141824, var(--panel-bg));
+            padding: 15px 30px;
+            border-bottom: 2px solid rgba(0, 255, 204, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-glow);
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+
+        .global-stats {
+            display: flex;
+            gap: 25px;
+        }
+
+        .stat-bubble {
+            background: rgba(0,0,0,0.4);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .stat-bubble span { color: var(--accent-gold); }
+
+        /* GŁÓWNY UKŁAD PANELU */
+        .game-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .panel-header {
+            padding: 15px 20px;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* PANEL LEWY: NAWYKI */
+        #habits-panel { flex: 1.2; }
+        
+        .habit-controls {
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            background: rgba(0,0,0,0.1);
+        }
+
+        .habit-controls input, .habit-controls select {
+            background: #10121a;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            outline: none;
+        }
+        .habit-controls input { flex: 1; }
+
+        .btn {
+            background: linear-gradient(135deg, #00ffcc, #00a8ff);
+            color: #0f111a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+        }
+
+        .habit-list {
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .habit-item {
+            background: #141824;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid var(--accent-glow);
+            transition: 0.3s;
+        }
+        .habit-item.bad { border-left-color: var(--accent-red); }
+
+        .habit-info h4 { margin-bottom: 5px; }
+        .habit-info span { font-size: 12px; color: var(--text-muted); }
+
+        .habit-actions { display: flex; gap: 8px; }
+        .action-btn {
+            width: 35px;
+            height: 35px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .btn-plus { background: #2ed573; color: white; }
+        .btn-minus { background: #ff4757; color: white; }
+        .btn-delete { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+        .btn-delete:hover { background: var(--accent-red); color: white; }
+
+        /* PANEL ŚRODKOWY: BOHATER I WALKA */
+        #hero-panel { flex: 1.5; }
+        
+        .battle-arena {
+            height: 220px;
+            background: linear-gradient(to bottom, rgba(15, 17, 26, 0.8), rgba(30, 34, 53, 0.9)), url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 2px solid #10121a;
+        }
+
+        .fighter {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            width: 120px;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #2f3542;
+            border: 3px solid var(--accent-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 0 20px rgba(0,255,204,0.2);
+            transition: transform 0.1s;
+        }
+        #enemy-avatar { border-color: var(--accent-red); box-shadow: 0 0 20px rgba(255,71,87,0.2); }
+
+        .hp-bar-container {
+            width: 100%;
+            height: 12px;
+            background: #2f3542;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .hp-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4757, #ff6b81);
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+        #hero-hp-bar { background: linear-gradient(90deg, #2ed573, #7bed9f); }
+
+        .damage-pop {
+            position: absolute;
+            top: -20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-red);
+            animation: floatUp 0.8s forwards;
+            opacity: 0;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-40px); opacity: 0; }
+        }
+
+        /* STATYSTYKI BOHATERA */
+        .hero-details {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.1);
+            padding: 10px 15px;
+            border-radius: 6px;
+        }
+        .stat-value { font-weight: bold; color: var(--accent-glow); }
+
+        /* PANEL PRAWY: SKLEP I EKWIPUNEK */
+        #shop-panel { flex: 1.2; }
+
+        .tabs {
+            display: flex;
+            background: rgba(0,0,0,0.2);
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+        .tab.active {
+            border-bottom-color: var(--accent-glow);
+            color: white;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .shop-content, .inventory-content {
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+        }
+        .hidden { display: none !important; }
+
+        .shop-item {
+            background: #141824;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.2s;
+        }
+        .shop-item:hover { border-color: rgba(0, 255, 204, 0.3); }
+
+        .item-info h5 { font-size: 15px; margin-bottom: 2px; }
+        .item-info p { font-size: 12px; color: var(--text-muted); }
+
+        /* ANIMACJE WALKI */
+        .attack-right { transform: translateX(30px) scale(1.1); }
+        .attack-left { transform: translateX(-30px) scale(1.1); }
+
+        /* DZIENNIK ZDARZEŃ */
+        #combat-log {
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            padding: 10px;
+            height: 100px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            color: #7bed9f;
+            margin-top: auto;
+        }
     </style>
 </head>
 <body>
-    <a href="index.html" class="btn-back">← POWRÓT</a>
-    <h2>HISTORIA AKTYWNOŚCI</h2>
-    <div id="history-list"></div>
+
+    <!-- GŁÓWNY NAGŁÓWEK Z POZIOMEM I WALUTĄ -->
+    <header>
+        <div class="logo">
+            <h1>HabitQuest</h1>
+        </div>
+        <div class="global-stats">
+            <div class="stat-bubble">POZIOM: <span id="global-level">1</span></div>
+            <div class="stat-bubble">ZŁOTO: <span id="global-gold">0</span> szt.</div>
+            <div class="stat-bubble">KRYSZTAŁY: <span id="global-gems">5</span> szt.</div>
+        </div>
+    </header>
+
+    <!-- KONTENER GRY -->
+    <div class="game-container">
+
+        <!-- PANEL LEWY: SYSTEM NAWYKÓW -->
+        <div class="panel" id="habits-panel">
+            <div class="panel-header">Twoje Nawyki & Zadania</div>
+            <div class="habit-controls">
+                <input type="text" id="habit-name" placeholder="Np. 30 min programowania, trening, fastfood...">
+                <select id="habit-type">
+                    <option value="good">Dobry Nawyk (+HP/+Złoto)</option>
+                    <option value="bad">Zły Nawyk (Atak Wroga)</option>
+                </select>
+                <button class="btn" onclick="addHabit()">Dodaj</button>
+            </div>
+            <div class="habit-list" id="habit-list-container">
+                <!-- Nawyki generowane dynamicznie -->
+            </div>
+        </div>
+
+        <!-- PANEL ŚRODKOWY: ARENA WALKI I STATYSTYKI POSTACI -->
+        <div class="panel" id="hero-panel">
+            <div class="panel-header">
+                <span>Wymiar Walki</span>
+                <span id="monster-name" style="color: var(--accent-red);">Cień Prokrastynacji</span>
+            </div>
+            
+            <div class="battle-arena">
+                <!-- Bohater -->
+                <div class="fighter" id="hero-fighter">
+                    <div class="avatar" id="hero-avatar">⚔️</div>
+                    <div class="hp-bar-container">
+                        <div class="hp-bar" id="hero-hp-bar"></div>
+                    </div>
+                    <div style="font-size: 12px;" id="hero-hp-text">HP: 100/100</div>
+                    <div class="damage-pop" id="hero-damage-pop"></div>
+                </div>
+
+                <div style="font-size: 28px; font-weight: bold; color: rgba(255,255,255,0.2)">VS</div>
+
+                <!-- Przeciwnik -->
+                <div class="fighter" id="enemy-fighter">
+                    <div class="avatar" id="enemy-avatar">👾</div>
+                    <div class="hp-bar-container">
+                        <div class="hp-bar" id="enemy-hp-bar"></div>
+                    </div>
+                    <div style="font-size: 12px;" id="enemy-hp-text">HP: 50/50</div>
+                    <div class="damage-pop" id="enemy-damage-pop"></div>
+                </div>
+            </div>
+
+            <div class="hero-details">
+                <div style="font-weight: bold; color: var(--text-muted); font-size: 14px;">STATYSTYKI BOHATERA:</div>
+                <div class="stat-row"><span>Doświadczenie (XP):</span> <span class="stat-value" id="stat-xp">0 / 100</span></div>
+                <div class="stat-row"><span>Siła Ataku (ATK):</span> <span class="stat-value" id="stat-atk">10</span></div>
+                <div class="stat-row"><span>Obrona (DEF):</span> <span class="stat-value" id="stat-def">0</span></div>
+                <div class="stat-row"><span>Pokonane potwory:</span> <span class="stat-value" id="stat-kills">0</span></div>
+                
+                <div id="combat-log">System: Witaj w świecie HabitQuest. Wykonuj dobre nawyki, aby atakować potwory! Złe nawyki ranią Ciebie.</div>
+            </div>
+        </div>
+
+        <!-- PANEL PRAWY: SKLEP I EKWIPUNEK -->
+        <div class="panel" id="shop-panel">
+            <div class="tabs">
+                <div class="tab active" id="tab-shop" onclick="switchTab('shop')">Zbrojownia</div>
+                <div class="tab" id="tab-inv" onclick="switchTab('inv')">Ekwipunek</div>
+            </div>
+
+            <!-- Zawartość Sklepu -->
+            <div class="shop-content" id="shop-content-view">
+                <!-- Przedmioty generowane dynamicznie -->
+            </div>
+
+            <!-- Zawartość Ekwipunku -->
+            <div class="inventory-content hidden" id="inv-content-view">
+                <!-- Posiadane przedmioty -->
+            </div>
+        </div>
+
+    </div>
 
     <script>
-        const history = JSON.parse(localStorage.getItem('neoHistory') || '[]');
-        const list = document.getElementById('history-list');
-        
-        if(history.length === 0) {
-            list.innerHTML = '<p style="color:#444">Brak biegów. Czas zacząć!</p>';
-        } else {
-            list.innerHTML = history.reverse().map(run => `
-                <div class="run-item">
-                    <div>
-                        <div class="run-dist">${run.dist} km</div>
-                        <div class="run-date">${run.date}</div>
+        // STAN GRY (Zapisywany w localStorage)
+        let state = {
+            level: 1,
+            xp: 0,
+            xpNeeded: 100,
+            gold: 50,
+            gems: 5,
+            heroHp: 100,
+            heroMaxHp: 100,
+            atk: 10,
+            def: 2,
+            kills: 0,
+            enemyHp: 50,
+            enemyMaxHp: 50,
+            enemyName: "Cień Prokrastynacji",
+            enemyIcon: "👾",
+            habits: [
+                { id: 1, name: "30 minut czytania książki", type: "good", streak: 0 },
+                { id: 2, name: "Zjedzenie czegoś niezdrowego", type: "bad", streak: 0 }
+            ],
+            inventory: []
+        };
+
+        const itemsDatabase = [
+            { id: 'sword_1', name: 'Miecz Koncentracji', type: 'weapon', stat: 5, price: 40, icon: '⚔️', desc: '+5 do Ataku' },
+            { id: 'sword_2', name: 'Ostrze Samodyscypliny', type: 'weapon', stat: 15, price: 120, icon: '🔥', desc: '+15 do Ataku' },
+            { id: 'armor_1', name: 'Pancerz Rutyny', type: 'armor', stat: 4, price: 35, icon: '🛡️', desc: '+4 do Obrony' },
+            { id: 'potion_1', name: 'Eliksir Motywacji', type: 'potion', stat: 50, price: 15, icon: '🧪', desc:_=> 'Leczy 50 HP natychmiast' }
+        ];
+
+        const monsterNames = ["Demon Social Mediów", "Władca Kanapowego Lenia", "Bestia Słodkich Przekąsek", "Smok Snu do Południa"];
+        const monsterIcons = ["👹", "🛸", "🪰", "🐉"];
+
+        // INICJALIZACJA GRY
+        window.onload = function() {
+            if(localStorage.getItem('habitQuest_state')) {
+                state = JSON.parse(localStorage.getItem('habitQuest_state'));
+            }
+            renderAll();
+        };
+
+        function saveGame() {
+            localStorage.setItem('habitQuest_state', JSON.stringify(state));
+        }
+
+        // RENDEROWANIE INTERFEJSU
+        function renderAll() {
+            // Nagłówek
+            document.getElementById('global-level').innerText = state.level;
+            document.getElementById('global-gold').innerText = state.gold;
+            document.getElementById('global-gems').innerText = state.gems;
+
+            // Statystyki
+            document.getElementById('stat-xp').innerText = `${state.xp} / ${state.xpNeeded}`;
+            document.getElementById('stat-atk').innerText = state.atk + getEquippedStat('weapon');
+            document.getElementById('stat-def').innerText = state.def + getEquippedStat('armor');
+            document.getElementById('stat-kills').innerText = state.kills;
+
+            // Walka / HP
+            document.getElementById('hero-hp-text').innerText = `HP: ${state.heroHp}/${state.heroMaxHp}`;
+            document.getElementById('hero-hp-bar').style.width = `${(state.heroHp / state.heroMaxHp) * 100}%`;
+            
+            document.getElementById('monster-name').innerText = state.enemyName;
+            document.getElementById('enemy-avatar').innerText = state.enemyIcon;
+            document.getElementById('enemy-hp-text').innerText = `HP: ${state.enemyHp}/${state.enemyMaxHp}`;
+            document.getElementById('enemy-hp-bar').style.width = `${(state.enemyHp / state.enemyMaxHp) * 100}%`;
+
+            renderHabits();
+            renderShop();
+            renderInventory();
+        }
+
+        // OBSŁUGA NAWYKÓW
+        function renderHabits() {
+            const container = document.getElementById('habit-list-container');
+            container.innerHTML = '';
+            
+            state.habits.forEach(habit => {
+                const item = document.createElement('div');
+                item.className = `habit-item ${habit.type === 'bad' ? 'bad' : ''}`;
+                
+                item.innerHTML = `
+                    <div class="habit-info">
+                        <h4>${habit.name}</h4>
+                        <span>Seria: ${habit.streak || 0} dni</span>
                     </div>
-                    <div style="color:#333">🏃‍♂️</div>
-                </div>
-            `).join('');
+                    <div class="habit-actions">
+                        ${habit.type === 'good' 
+                            ? `<button class="action-btn btn-plus" onclick="triggerHabit(${habit.id}, true)">✓</button>`
+                            : `<button class="action-btn btn-minus" onclick="triggerHabit(${habit.id}, false)">✗</button>`
+                        }
+                        <button class="action-btn btn-delete" onclick="deleteHabit(${habit.id})">🗑</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function addHabit() {
+            const nameInput = document.getElementById('habit-name');
+            const typeInput = document.getElementById('habit-type');
+            
+            if(!nameInput.value.trim()) return;
+
+            state.habits.push({
+                id: Date.now(),
+                name: nameInput.value,
+                type: typeInput.value,
+                streak: 0
+            });
+
+            nameInput.value = '';
+            saveGame();
+            renderHabits();
+        }
+
+        function deleteHabit(id) {
+            state.habits = state.habits.filter(h => h.id !== id);
+            saveGame();
+            renderHabits();
+        }
+
+        // AKTYWACJA NAWYKU (WALKA I INTERAKCJA)
+        function triggerHabit(id, isPositive) {
+            const habit = state.habits.find(h => h.id === id);
+            if(!habit) return;
+
+            if(isPositive) {
+                // Dobry nawyk -> Atakujesz potwora
+                habit.streak++;
+                let totalAtk = state.atk + getEquippedStat('weapon');
+                state.enemyHp -= totalAtk;
+                
+                // Animacja ataku
+                animateFighter('hero-avatar', 'attack-right');
+                showDamagePop('enemy-damage-pop', `-${totalAtk}`);
+                logMessage(`Wykonałeś dobry nawyk! Atakujesz ${state.enemyName} za ${totalAtk} pkt.`);
+
+                // Zdobywanie waluty za działanie
+                state.gold += Math.floor(Math.random() * 5) + 3;
+
+                if(state.enemyHp <= 0) {
+                    monsterDefeated();
+                }
+            } else {
+                // Zły nawyk -> Potwór atakuje Ciebie
+                habit.streak = 0; // reset serii
+                let actualDef = state.def + getEquippedStat('armor');
+                let monsterDmg = Math.max(5, 15 - actualDef);
+                
+                state.heroHp -= monsterDmg;
+
+                // Animacja otrzymania obrażeń
+                animateFighter('enemy-avatar', 'attack-left');
+                showDamagePop('hero-damage-pop', `-${monsterDmg}`);
+                logMessage(`Uległeś złemu nawykowi! ${state.enemyName} zadaje Ci ${monsterDmg} obrażeń!`, true);
+
+                if(state.heroHp <= 0) {
+                    playerDefeated();
+                }
+            }
+
+            saveGame();
+            renderAll();
+        }
+
+        // MECHANIKA WALKI
+        function monsterDefeated() {
+            state.kills++;
+            let xpGained = 30 + (state.level * 5);
+            let goldGained = 20 + (state.level * 10);
+            state.xp += xpGained;
+            state.gold += goldGained;
+
+            logMessage(`⚔️ Pokonałeś ${state.enemyName}! Zyskujesz +${xpGained} XP i +${goldGained} Złota!`);
+
+            // Sprawdzenie Level Up
+            if(state.xp >= state.xpNeeded) {
+                state.level++;
+                state.xp -= state.xpNeeded;
+                state.xpNeeded = Math.floor(state.xpNeeded * 1.5);
+                state.heroMaxHp += 20;
+                state.heroHp = state.heroMaxHp;
+                state.atk += 3;
+                state.def += 1;
+                state.gems += 2;
+                logMessage(`🎉 AWANSOWAŁEŚ NA POZIOM ${state.level}! Twoje statystyki rosną! (+2 Kryształy)`, false);
+            }
+
+            // Generowanie nowego potwora
+            state.enemyMaxHp = Math.floor(50 * Math.pow(1.2, state.level));
+            state.enemyHp = state.enemyMaxHp;
+            state.enemyName = monsterNames[Math.floor(Math.random() * monsterNames.length)] + ` (Lvl ${state.level})`;
+            state.enemyIcon = monsterIcons[Math.floor(Math.random() * monsterIcons.length)];
+        }
+
+        function playerDefeated() {
+            logMessage(`💀 Zostałeś pokonany! Tracisz część złota. Czas wstać, otrzepać się i wrócić do dobrych nawyków!`, true);
+            state.gold = Math.max(0, state.gold - 30);
+            state.heroHp = state.heroMaxHp; // Pełne uleczenie po porażce jako nowa szansa
+        }
+
+        // ZBROJOWNIA / SKLEP / SKLEP I EKWIPUNEK
+        function renderShop() {
+            const container = document.getElementById('shop-content-view');
+            container.innerHTML = '';
+
+            itemsDatabase.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'shop-item';
+                row.innerHTML = `
+                    <div class="item-info">
+                        <h5>${item.icon} ${item.name}</h5>
+                        <p>${typeof item.desc === 'function' ? item.desc() : item.desc}</p>
+                    </div>
+                    <button class="btn" style="padding: 5px 10px; font-size:12px;" onclick="buyItem('${item.id}')">${item.price} Złota</button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function buyItem(itemId) {
+            const item = itemsDatabase.find(i => i.id === itemId);
+            if(state.gold >= item.price) {
+                state.gold -= item.price;
+                
+                if(item.type === 'potion') {
+                    state.heroHp = Math.min(state.heroMaxHp, state.heroHp + 50);
+                    logMessage(`🧪 Wypisłeś ${item.name}. Odzyskujesz 50 HP!`);
+                } else {
+                    state.inventory.push({ ...item, equipped: false, invId: Date.now() });
+                    logMessage(`🛍️ Kupiłeś przedmiot: ${item.name}! Załóż go w Ekwipunku.`);
+                }
+                saveGame();
+                renderAll();
+            } else {
+                alert("Masz za mało złota! Zrób coś pożytecznego ze swojej listy nawyków!");
+            }
+        }
+
+        function renderInventory() {
+            const container = document.getElementById('inv-content-view');
+            container.innerHTML = '';
+
+            if(state.inventory.length === 0) {
+                container.innerHTML = `<p style="color:var(--text-muted); text-align:center;">Twój ekwipunek jest pusty.</p>`;
+                return;
+            }
+
+            state.inventory.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'shop-item';
+                row.innerHTML = `
+                    <div class="item-info">
+                        <h5>${item.icon} ${item.name} ${item.equipped ? '<span style="color:var(--accent-glow)">(Założony)</span>' : ''}</h5>
+                        <p>${item.desc}</p>
+                    </div>
+                    <button class="btn" style="padding: 5px 10px; font-size:12px; background:${item.equipped ? '#ff4757':'#2ed573'}" onclick="toggleEquip(${item.invId})">
+                        ${item.equipped ? 'Zdejmij' : 'Załóż'}
+                    </button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function toggleEquip(invId) {
+            const item = state.inventory.find(i => i.invId === invId);
+            if(!item) return;
+
+            if(item.equipped) {
+                item.equipped = false;
+            } else {
+                // Zdejmij inne przedmioty tego samego typu przed założeniem
+                state.inventory.forEach(i => {
+                    if(i.type === item.type) i.equipped = false;
+                });
+                item.equipped = true;
+            }
+            saveGame();
+            renderAll();
+        }
+
+        function getEquippedStat(type) {
+            let total = 0;
+            state.inventory.forEach(i => {
+                if(i.type === type && i.equipped) total += i.stat;
+            });
+            return total;
+        }
+
+        // WIZUALNE I POMOCNICZE FUNKCJE
+        function switchTab(tab) {
+            if(tab === 'shop') {
+                document.getElementById('tab-shop').classList.add('active');
+                document.getElementById('tab-inv').classList.remove('active');
+                document.getElementById('shop-content-view').classList.remove('hidden');
+                document.getElementById('inv-content-view').classList.add('hidden');
+            } else {
+                document.getElementById('tab-shop').classList.remove('active');
+                document.getElementById('tab-inv').classList.add('active');
+                document.getElementById('shop-content-view').classList.add('hidden');
+                document.getElementById('inv-content-view').classList.remove('hidden');
+            }
+        }
+
+        function animateFighter(id, className) {
+            const el = document.getElementById(id);
+            el.classList.add(className);
+            setTimeout(() => el.classList.remove(className), 100);
+        }
+
+        function showDamagePop(id, text) {
+            const el = document.getElementById(id);
+            el.innerText = text;
+            el.style.animation = 'none';
+            el.offsetHeight; /* trigger reflow */
+            el.style.animation = null; 
+        }
+
+        function logMessage(msg, isNegative = false) {
+            const log = document.getElementById('combat-log');
+            const color = isNegative ? 'var(--accent-red)' : '#7bed9f';
+            log.innerHTML = `<span style="color: ${color}">> ${msg}</span><br>` + log.innerHTML;
         }
     </script>
 </body>
