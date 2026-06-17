@@ -23,22 +23,57 @@ price_history = []
 state_lock = threading.Lock()
 
 def add_log(message):
-    """Dodaje log z datą do historii logów bota"""
+    """Dodaje log z datą do historii logów bota i konsoli"""
     timestamp = datetime.utcnow().strftime("%H:%M:%S")
     log_entry = f"[{timestamp}] {message}"
-    print(log_entry)  # Wypisz w konsoli Rendera
+    print(log_entry)  # Log do konsoli głównej Rendera
     with state_lock:
         bot_state["logs"].append(log_entry)
         if len(bot_state["logs"]) > 50:
             bot_state["logs"].pop(0)
 
 def get_btc_price():
+    """Pobiera cenę z Binance z automatycznym przełączeniem na Coinbase/Kraken w razie blokady IP"""
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+
+    # Metoda 1: Binance
     try:
         url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
-        response = requests.get(url, timeout=5).json()
-        return float(response['price'])
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            return float(response.json()['price'])
+        else:
+            print(f"[Binance] Kod odpowiedzi: {response.status_code} (prawdopodobnie blokada IP)")
     except Exception as e:
-        return None
+        print(f"[Binance] Błąd połączenia: {e}")
+
+    # Metoda 2 (Awaryjna): Coinbase
+    try:
+        url = "https://api.coinbase.com/v2/prices/BTC-USD/spot"
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            return float(response.json()['data']['amount'])
+        else:
+            print(f"[Coinbase] Kod odpowiedzi: {response.status_code}")
+    except Exception as e:
+        print(f"[Coinbase] Błąd połączenia: {e}")
+
+    # Metoda 3 (Awaryjna): Kraken
+    try:
+        url = "https://api.kraken.com/0/public/Ticker?pair=XBTUSD"
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            # Kraken zwraca dane w zagnieżdżonej strukturze pod inną nazwą klucza
+            result = response.json().get('result', {})
+            pair_key = list(result.keys())[0] if result else None
+            if pair_key:
+                return float(result[pair_key]['c'][0])
+    except Exception as e:
+        print(f"[Kraken] Błąd połączenia: {e}")
+
+    return None
 
 def update_candle_logic(current_price):
     """Odpowiada za symulację 15-minutowych rynków Polymarket"""
@@ -61,13 +96,13 @@ def update_candle_logic(current_price):
             price_history.pop(0)
         bot_state["sma"] = sum(price_history) / len(price_history)
 
-        # Ustalenie ceny strike na początku nowej świecy (minuta 0, sekunda 0-30)
-        if minutes_passed == 0 and seconds_passed < 35:
+        # Ustalenie ceny strike na początku nowej świecy (minuta 0, sekundy 0-10)
+        if minutes_passed == 0 and seconds_passed < 10:
             if bot_state["current_candle_strike"] != current_price:
                 bot_state["current_candle_strike"] = current_price
-                add_log(f"🆕 Rozpoczęcie nowej świecy 15m. Cena Strike (baza): ${current_price:,.2f}")
+                add_log(f"🆕 Rozpoczęcie nowej świecy 15m. Strike: ${current_price:,.2f}")
 
-        # ROZSTRZYGNIĘCIE TRANSAKCJI NA KOŃCU ŚWIECY (ostatnie 5 sekund przed końcem 15m)
+        # ROZSTRZYGNIĘCIE TRANSAKCJI NA KOŃCU ŚWIECY (ostatnie sekundy przed końcem 15m)
         if minutes_passed == 14 and seconds_passed >= 55:
             if bot_state["active_trade"]:
                 trade = bot_state["active_trade"]
@@ -89,7 +124,7 @@ def update_candle_logic(current_price):
                     profit = payout - cost
                     bot_state["virtual_balance"] += payout
                     status = "WYGRANA"
-                    add_log(f"🎉 Sukces! Transakcja {direction} zakończona zyskiem. Zarobiono: +${profit:.2f} USDC")
+                    add_log(f"🎉 Sukces! Transakcja {direction} zamknięta zyskiem. Zarobiono: +${profit:.2f} USDC")
                 else:
                     profit = -cost
                     status = "PRZEGRANA"
@@ -108,74 +143,83 @@ def run_trading_strategy():
     """Główna pętla logiczna bota realizująca zasady Krajekisa"""
     add_log("System analizy rynkowej uruchomiony pomyślnie.")
     
-    # Inicjalne ustawienie ceny bazowej przy uruchomieniu bota
+    # Próba pierwszej konfiguracji ceny bazowej
     init_price = get_btc_price()
     if init_price:
-        bot_state["current_candle_strike"] = init_price
-    
-    while True:
-        current_price = get_btc_price()
-        if not current_price:
-            time.sleep(5)
-            continue
-            
-        update_candle_logic(current_price)
-        
-        # Pobieramy lokalne zmienne w bezpieczny sposób
         with state_lock:
-            m_left = bot_state["minutes_left"]
-            active = bot_state["active_trade"]
-            sma = bot_state["sma"]
-            strike = bot_state["current_candle_strike"]
-            balance = bot_state["virtual_balance"]
+            bot_state["current_candle_strike"] = init_price
+            bot_state["current_price"] = init_price
+        add_log(f"🟢 Połączono z serwerem cenowym! Początkowe BTC: ${init_price:,.2f}")
+    else:
+        add_log("⚠️ Brak połączenia z giełdami przy starcie. Bot podejmie próbę za chwilę...")
 
-        # ZASADA KRAJEKISA: Szukamy transakcji TYLKO w oknie od 5 do 10 minut do końca świecy
-        if 5 <= m_left <= 10 and not active:
+    error_count = 0
+    while True:
+        try:
+            current_price = get_btc_price()
+            if not current_price:
+                error_count += 1
+                if error_count % 6 == 0:  # Loguj co 30 sekund niepowodzenia
+                    add_log("❌ Problem z pobraniem ceny BTC z giełd. Sprawdź status sieci...")
+                time.sleep(5)
+                continue
             
-            # Dynamiczne wyliczanie ceny udziałów na Polymarket (symulacja spreadu)
-            # Im dalej cena jest od strike, tym droższe są udziały (od 0.50 do 0.90 USDC)
-            price_diff = current_price - strike
+            error_count = 0 # Reset licznika błędów po udanym pobraniu ceny
+            update_candle_logic(current_price)
             
-            # Scenariusz 1: TREND WZROSTOWY (Cena nad średnią SMA i nad ceną Strike)
-            if current_price > sma + 15 and price_diff > 10:
-                # Szacujemy koszt udziału YES na np. 75 centów (0.75 USDC)
-                share_price = min(0.90, max(0.55, 0.50 + (price_diff / 100)))
-                investment = 20.0 # Ryzykujemy 20 USDC na transakcję
-                shares = investment / share_price
-                
-                with state_lock:
-                    bot_state["active_trade"] = {
-                        "direction": "UP",
-                        "entry_price": share_price,
-                        "strike_price": strike,
-                        "btc_at_entry": current_price,
-                        "amount_shares": shares,
-                        "cost": investment,
-                        "opened_at": datetime.utcnow().strftime("%H:%M:%S")
-                    }
-                    bot_state["virtual_balance"] -= investment
-                add_log(f"🛒 [OTWARCIE] Kupiono UP (YES) po kursie ${share_price:.2f}. Koszt: {investment} USDC. Liczba udziałów: {shares:.2f}")
+            # Pobieramy lokalne zmienne w bezpieczny sposób
+            with state_lock:
+                m_left = bot_state["minutes_left"]
+                active = bot_state["active_trade"]
+                sma = bot_state["sma"]
+                strike = bot_state["current_candle_strike"]
 
-            # Scenariusz 2: TREND SPADKOWY (Cena pod średnią SMA i pod ceną Strike)
-            elif current_price < sma - 15 and price_diff < -10:
-                share_price = min(0.90, max(0.55, 0.50 + (abs(price_diff) / 100)))
-                investment = 20.0
-                shares = investment / share_price
+            # ZASADA KRAJEKISA: Szukamy transakcji TYLKO w oknie od 5 do 10 minut do końca świecy
+            if 5 <= m_left <= 10 and not active and sma > 0:
                 
-                with state_lock:
-                    bot_state["active_trade"] = {
-                        "direction": "DOWN",
-                        "entry_price": share_price,
-                        "strike_price": strike,
-                        "btc_at_entry": current_price,
-                        "amount_shares": shares,
-                        "cost": investment,
-                        "opened_at": datetime.utcnow().strftime("%H:%M:%S")
-                    }
-                    bot_state["virtual_balance"] -= investment
-                add_log(f"🛒 [OTWARCIE] Kupiono DOWN (YES) po kursie ${share_price:.2f}. Koszt: {investment} USDC. Liczba udziałów: {shares:.2f}")
+                price_diff = current_price - strike
+                
+                # Scenariusz 1: TREND WZROSTOWY
+                if current_price > sma + 15 and price_diff > 10:
+                    share_price = min(0.90, max(0.55, 0.50 + (price_diff / 100)))
+                    investment = 20.0
+                    shares = investment / share_price
+                    
+                    with state_lock:
+                        bot_state["active_trade"] = {
+                            "direction": "UP",
+                            "entry_price": share_price,
+                            "strike_price": strike,
+                            "btc_at_entry": current_price,
+                            "amount_shares": shares,
+                            "cost": investment,
+                            "opened_at": datetime.utcnow().strftime("%H:%M:%S")
+                        }
+                        bot_state["virtual_balance"] -= investment
+                    add_log(f"🛒 [OTWARCIE] Kupiono UP po kursie ${share_price:.2f}. Koszt: {investment} USDC.")
 
-        # Częstotliwość odświeżania danych
+                # Scenariusz 2: TREND SPADKOWY
+                elif current_price < sma - 15 and price_diff < -10:
+                    share_price = min(0.90, max(0.55, 0.50 + (abs(price_diff) / 100)))
+                    investment = 20.0
+                    shares = investment / share_price
+                    
+                    with state_lock:
+                        bot_state["active_trade"] = {
+                            "direction": "DOWN",
+                            "entry_price": share_price,
+                            "strike_price": strike,
+                            "btc_at_entry": current_price,
+                            "amount_shares": shares,
+                            "cost": investment,
+                            "opened_at": datetime.utcnow().strftime("%H:%M:%S")
+                        }
+                        bot_state["virtual_balance"] -= investment
+                    add_log(f"🛒 [OTWARCIE] Kupiono DOWN po kursie ${share_price:.2f}. Koszt: {investment} USDC.")
+
+        except Exception as e:
+            add_log(f"🚨 Nieoczekiwany błąd w pętli strategii: {e}")
+            
         time.sleep(5)
 
 # --- PANEL KONTROLNY (WEB SERVER) ---
@@ -185,7 +229,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == '/api/status':
-            # Endpoint API zwracający aktualne dane dla skryptu JS
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
@@ -193,7 +236,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps(bot_state).encode('utf-8'))
             return
 
-        # Główna strona Dashboard (HTML + Tailwind CSS)
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.end_headers()
@@ -242,7 +284,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <!-- BTC PRICE -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
-                        <p class="text-sm font-medium text-slate-400">Aktualna cena BTC (Binance)</p>
+                        <p class="text-sm font-medium text-slate-400">Aktualna cena BTC (Binance/Coinbase)</p>
                         <p id="ui-price" class="text-2xl font-extrabold mt-2 text-white">Wczytywanie...</p>
                         <p id="ui-sma" class="text-xs text-slate-500 mt-2">Średnia SMA: --</p>
                     </div>
@@ -325,7 +367,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
                         // Saldo i cena
                         document.getElementById('ui-balance').innerText = '$' + data.virtual_balance.toFixed(2) + ' USDC';
-                        document.getElementById('ui-price').innerText = '$' + data.current_price.toLocaleString('en-US', {minimumFractionDigits: 2});
+                        
+                        if (data.current_price > 0) {
+                            document.getElementById('ui-price').innerText = '$' + data.current_price.toLocaleString('en-US', {minimumFractionDigits: 2});
+                        } else {
+                            document.getElementById('ui-price').innerText = 'Łączenie z API...';
+                        }
+                        
                         document.getElementById('ui-sma').innerText = 'Średnia SMA (30 okresów): $' + data.sma.toLocaleString('en-US', {minimumFractionDigits: 2});
                         
                         // Zegar i pasek postępu
@@ -346,15 +394,19 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         }
 
                         // Strike
-                        document.getElementById('ui-strike').innerText = '$' + data.current_candle_strike.toLocaleString('en-US', {minimumFractionDigits: 2});
-                        const diff = data.current_price - data.current_candle_strike;
-                        const diffEl = document.getElementById('ui-diff');
-                        if (diff >= 0) {
-                            diffEl.className = "text-xs mt-2 text-emerald-400";
-                            diffEl.innerText = 'Różnica: +$' + diff.toFixed(2);
+                        if (data.current_candle_strike > 0) {
+                            document.getElementById('ui-strike').innerText = '$' + data.current_candle_strike.toLocaleString('en-US', {minimumFractionDigits: 2});
+                            const diff = data.current_price - data.current_candle_strike;
+                            const diffEl = document.getElementById('ui-diff');
+                            if (diff >= 0) {
+                                diffEl.className = "text-xs mt-2 text-emerald-400";
+                                diffEl.innerText = 'Różnica: +$' + diff.toFixed(2);
+                            } else {
+                                diffEl.className = "text-xs mt-2 text-rose-400";
+                                diffEl.innerText = 'Różnica: -$' + Math.abs(diff).toFixed(2);
+                            }
                         } else {
-                            diffEl.className = "text-xs mt-2 text-rose-400";
-                            diffEl.innerText = 'Różnica: -$' + Math.abs(diff).toFixed(2);
+                            document.getElementById('ui-strike').innerText = 'Czekam na nową świecę...';
                         }
 
                         // Aktywna pozycja
@@ -387,7 +439,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
                         // Logi
                         const logsDiv = document.getElementById('ui-logs');
-                        logsDiv.innerHTML = data.logs.slice().reverse().map(l => `<div>${l}</div>`).join('');
+                        if (data.logs.length > 0) {
+                            logsDiv.innerHTML = data.logs.slice().reverse().map(l => `<div>${l}</div>`).join('');
+                        } else {
+                            logsDiv.innerHTML = '<div class="text-slate-500">Łączenie z botem...</div>';
+                        }
 
                         // Statystyki i historia transakcji
                         const historyRows = document.getElementById('ui-history-rows');
