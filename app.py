@@ -1,3 +1,4 @@
+```python
 import time
 import requests
 import json
@@ -20,7 +21,8 @@ bot_state = {
 }
 
 price_history = []
-state_lock = threading.Lock()
+# Zmiana z Lock() na RLock() - zapobiega zakleszczeniom (deadlocks) przy zagnieżdżonych wywołaniach
+state_lock = threading.RLock()
 
 def add_log(message):
     """Dodaje wpis do konsoli bota na żywo oraz do logów systemowych"""
@@ -248,7 +250,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             <script src="https://cdn.tailwindcss.com"></script>
             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
                 body { font-family: 'Plus Jakarta Sans', sans-serif; }
             </style>
         </head>
@@ -410,19 +412,19 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-left bg-slate-950 p-4 rounded-xl border border-indigo-500/20">
                                     <div>
                                         <p class="text-xs text-slate-400">KIERUNEK</p>
-                                        <p class="text-lg font-bold ${trade.direction === 'UP' ? 'text-emerald-400' : 'text-rose-400'}">${trade.direction}</p>
+                                        <p class="text-lg font-bold \${trade.direction === 'UP' ? 'text-emerald-400' : 'text-rose-400'}">\${trade.direction}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-400">KURS WEJŚCIA</p>
-                                        <p class="text-lg font-bold text-slate-200">$${trade.entry_price.toFixed(2)}</p>
+                                        <p class="text-lg font-bold text-slate-200">\$\${trade.entry_price.toFixed(2)}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-400">KURS BTC W CHWILI ZAKUPU</p>
-                                        <p class="text-lg font-bold text-slate-200">$${trade.btc_at_entry.toLocaleString()}</p>
+                                        <p class="text-lg font-bold text-slate-200">\$\${trade.btc_at_entry.toLocaleString()}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-400">ILOŚĆ UDZIAŁÓW / KOSZT</p>
-                                        <p class="text-lg font-bold text-slate-200">${trade.amount_shares.toFixed(1)} szt. / $${trade.cost} USDC</p>
+                                        <p class="text-lg font-bold text-slate-200">\${trade.amount_shares.toFixed(1)} szt. / \$\${trade.cost} USDC</p>
                                     </div>
                                 </div>
                             `;
@@ -432,7 +434,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
                         const logsDiv = document.getElementById('ui-logs');
                         if (data.logs.length > 0) {
-                            logsDiv.innerHTML = data.logs.slice().reverse().map(l => `<div>${l}</div>`).join('');
+                            logsDiv.innerHTML = data.logs.slice().reverse().map(l => `<div>\${l}</div>`).join('');
                         } else {
                             logsDiv.innerHTML = '<div class="text-slate-500">Łączenie z botem...</div>';
                         }
@@ -451,10 +453,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                 
                                 return `
                                     <tr class="border-b border-slate-800/30">
-                                        <td class="py-3 px-3 font-semibold ${dirColor}">${t.direction}</td>
-                                        <td class="py-3 px-3">$${t.entry_price.toFixed(2)}</td>
-                                        <td class="py-3 px-3 text-xs text-slate-400">$${t.strike_price.toLocaleString()} vs $${t.exit_price.toLocaleString()}</td>
-                                        <td class="py-3 px-3 font-bold ${profitColor}">${t.status} (${t.profit >= 0 ? '+' : ''}$${t.profit.toFixed(2)})</td>
+                                        <td class="py-3 px-3 font-semibold \${dirColor}">\${t.direction}</td>
+                                        <td class="py-3 px-3">\$\${t.entry_price.toFixed(2)}</td>
+                                        <td class="py-3 px-3 text-xs text-slate-400">\$\${t.strike_price.toLocaleString()} vs \$\${t.exit_price.toLocaleString()}</td>
+                                        <td class="py-3 px-3 font-bold \${profitColor}">\${t.status} (\${t.profit >= 0 ? '+' : ''}\$\${t.profit.toFixed(2)})</td>
                                     </tr>
                                 `;
                             }).join('');
@@ -496,3 +498,5 @@ if __name__ == "__main__":
     server = ThreadingHTTPServer(('0.0.0.0', port), DashboardHandler)
     add_log(f"Wielowątkowy serwer HTTP Dashboard wystartował na porcie {port}")
     server.serve_forever()
+
+```
