@@ -20,7 +20,7 @@ bot_state = {
 }
 
 price_history = []
-# Zmiana z Lock() na RLock() - zapobiega zakleszczeniom (deadlocks) przy zagnieżdżonych wywołaniach
+# RLock() zapobiega zakleszczeniom (deadlockom) w wielowątkowości
 state_lock = threading.RLock()
 
 def add_log(message):
@@ -176,7 +176,7 @@ def run_trading_strategy():
             if 5 <= m_left <= 10 and not active and sma > 0 and strike > 0:
                 price_diff = current_price - strike
                 
-                # Scenariusz 1: Trend wzrostowy (Cena powyżej SMA + margines oraz powyżej Strike)
+                # Scenariusz 1: Trend wzrostowy
                 if current_price > sma + 15 and price_diff > 10:
                     share_price = min(0.90, max(0.55, 0.50 + (price_diff / 100)))
                     investment = 20.0
@@ -195,7 +195,7 @@ def run_trading_strategy():
                         bot_state["virtual_balance"] -= investment
                     add_log(f"🛒 [OTWARCIE] Kupiono UP po kursie ${share_price:.2f}. Koszt: {investment} USDC.")
 
-                # Scenariusz 2: Trend spadkowy (Cena poniżej SMA - margines oraz poniżej Strike)
+                # Scenariusz 2: Trend spadkowy
                 elif current_price < sma - 15 and price_diff < -10:
                     share_price = min(0.90, max(0.55, 0.50 + (abs(price_diff) / 100)))
                     investment = 20.0
@@ -411,19 +411,19 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-left bg-slate-950 p-4 rounded-xl border border-indigo-500/20">
                                     <div>
                                         <p class="text-xs text-slate-400">KIERUNEK</p>
-                                        <p class="text-lg font-bold \${trade.direction === 'UP' ? 'text-emerald-400' : 'text-rose-400'}">\${trade.direction}</p>
+                                        <p class="text-lg font-bold ` + (trade.direction === 'UP' ? 'text-emerald-400' : 'text-rose-400') + `">` + trade.direction + `</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-400">KURS WEJŚCIA</p>
-                                        <p class="text-lg font-bold text-slate-200">\$\${trade.entry_price.toFixed(2)}</p>
+                                        <p class="text-lg font-bold text-slate-200">$` + trade.entry_price.toFixed(2) + `</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-400">KURS BTC W CHWILI ZAKUPU</p>
-                                        <p class="text-lg font-bold text-slate-200">\$\${trade.btc_at_entry.toLocaleString()}</p>
+                                        <p class="text-lg font-bold text-slate-200">$` + trade.btc_at_entry.toLocaleString() + `</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-400">ILOŚĆ UDZIAŁÓW / KOSZT</p>
-                                        <p class="text-lg font-bold text-slate-200">\${trade.amount_shares.toFixed(1)} szt. / \$\${trade.cost} USDC</p>
+                                        <p class="text-lg font-bold text-slate-200">` + trade.amount_shares.toFixed(1) + ` szt. / $` + trade.cost + ` USDC</p>
                                     </div>
                                 </div>
                             `;
@@ -433,7 +433,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
                         const logsDiv = document.getElementById('ui-logs');
                         if (data.logs.length > 0) {
-                            logsDiv.innerHTML = data.logs.slice().reverse().map(l => `<div>\${l}</div>`).join('');
+                            // Klasyczne łączenie tekstów w JS - w 100% bezpieczne przed problemami ze znakami ucieczki $ i {}
+                            logsDiv.innerHTML = data.logs.slice().reverse().map(function(l) {
+                                return '<div>' + l + '</div>';
+                            }).join('');
                         } else {
                             logsDiv.innerHTML = '<div class="text-slate-500">Łączenie z botem...</div>';
                         }
@@ -443,7 +446,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             let totalWins = 0;
                             let totalProfit = 0;
                             
-                            const rowsHtml = data.trade_history.slice().reverse().map(t => {
+                            const rowsHtml = data.trade_history.slice().reverse().map(function(t) {
                                 if (t.status === "WYGRANA") totalWins++;
                                 totalProfit += t.profit;
                                 
@@ -452,10 +455,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                 
                                 return `
                                     <tr class="border-b border-slate-800/30">
-                                        <td class="py-3 px-3 font-semibold \${dirColor}">\${t.direction}</td>
-                                        <td class="py-3 px-3">\$\${t.entry_price.toFixed(2)}</td>
-                                        <td class="py-3 px-3 text-xs text-slate-400">\$\${t.strike_price.toLocaleString()} vs \$\${t.exit_price.toLocaleString()}</td>
-                                        <td class="py-3 px-3 font-bold \${profitColor}">\${t.status} (\${t.profit >= 0 ? '+' : ''}\$\${t.profit.toFixed(2)})</td>
+                                        <td class="py-3 px-3 font-semibold ` + dirColor + `">` + t.direction + `</td>
+                                        <td class="py-3 px-3">$` + t.entry_price.toFixed(2) + `</td>
+                                        <td class="py-3 px-3 text-xs text-slate-400">$` + t.strike_price.toLocaleString() + ` vs $` + t.exit_price.toLocaleString() + `</td>
+                                        <td class="py-3 px-3 font-bold ` + profitColor + `">` + t.status + ` (` + (t.profit >= 0 ? '+' : '') + `$` + t.profit.toFixed(2) + `)</td>
                                     </tr>
                                 `;
                             }).join('');
