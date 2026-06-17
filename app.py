@@ -497,5 +497,3 @@ if __name__ == "__main__":
     server = ThreadingHTTPServer(('0.0.0.0', port), DashboardHandler)
     add_log(f"Wielowątkowy serwer HTTP Dashboard wystartował na porcie {port}")
     server.serve_forever()
-
-```
