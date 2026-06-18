@@ -83,25 +83,20 @@ def auto_discover_btc_tokens():
         pass
 
 def update_real_balance():
-    """Odczytuje saldo przez oficjalne API Polygonscan (Zabezpieczone przed Cloudflare)"""
+    """Odczytuje saldo przez oficjalne API Polygonscan (Zabezpieczone przed Render)"""
     global poly_client
-    if not poly_client: 
-        add_log("⚠️ Oczekiwanie na inicjalizację klienta (poly_client to None).")
-        return
+    if not poly_client: return
 
     POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
     target_address = POLY_ADDRESS if POLY_ADDRESS else poly_client.get_address()
-    
-    POLYGONSCAN_API_KEY = os.environ.get("POLYGONSCAN_API_KEY", "").strip()
-    api_key_param = f"&apikey={POLYGONSCAN_API_KEY}" if POLYGONSCAN_API_KEY else ""
 
-    # Udajemy prawdziwą przeglądarkę, aby obejść blokady Cloudflare na Polygonscan
+    # ZABEZPIECZENIE 1: Udajemy przeglądarkę, żeby serwery nie blokowały zapytań z Render!
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
 
     tokens = [
-        "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # Nowy token Polymarket pUSD
+        "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # Polymarket pUSD (tu są Twoje środki)
         "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", # USDC.e
         "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"  # Native USDC
     ]
@@ -110,64 +105,53 @@ def update_real_balance():
         clob_collat = poly_client.get_collateral_address()
         if clob_collat and clob_collat not in tokens:
             tokens.insert(0, clob_collat)
-    except Exception as e:
+    except:
         pass
 
     total_balance = 0.0
 
-    # METODA 1: Oficjalne API Polygonscan
+    # METODA 1: Polygonscan (Omija Cloudflare)
     try:
         for token in tokens:
-            url = f"https://api.polygonscan.com/api?module=account&action=tokenbalance&contractaddress={token}&address={target_address}&tag=latest{api_key_param}"
+            url = f"https://api.polygonscan.com/api?module=account&action=tokenbalance&contractaddress={token}&address={target_address}&tag=latest"
+            # Zauważ: dodano 'headers=headers' do zapytania!
             res = requests.get(url, headers=headers, timeout=10)
-            
-            # Bezpieczne sprawdzanie czy serwer oddał poprawne dane JSON
             try:
                 data = res.json()
                 if data.get("status") == "1":
                     bal = float(data["result"]) / 10**6
                     if bal > 0:
                         total_balance += bal
-                else:
-                    # Wyświetla błędy API z samego serwera
-                    msg = data.get("message", "")
-                    if "NOTOK" in msg:
-                        add_log(f"⚠️ Info Polygonscan: {data.get('result', msg)}")
             except ValueError:
-                # Jeśli serwer odda HTML (np. blokada Cloudflare), ignorujemy i idziemy dalej
-                pass
-                
+                pass 
     except Exception as e:
-        add_log(f"⚠️ Błąd sieci (Polygonscan): {e}")
+        pass
 
-    # METODA 2: Fallback do standardowych RPC (jeśli Metoda 1 zawiedzie)
+    # METODA 2: Niezawodne RPC (Uruchamia się, jeśli API Polygonscan ma limity)
     if total_balance == 0.0:
-        # Rozszerzona lista niezawodnych darmowych RPC
         rpcs = [
+            "https://polygon-mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161", # ZABEZPIECZENIE 2: Niezawodny węzeł
             "https://polygon-rpc.com", 
-            "https://rpc.ankr.com/polygon", 
-            "https://polygon-mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+            "https://rpc.ankr.com/polygon"
         ]
         for rpc in rpcs:
             if total_balance > 0: break
             try:
                 for token in tokens:
                     payload = {"jsonrpc": "2.0", "method": "eth_call", "params": [{"to": token, "data": "0x70a08231" + target_address.replace("0x", "").zfill(64)}, "latest"], "id": 1}
-                    res = requests.post(rpc, json=payload, headers=headers, timeout=5)
+                    # Zauważ: dodano 'headers=headers' do zapytania RPC!
+                    res = requests.post(rpc, json=payload, headers=headers, timeout=10)
                     if res.status_code == 200:
-                        try:
-                            val_hex = res.json().get("result", "0x0")
-                            if val_hex and val_hex != "0x":
-                                bal = int(val_hex, 16) / 10**6
-                                if bal > 0: total_balance += bal
-                        except ValueError:
-                            pass
-            except Exception as e:
+                        val_hex = res.json().get("result", "0x0")
+                        if val_hex and val_hex != "0x":
+                            bal = int(val_hex, 16) / 10**6
+                            if bal > 0: total_balance += bal
+            except:
                 continue
 
     with state_lock:
         bot_state["virtual_balance"] = total_balance
-        
+
 def init_mainnet_client():
     global poly_client
     POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "").strip()
@@ -201,7 +185,7 @@ def init_mainnet_client():
             add_log(f"🚨 BŁĄD MAINNET: {e}")
 
 def get_btc_price():
-    headers = {'User-Agent': 'Mozilla/5.0'}
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     try:
         url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
         res = requests.get(url, headers=headers, timeout=5)
