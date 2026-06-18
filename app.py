@@ -85,22 +85,66 @@ def auto_discover_btc_tokens():
         add_log(f"⚠️ Błąd automatycznego wykrywania rynków: {e}")
 
 def update_real_balance():
+    """Całkowicie przepisana metoda odczytu salda. Używa bezpośredniego połączenia z Blockchainem (odporna na błędy biblioteki)"""
     global poly_client
     if not poly_client:
         return
     try:
         POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
+        # Ważne: Sprawdzamy portfel główny (Smart Account), a nie portfel klucza.
         target_address = POLY_ADDRESS if POLY_ADDRESS else poly_client.get_address()
         
-        balance_resp = poly_client.get_collateral_balance(target_address)
-        usdc_val = 0.0
+        # Standardowe adresy używane przez Polymarket na warstwie Polygon
+        collateral_addresses = [
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", # Bridged USDC (USDC.e)
+            "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"  # Native USDC
+        ]
+        
+        # Pobieramy również dynamiczny adres pUSD / collateralu przypisany przez Giełdę
+        try:
+            clob_collat = poly_client.get_collateral_address()
+            if clob_collat and clob_collat not in collateral_addresses:
+                collateral_addresses.insert(0, clob_collat)
+        except:
+            pass
+
+        total_balance = 0.0
+        
+        # Pytamy bezpośrednio blockchain za pomocą metody balanceOf (omijamy błędy py-clob-client)
+        for token_address in collateral_addresses:
+            data = {
+                "jsonrpc": "2.0",
+                "method": "eth_call",
+                "params": [{
+                    "to": token_address,
+                    "data": "0x70a08231000000000000000000000000" + target_address.replace("0x", "").zfill(64)
+                }, "latest"],
+                "id": 1
+            }
+            try:
+                res = requests.post("https://polygon-rpc.com", json=data, timeout=5)
+                if res.status_code == 200:
+                    val_hex = res.json().get("result", "0x0")
+                    if val_hex != "0x" and val_hex is not None:
+                        # Dzielimy wynik do odpowiedniej formy (USDC i pUSD to monety o 6 miejscach po przecinku)
+                        total_balance += (int(val_hex, 16) / 10**6)
+            except:
+                pass
+        
+        if total_balance > 0:
+            with state_lock:
+                bot_state["virtual_balance"] = total_balance
+            return
+            
+        # Zabezpieczenie na wypadek awarii RPC (fallback do wadliwej metody z biblioteki)
+        balance_resp = poly_client.get_collateral_balance()
         if isinstance(balance_resp, dict):
-            usdc_val = float(balance_resp.get("balance", balance_resp.get("amount", 0.0)))
+            val = float(balance_resp.get("balance", balance_resp.get("amount", 0.0)))
         else:
-            usdc_val = float(balance_resp)
+            val = float(balance_resp)
             
         with state_lock:
-            bot_state["virtual_balance"] = usdc_val
+            bot_state["virtual_balance"] = val
     except Exception as e:
         pass
 
@@ -137,7 +181,7 @@ def init_mainnet_client():
             
             # Pobieramy pierwsze saldo
             update_real_balance()
-            add_log(f"💰 MAINNET: Pobrano saldo startowe: {bot_state['virtual_balance']:.2f} USDC")
+            add_log(f"💰 MAINNET: Pobrano saldo startowe: {bot_state['virtual_balance']:.2f} pUSD/USDC")
                 
         except Exception as e:
             add_log(f"🚨 KRYTYCZNY BŁĄD MAINNET: {e}")
@@ -397,7 +441,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             </span>
                             <h1 class="text-2xl font-bold tracking-tight text-white">Krajekis Bot Panel (LIVE)</h1>
                         </div>
-                        <p class="text-sm text-slate-400 mt-1">System operujący na prawdziwych środkach (Mainnet USDC)</p>
+                        <p class="text-sm text-slate-400 mt-1">System operujący na prawdziwych środkach (Mainnet USDC/pUSD)</p>
                     </div>
                     <div class="bg-slate-900 border border-slate-800 rounded-xl px-5 py-3 flex items-center gap-4">
                         <div>
