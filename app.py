@@ -92,6 +92,7 @@ def update_real_balance():
 
     # Podstawowe tokeny Polymarketu na sieci Polygon (USDC.e / pUSD)
     tokens = [
+        "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # Nowy token Polymarket pUSD (Tu leżą Twoje środki!)
         "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
         "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
     ]
