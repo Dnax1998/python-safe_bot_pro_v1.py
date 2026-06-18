@@ -85,20 +85,28 @@ def auto_discover_btc_tokens():
 def update_real_balance():
     """Odczytuje realne saldo pUSD/USDC bezpośrednio z CLOB Client lub bezpiecznych RPC"""
     global poly_client
+    
     with state_lock:
         balance_val = 0.0
 
+    POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
+    
+    # Bezpieczne ustalenie adresu docelowego (niezależnie od tego czy poly_client istnieje)
     if poly_client:
-        POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
         target_address = POLY_ADDRESS if POLY_ADDRESS else poly_client.get_address()
+    else:
+        target_address = POLY_ADDRESS
         
-        # Metoda 3: Bezpośrednie odpytanie salda przez oficjalne endpointy Polymarket (Najbardziej niezawodne dla pUSD)
+    if not target_address:
+        return
+
+    # Próba 3: Odpytanie oficjalnego API CLOB / portfela Polymarket (Najbardziej niezawodne dla pUSD)
+    if poly_client:
         try:
-            # Sprawdzenie salda collaterala przez wbudowane metody klienta clob
             collateral_balance_info = poly_client.get_account()
+            # Sprawdzamy czy API zwraca słownik z odpowiednimi kluczami
             if collateral_balance_info and "balances" in collateral_balance_info:
                 for bal_obj in collateral_balance_info["balances"]:
-                    # PUSD lub inne collaterale
                     if float(bal_obj.get("balance", 0)) > 0:
                         balance_val = float(bal_obj["balance"]) / 10**6
                         add_log(f"💰 Odnaleziono saldo z API Polymarket: {balance_val:.2f} pUSD")
@@ -108,19 +116,20 @@ def update_real_balance():
         except Exception as e:
             add_log(f"⚠️ Nie udało się pobrać salda przez API CLOB: {e}")
 
-    # Jeśli API zwraca 0, wracamy do zaktualizowanego słownika tokenów (pUSD/USDC)
+    # Jeśli API zwraca 0 lub wystąpił błąd, wracamy do odpytania łańcucha (pUSD / USDC)
     tokens = [
         "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # pUSD (Polymarket Collateral)
         "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", # USDC.e
         "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"  # Native USDC
     ]
     
-    try:
-        clob_collat = poly_client.get_collateral_address()
-        if clob_collat and clob_collat not in tokens:
-            tokens.insert(0, clob_collat)
-    except:
-        pass
+    if poly_client:
+        try:
+            clob_collat = poly_client.get_collateral_address()
+            if clob_collat and clob_collat not in tokens:
+                tokens.insert(0, clob_collat)
+        except:
+            pass
 
     total_balance = 0.0
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
@@ -137,7 +146,7 @@ def update_real_balance():
     except Exception:
         pass
 
-    # Metoda 2: Fallback RPC dla pUSD
+    # Metoda 2: Fallback RPC dla pUSD / USDC
     if total_balance == 0.0:
         rpcs = ["https://polygon-rpc.com", "https://rpc.ankr.com/polygon"]
         for rpc in rpcs:
@@ -156,38 +165,6 @@ def update_real_balance():
 
     with state_lock:
         bot_state["virtual_balance"] = total_balance
-def init_mainnet_client():
-    global poly_client
-    POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "").strip()
-    POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
-    
-    if POLY_PRIVATE_KEY:
-        try:
-            client_kwargs = {
-                "host": "https://clob.polymarket.com",
-                "key": POLY_PRIVATE_KEY.replace("0x", ""),
-                "chain_id": POLYGON
-            }
-            if POLY_ADDRESS:
-                client_kwargs["funder"] = POLY_ADDRESS
-                try:
-                    from py_clob_client.clob_types import SignatureType
-                    client_kwargs["signature_type"] = SignatureType.POLY_GNOSIS_SAFE 
-                except: pass
-            
-            poly_client = ClobClient(**client_kwargs)
-            
-            if POLY_ADDRESS:
-                add_log(f"✅ MAINNET: Skonfigurowano konto Gmail/Proxy: {POLY_ADDRESS}")
-            else:
-                add_log(f"✅ MAINNET: Zalogowano standardowo na: {poly_client.get_address()}")
-            
-            update_real_balance()
-            add_log(f"💰 MAINNET: Pobrano saldo startowe: {bot_state['virtual_balance']:.2f} USDC")
-                
-        except Exception as e:
-            add_log(f"🚨 BŁĄD MAINNET: {e}")
-
 def get_btc_price():
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     try:
