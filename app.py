@@ -17,7 +17,7 @@ from py_clob_client.clob_types import OrderArgs
 # =====================================================================
 USE_DYNAMIC_RISK = True      # True = bot ryzykuje % salda | False = stała kwota w USDC
 RISK_PERCENT = 2.0           # Jaki % salda ryzykować na jedną pozycję
-FIXED_TRADE_AMOUNT = 20.0    # Stała kwota transakcji w USDC
+FIXED_TRADE_AMOUNT = 5.0    # Stała kwota transakcji w USDC
 
 ENABLE_EARLY_EXIT = True     # True = włącza Stop-Loss i Take-Profit
 STOP_LOSS_PRICE = 0.35       # Sprzedaj udziały, jeśli ich wartość spadnie poniżej 35 centów
