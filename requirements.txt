@@ -1,2 +1,2 @@
 requests
-pyclob-client
+git+https://github.com/polymarket/pyclob-client.git
