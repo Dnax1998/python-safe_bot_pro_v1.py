@@ -35,7 +35,7 @@ active_market_info = {
 # =====================================================================
 
 bot_state = {
-    "virtual_balance": 0.0,         # Saldo pobierane prosto z kontraktu giełdy
+    "virtual_balance": 0.0,         
     "current_price": 0.0,
     "sma": 0.0,
     "minutes_left": 0,
@@ -60,7 +60,6 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def auto_discover_btc_tokens():
-    """Automatycznie wyszukuje najnowszy aktywny rynek BTC 15m na Polymarket"""
     global active_market_info
     try:
         url = "https://gamma-api.polymarket.com/markets?active=true&closed=false&q=Bitcoin"
@@ -71,8 +70,8 @@ def auto_discover_btc_tokens():
                 title = m.get("title", "")
                 tokens = m.get("clobTokenIds")
                 if tokens and len(tokens) >= 2 and "above" in title.lower() and "15m" in title.lower():
-                    token_up = tokens[0]   # YES (UP)
-                    token_down = tokens[1] # NO (DOWN)
+                    token_up = tokens[0]   
+                    token_down = tokens[1] 
                     
                     if active_market_info["token_id_up"] != token_up:
                         active_market_info["token_id_up"] = token_up
@@ -86,12 +85,10 @@ def auto_discover_btc_tokens():
         add_log(f"⚠️ Błąd automatycznego wykrywania rynków: {e}")
 
 def update_real_balance():
-    """Pobiera rzeczywiste saldo USDC dla konta głównego (Smart Account)"""
     global poly_client
     if not poly_client:
         return
     try:
-        # Sprawdzamy saldo dla adresu konta głównego (Smart Contract Wallet)
         POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
         target_address = POLY_ADDRESS if POLY_ADDRESS else poly_client.get_address()
         
@@ -108,25 +105,33 @@ def update_real_balance():
         pass
 
 def init_mainnet_client():
-    """Inicjalizacja połączenia z portfelem z uwzględnieniem Proxy (Smart Account)"""
+    """Poprawna inicjalizacja klienta Pythona dla kont Proxy/Gmail"""
     global poly_client
     POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "").strip()
     POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
     
     if POLY_PRIVATE_KEY:
         try:
-            # Kluczowa zmiana: definiujemy i konfigurujemy Smart Account w ClobClient
-            poly_client = ClobClient(
-                host="https://clob.polymarket.com", 
-                key=POLY_PRIVATE_KEY.replace("0x", ""), 
-                chain_id=POLYGON
-            )
+            client_kwargs = {
+                "host": "https://clob.polymarket.com",
+                "key": POLY_PRIVATE_KEY.replace("0x", ""),
+                "chain_id": POLYGON
+            }
             
-            # Jeśli podaliśmy adres główny w Renderze (Smart Account), nakazujemy botowi go używać!
+            # W Pythonie portfel Proxy konfigurujemy przez parametry funder i signature_type
             if POLY_ADDRESS:
-                poly_client.set_smart_wallet_address(POLY_ADDRESS)
-                add_log(f"✅ MAINNET (Smart Account): Skonfigurowano portfel główny: {POLY_ADDRESS}")
-                add_log(f"   ↳ Portfel podpisujący (Klucz prywatny): {poly_client.get_address()}")
+                client_kwargs["funder"] = POLY_ADDRESS
+                try:
+                    from py_clob_client.clob_types import SignatureType
+                    # 2 to POLY_GNOSIS_SAFE, wymagane dla kont zakładanych przez Gmail
+                    client_kwargs["signature_type"] = SignatureType.POLY_GNOSIS_SAFE 
+                except ImportError:
+                    pass
+            
+            poly_client = ClobClient(**client_kwargs)
+            
+            if POLY_ADDRESS:
+                add_log(f"✅ MAINNET: Skonfigurowano konto Gmail/Proxy. Portfel główny: {POLY_ADDRESS}")
             else:
                 add_log(f"✅ MAINNET: Zalogowano standardowo na adres: {poly_client.get_address()}")
             
@@ -146,7 +151,6 @@ def get_btc_price():
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200: return float(response.json()['price'])
     except: pass
-
     try:
         url = "https://api.coinbase.com/v2/prices/BTC-USD/spot"
         response = requests.get(url, headers=headers, timeout=5)
@@ -203,7 +207,6 @@ def update_candle_logic(current_price):
                 bot_state["trade_history"].append(trade)
                 bot_state["active_trade"] = None
                 
-                # Aktualizujemy saldo po rozliczeniu pozycji
                 update_real_balance()
 
 def run_trading_strategy():
@@ -220,10 +223,7 @@ def run_trading_strategy():
     error_count = 0
     while True:
         try:
-            # 1. Automatycznie szukamy najświeższego aktywnego rynku na ten kwadrans
             auto_discover_btc_tokens()
-            
-            # 2. Aktualizujemy realne saldo USDC w tle co pętlę
             update_real_balance()
             
             current_price = get_btc_price()
@@ -243,7 +243,7 @@ def run_trading_strategy():
                 strike = bot_state["current_candle_strike"]
                 balance = bot_state["virtual_balance"]
 
-            # --- EXIT: STOP-LOSS / TAKE-PROFIT (REAL CRYPTO SELL) ---
+            # --- EXIT ---
             if active and ENABLE_EARLY_EXIT:
                 price_diff = current_price - active["strike_price"]
                 volatility_denominator = 5.0 + (m_left * 2.0)
@@ -260,7 +260,6 @@ def run_trading_strategy():
                     recovered = active["amount_shares"] * sim_share_price
                     profit = recovered - active["cost"]
                     
-                    # Wysłanie realnego zlecenia SELL
                     if poly_client and active["token_id"]:
                         try:
                             order_args = OrderArgs(price=round(sim_share_price, 2), size=round(active["amount_shares"], 2), side="sell", token_id=active["token_id"])
@@ -283,7 +282,7 @@ def run_trading_strategy():
                     time.sleep(5)
                     continue
 
-            # --- ENTRY: OPEN NEW TRADE (REAL CRYPTO BUY) ---
+            # --- ENTRY ---
             if 5 <= m_left <= 10 and not active and sma > 0 and strike > 0:
                 price_diff = current_price - strike
                 
@@ -293,10 +292,8 @@ def run_trading_strategy():
                 else:
                     investment = min(balance, FIXED_TRADE_AMOUNT)
 
-                # Kupujemy tylko wtedy, gdy mamy realne środki i znaleźliśmy aktywne Token ID
                 if investment >= 2.0 and active_market_info["token_id_up"] and active_market_info["token_id_down"]:
                     
-                    # Scenariusz 1: Trend wzrostowy (UP)
                     if current_price > sma + PRICE_MARGIN and price_diff > STRIKE_MARGIN:
                         share_price = min(0.90, max(0.55, 0.50 + (price_diff / 100)))
                         shares = investment / share_price
@@ -324,7 +321,6 @@ def run_trading_strategy():
                             except Exception as e:
                                 add_log(f"🚨 BŁĄD KUPNA UP (MAINNET): {e}")
 
-                    # Scenariusz 2: Trend spadkowy (DOWN)
                     elif current_price < sma - PRICE_MARGIN and price_diff < -STRIKE_MARGIN:
                         share_price = min(0.90, max(0.55, 0.50 + (abs(price_diff) / 100)))
                         shares = investment / share_price
@@ -357,7 +353,6 @@ def run_trading_strategy():
             
         time.sleep(5)
 
-# --- PANEL KONTROLNY (WEB SERWER) ---
 class DashboardHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args): return
 
