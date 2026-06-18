@@ -26,7 +26,7 @@ TAKE_PROFIT_PRICE = 0.90     # Sprzedaj udziały, jeśli ich wartość wzrośnie
 PRICE_MARGIN = 15.0          # Wymagany dystans BTC od SMA (w USD)
 STRIKE_MARGIN = 10.0         # Wymagany dystans BTC od ceny Strike (w USD)
 
-# Dynamicznie wykrywane tokeny rynkowe (nie musisz już ich wpisywać ręcznie!)
+# Dynamicznie wykrywane tokeny rynkowe
 active_market_info = {
     "token_id_up": None,
     "token_id_down": None,
@@ -63,7 +63,6 @@ def auto_discover_btc_tokens():
     """Automatycznie wyszukuje najnowszy aktywny rynek BTC 15m na Polymarket"""
     global active_market_info
     try:
-        # Odpytujemy publiczne API Gamma o aktywne rynki Bitcoin
         url = "https://gamma-api.polymarket.com/markets?active=true&closed=false&q=Bitcoin"
         r = requests.get(url, timeout=5)
         if r.status_code == 200:
@@ -71,7 +70,6 @@ def auto_discover_btc_tokens():
             for m in markets:
                 title = m.get("title", "")
                 tokens = m.get("clobTokenIds")
-                # Szukamy rynku 15-minutowego (Interval / 15m / Above)
                 if tokens and len(tokens) >= 2 and "above" in title.lower() and "15m" in title.lower():
                     token_up = tokens[0]   # YES (UP)
                     token_down = tokens[1] # NO (DOWN)
@@ -80,21 +78,24 @@ def auto_discover_btc_tokens():
                         active_market_info["token_id_up"] = token_up
                         active_market_info["token_id_down"] = token_down
                         active_market_info["title"] = title
-                        add_log(f"🎯 WYKRYTO NOWY RYNEK: {title}")
-                        add_log(f"   ↳ UP Token ID: {token_up[:15]}...")
-                        add_log(f"   ↳ DOWN Token ID: {token_down[:15]}...")
+                        add_log(f"🎯 WYKRYTO RYNEK: {title}")
+                        add_log(f"   ↳ Token UP (YES): {token_up[:15]}...")
+                        add_log(f"   ↳ Token DOWN (NO): {token_down[:15]}...")
                     return
     except Exception as e:
         add_log(f"⚠️ Błąd automatycznego wykrywania rynków: {e}")
 
 def update_real_balance():
-    """Pobiera rzeczywiste saldo USDC powiązanego portfela przy użyciu oficjalnego endpointu"""
+    """Pobiera rzeczywiste saldo USDC dla konta głównego (Smart Account)"""
     global poly_client
     if not poly_client:
         return
     try:
-        # Oficjalna metoda py-clob-client pobierająca saldo USDC (Collateral) dla zalogowanego adresu
-        balance_resp = poly_client.get_collateral_balance()
+        # Sprawdzamy saldo dla adresu konta głównego (Smart Contract Wallet)
+        POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
+        target_address = POLY_ADDRESS if POLY_ADDRESS else poly_client.get_address()
+        
+        balance_resp = poly_client.get_collateral_balance(target_address)
         usdc_val = 0.0
         if isinstance(balance_resp, dict):
             usdc_val = float(balance_resp.get("balance", balance_resp.get("amount", 0.0)))
@@ -104,22 +105,30 @@ def update_real_balance():
         with state_lock:
             bot_state["virtual_balance"] = usdc_val
     except Exception as e:
-        # Alternatywna metoda zapobiegająca awarii pętli przy braku odpowiedzi sieci
         pass
 
 def init_mainnet_client():
-    """Inicjalizacja połączenia z portfelem na starcie"""
+    """Inicjalizacja połączenia z portfelem z uwzględnieniem Proxy (Smart Account)"""
     global poly_client
     POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "").strip()
+    POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
+    
     if POLY_PRIVATE_KEY:
         try:
+            # Kluczowa zmiana: definiujemy i konfigurujemy Smart Account w ClobClient
             poly_client = ClobClient(
                 host="https://clob.polymarket.com", 
                 key=POLY_PRIVATE_KEY.replace("0x", ""), 
                 chain_id=POLYGON
             )
-            address = poly_client.get_address()
-            add_log(f"✅ MAINNET: Zalogowano pomyślnie! Portfel bota: {address}")
+            
+            # Jeśli podaliśmy adres główny w Renderze (Smart Account), nakazujemy botowi go używać!
+            if POLY_ADDRESS:
+                poly_client.set_smart_wallet_address(POLY_ADDRESS)
+                add_log(f"✅ MAINNET (Smart Account): Skonfigurowano portfel główny: {POLY_ADDRESS}")
+                add_log(f"   ↳ Portfel podpisujący (Klucz prywatny): {poly_client.get_address()}")
+            else:
+                add_log(f"✅ MAINNET: Zalogowano standardowo na adres: {poly_client.get_address()}")
             
             # Pobieramy pierwsze saldo
             update_real_balance()
