@@ -83,24 +83,38 @@ def auto_discover_btc_tokens():
         pass
 
 def update_real_balance():
-    """Odczytuje saldo przez oficjalne API Polygonscan (Zabezpieczone przed Render)"""
+    """Odczytuje realne saldo pUSD/USDC bezpośrednio z CLOB Client lub bezpiecznych RPC"""
     global poly_client
-    if not poly_client: return
+    with state_lock:
+        balance_val = 0.0
 
-    POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
-    target_address = POLY_ADDRESS if POLY_ADDRESS else poly_client.get_address()
+    if poly_client:
+        POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
+        target_address = POLY_ADDRESS if POLY_ADDRESS else poly_client.get_address()
+        
+        # Metoda 3: Bezpośrednie odpytanie salda przez oficjalne endpointy Polymarket (Najbardziej niezawodne dla pUSD)
+        try:
+            # Sprawdzenie salda collaterala przez wbudowane metody klienta clob
+            collateral_balance_info = poly_client.get_account()
+            if collateral_balance_info and "balances" in collateral_balance_info:
+                for bal_obj in collateral_balance_info["balances"]:
+                    # PUSD lub inne collaterale
+                    if float(bal_obj.get("balance", 0)) > 0:
+                        balance_val = float(bal_obj["balance"]) / 10**6
+                        add_log(f"💰 Odnaleziono saldo z API Polymarket: {balance_val:.2f} pUSD")
+                        with state_lock:
+                            bot_state["virtual_balance"] = balance_val
+                        return
+        except Exception as e:
+            add_log(f"⚠️ Nie udało się pobrać salda przez API CLOB: {e}")
 
-    # ZABEZPIECZENIE 1: Udajemy przeglądarkę, żeby serwery nie blokowały zapytań z Render!
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    }
-
+    # Jeśli API zwraca 0, wracamy do zaktualizowanego słownika tokenów (pUSD/USDC)
     tokens = [
-        "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # Polymarket pUSD (tu są Twoje środki)
+        "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # pUSD (Polymarket Collateral)
         "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", # USDC.e
         "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"  # Native USDC
     ]
-
+    
     try:
         clob_collat = poly_client.get_collateral_address()
         if clob_collat and clob_collat not in tokens:
@@ -109,38 +123,29 @@ def update_real_balance():
         pass
 
     total_balance = 0.0
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
 
-    # METODA 1: Polygonscan (Omija Cloudflare)
+    # Metoda 1: Polygonscan (Obejście Cloudflare)
     try:
         for token in tokens:
             url = f"https://api.polygonscan.com/api?module=account&action=tokenbalance&contractaddress={token}&address={target_address}&tag=latest"
-            # Zauważ: dodano 'headers=headers' do zapytania!
-            res = requests.get(url, headers=headers, timeout=10)
-            try:
-                data = res.json()
-                if data.get("status") == "1":
-                    bal = float(data["result"]) / 10**6
-                    if bal > 0:
-                        total_balance += bal
-            except ValueError:
-                pass 
-    except Exception as e:
+            res = requests.get(url, headers=headers, timeout=5).json()
+            if res.get("status") == "1":
+                bal = float(res["result"]) / 10**6
+                if bal > 0:
+                    total_balance += bal
+    except Exception:
         pass
 
-    # METODA 2: Niezawodne RPC (Uruchamia się, jeśli API Polygonscan ma limity)
+    # Metoda 2: Fallback RPC dla pUSD
     if total_balance == 0.0:
-        rpcs = [
-            "https://polygon-mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161", # ZABEZPIECZENIE 2: Niezawodny węzeł
-            "https://polygon-rpc.com", 
-            "https://rpc.ankr.com/polygon"
-        ]
+        rpcs = ["https://polygon-rpc.com", "https://rpc.ankr.com/polygon"]
         for rpc in rpcs:
             if total_balance > 0: break
             try:
                 for token in tokens:
                     payload = {"jsonrpc": "2.0", "method": "eth_call", "params": [{"to": token, "data": "0x70a08231" + target_address.replace("0x", "").zfill(64)}, "latest"], "id": 1}
-                    # Zauważ: dodano 'headers=headers' do zapytania RPC!
-                    res = requests.post(rpc, json=payload, headers=headers, timeout=10)
+                    res = requests.post(rpc, json=payload, headers=headers, timeout=5)
                     if res.status_code == 200:
                         val_hex = res.json().get("result", "0x0")
                         if val_hex and val_hex != "0x":
@@ -151,7 +156,6 @@ def update_real_balance():
 
     with state_lock:
         bot_state["virtual_balance"] = total_balance
-
 def init_mainnet_client():
     global poly_client
     POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "").strip()
