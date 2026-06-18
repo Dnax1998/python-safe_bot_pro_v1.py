@@ -3,8 +3,24 @@ import requests
 import json
 import threading
 import os
+import math  # Potrzebne do zaawansowanych obliczeń prawdopodobieństwa (Sigmoidy)
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+# =====================================================================
+#  USTAWIENIA BOTA (Zarządzanie Ryzykiem i Pozycją)
+# =====================================================================
+USE_DYNAMIC_RISK = True      # True = bot ryzykuje % salda | False = stała kwota w USDC
+RISK_PERCENT = 2.0           # Jaki % salda ryzykować na jedną pozycję (zalecane: 2% - 5%)
+FIXED_TRADE_AMOUNT = 20.0    # Stała kwota transakcji w USDC (gdy USE_DYNAMIC_RISK = False)
+
+ENABLE_EARLY_EXIT = True     # True = włącza Stop-Loss i Take-Profit w trakcie świecy
+STOP_LOSS_PRICE = 0.35       # Sprzedaj udziały, jeśli ich wartość spadnie poniżej 35 centów (tniemy straty!)
+TAKE_PROFIT_PRICE = 0.90     # Sprzedaj udziały i weź pewny zysk, jeśli ich wartość wzrośnie do 90 centów
+
+PRICE_MARGIN = 15.0          # Wymagany dystans BTC od SMA (w USD)
+STRIKE_MARGIN = 10.0         # Wymagany dystans BTC od ceny Strike (w USD)
+# =====================================================================
 
 # --- GLOBALNY STAN BOTA (Paper Trading) ---
 bot_state = {
@@ -76,7 +92,7 @@ def get_btc_price():
     return None
 
 def update_candle_logic(current_price):
-    """Zarządza logiką 15-minutowych rynków oraz rozliczaniem pozycji"""
+    """Zarządza logiką 15-minutowych rynków oraz rozliczaniem pozycji na koniec świecy"""
     global price_history
     now = datetime.utcnow()
     
@@ -123,11 +139,11 @@ def update_candle_logic(current_price):
                     profit = payout - cost
                     bot_state["virtual_balance"] += payout
                     status = "WYGRANA"
-                    add_log(f"🎉 Sukces! Transakcja {direction} zamknęła się zyskiem. Zarobiono: +${profit:.2f} USDC")
+                    add_log(f"🎉 Sukces! Transakcja {direction} przetrwana do końca. Zysk: +${profit:.2f} USDC")
                 else:
                     profit = -cost
                     status = "PRZEGRANA"
-                    add_log(f"📉 Porażka. Transakcja {direction} stratna. Strata: {profit:.2f} USDC")
+                    add_log(f"📉 Porażka. Transakcja {direction} na koniec świecy była stratna. Strata: -${cost:.2f} USDC")
                 
                 # Zapis transakcji do historii
                 trade["exit_price"] = final_price
@@ -142,7 +158,6 @@ def run_trading_strategy():
     """Główna pętla handlowa bota oparta o timing i trend Krajekisa"""
     add_log("System analizy rynkowej uruchomiony pomyślnie.")
     
-    # Pierwsza inicjalizacja ceny
     init_price = get_btc_price()
     if init_price:
         with state_lock:
@@ -171,15 +186,79 @@ def run_trading_strategy():
                 active = bot_state["active_trade"]
                 sma = bot_state["sma"]
                 strike = bot_state["current_candle_strike"]
+                balance = bot_state["virtual_balance"]
 
-            # ZASADA TIMINGU KRAJEKISA: Handlujemy tylko w oknie 5-10 minut do końca świecy
+            # -----------------------------------------------------------------
+            # AKTYWNE MONITOROWANIE I ZAMYKANIE POZYCJI W TRAKCIE ŚWIECY (WERSJA 2.0 - SIGMOIDA)
+            # -----------------------------------------------------------------
+            if active and ENABLE_EARLY_EXIT:
+                price_diff = current_price - active["strike_price"]
+                
+                # Dynamiczna zmienność: im mniej czasu, tym rynek staje się bardziej nerwowy (czuły)
+                volatility_denominator = 5.0 + (m_left * 2.0)
+                
+                # Zaawansowany model prawdopodobieństwa giełdowego (Krzywa Sigmoidalna):
+                try:
+                    if active["direction"] == "UP":
+                        sim_share_price = 1.0 / (1.0 + math.exp(-price_diff / volatility_denominator))
+                    else: # DOWN
+                        sim_share_price = 1.0 / (1.0 + math.exp(price_diff / volatility_denominator))
+                    
+                    # Logiczne ograniczenie cen rynkowych
+                    sim_share_price = min(0.98, max(0.02, sim_share_price))
+                except OverflowError:
+                    sim_share_price = 0.98 if price_diff > 0 else 0.02
+
+                # A. AKTYWNY STOP-LOSS (Cięcie strat)
+                if sim_share_price <= STOP_LOSS_PRICE:
+                    recovered_amount = active["amount_shares"] * sim_share_price
+                    loss = recovered_amount - active["cost"]
+                    
+                    with state_lock:
+                        bot_state["virtual_balance"] += recovered_amount
+                        active["status"] = "STOP LOSS"
+                        active["profit"] = loss
+                        active["exit_price"] = current_price
+                        active["closed_at"] = datetime.utcnow().strftime("%H:%M:%S")
+                        bot_state["trade_history"].append(active)
+                        bot_state["active_trade"] = None
+                    add_log(f"🛡️ [STOP LOSS] Szybka ucieczka z pozycji {active['direction']}. Odzyskano: {recovered_amount:.2f} USDC (Uratowano kapitał, strata obniżona do: {loss:.2f} USDC)")
+                    time.sleep(5)
+                    continue
+
+                # B. AKTYWNY TAKE-PROFIT (Zabezpieczenie zysku)
+                elif sim_share_price >= TAKE_PROFIT_PRICE:
+                    secured_amount = active["amount_shares"] * sim_share_price
+                    profit = secured_amount - active["cost"]
+                    
+                    with state_lock:
+                        bot_state["virtual_balance"] += secured_amount
+                        active["status"] = "TAKE PROFIT"
+                        active["profit"] = profit
+                        active["exit_price"] = current_price
+                        active["closed_at"] = datetime.utcnow().strftime("%H:%M:%S")
+                        bot_state["trade_history"].append(active)
+                        bot_state["active_trade"] = None
+                    add_log(f"💰 [TAKE PROFIT] Cel osiągnięty przed czasem! Zamknięcie {active['direction']}. Zysk zabezpieczony: +{profit:.2f} USDC!")
+                    time.sleep(5)
+                    continue
+
+            # -----------------------------------------------------------------
+            # OTWIERANIE NOWYCH POZYCJI (Zasada Krajekisa)
+            # -----------------------------------------------------------------
             if 5 <= m_left <= 10 and not active and sma > 0 and strike > 0:
                 price_diff = current_price - strike
                 
+                # Obliczanie stawki transakcji na podstawie ustawień ryzyka
+                if USE_DYNAMIC_RISK:
+                    investment = (balance * RISK_PERCENT) / 100.0
+                    investment = min(balance, max(2.0, investment))
+                else:
+                    investment = min(balance, FIXED_TRADE_AMOUNT)
+
                 # Scenariusz 1: Trend wzrostowy
-                if current_price > sma + 15 and price_diff > 10:
+                if current_price > sma + PRICE_MARGIN and price_diff > STRIKE_MARGIN:
                     share_price = min(0.90, max(0.55, 0.50 + (price_diff / 100)))
-                    investment = 20.0
                     shares = investment / share_price
                     
                     with state_lock:
@@ -193,12 +272,11 @@ def run_trading_strategy():
                             "opened_at": datetime.utcnow().strftime("%H:%M:%S")
                         }
                         bot_state["virtual_balance"] -= investment
-                    add_log(f"🛒 [OTWARCIE] Kupiono UP po kursie ${share_price:.2f}. Koszt: {investment} USDC.")
+                    add_log(f"🛒 [OTWARCIE] Kupiono UP po kursie ${share_price:.2f}. Koszt: {investment:.2f} USDC (Ryzyko: {RISK_PERCENT}%).")
 
                 # Scenariusz 2: Trend spadkowy
-                elif current_price < sma - 15 and price_diff < -10:
+                elif current_price < sma - PRICE_MARGIN and price_diff < -STRIKE_MARGIN:
                     share_price = min(0.90, max(0.55, 0.50 + (abs(price_diff) / 100)))
-                    investment = 20.0
                     shares = investment / share_price
                     
                     with state_lock:
@@ -212,7 +290,7 @@ def run_trading_strategy():
                             "opened_at": datetime.utcnow().strftime("%H:%M:%S")
                         }
                         bot_state["virtual_balance"] -= investment
-                    add_log(f"🛒 [OTWARCIE] Kupiono DOWN po kursie ${share_price:.2f}. Koszt: {investment} USDC.")
+                    add_log(f"🛒 [OTWARCIE] Kupiono DOWN po kursie ${share_price:.2f}. Koszt: {investment:.2f} USDC (Ryzyko: {RISK_PERCENT}%).")
 
         except Exception as e:
             add_log(f"🚨 Nieoczekiwany błąd w pętli strategii: {e}")
@@ -266,7 +344,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             </span>
                             <h1 class="text-2xl font-bold tracking-tight text-white">Krajekis Bot Panel</h1>
                         </div>
-                        <p class="text-sm text-slate-400 mt-1">Automatyczny system Paper Tradingu na rynkach BTC 15m Polymarket</p>
+                        <p class="text-sm text-slate-400 mt-1">Automatyczny system Paper Trading na rynkach BTC 15m Polymarket</p>
                     </div>
                     <div class="bg-slate-900 border border-slate-800 rounded-xl px-5 py-3 flex items-center gap-4">
                         <div>
@@ -423,7 +501,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-400">ILOŚĆ UDZIAŁÓW / KOSZT</p>
-                                        <p class="text-lg font-bold text-slate-200">` + trade.amount_shares.toFixed(1) + ` szt. / $` + trade.cost + ` USDC</p>
+                                        <p class="text-lg font-bold text-slate-200">` + trade.amount_shares.toFixed(1) + ` szt. / $` + trade.cost.toFixed(2) + ` USDC</p>
                                     </div>
                                 </div>
                             `;
@@ -433,7 +511,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
                         const logsDiv = document.getElementById('ui-logs');
                         if (data.logs.length > 0) {
-                            // Klasyczne łączenie tekstów w JS - w 100% bezpieczne przed problemami ze znakami ucieczki $ i {}
                             logsDiv.innerHTML = data.logs.slice().reverse().map(function(l) {
                                 return '<div>' + l + '</div>';
                             }).join('');
@@ -447,7 +524,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             let totalProfit = 0;
                             
                             const rowsHtml = data.trade_history.slice().reverse().map(function(t) {
-                                if (t.status === "WYGRANA") totalWins++;
+                                if (t.status === "WYGRANA" || t.status === "TAKE PROFIT") totalWins++;
                                 totalProfit += t.profit;
                                 
                                 const profitColor = t.profit >= 0 ? 'text-emerald-400' : 'text-rose-400';
