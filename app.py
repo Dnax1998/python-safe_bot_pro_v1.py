@@ -20,18 +20,25 @@ POLY_API_KEY = os.environ.get("POLY_API_KEY", "").strip()
 POLY_API_SECRET = os.environ.get("POLY_API_SECRET", "").strip()
 POLY_API_PASSPHRASE = os.environ.get("POLY_API_PASSPHRASE", "").strip()
 
-bot_state = {"logs": ["SYSTEM: Czekam na klucze API..."], "active_trade": None, "trade_history": [], "real_balance": 0.0}
+bot_state = {"logs": ["SYSTEM: Uruchamiam diagnostykę..."], "active_trade": None, "trade_history": [], "real_balance": 0.0}
 state_lock = threading.RLock()
 
 def add_log(msg):
     with state_lock:
-        bot_state["logs"].append(f"[{datetime.utcnow().strftime('%H:%M:%S')}] {msg}")
-        if len(bot_state["logs"]) > 20: bot_state["logs"].pop(0)
-    print(msg)
+        timestamp = datetime.utcnow().strftime('%H:%M:%S')
+        log_msg = f"[{timestamp}] {msg}"
+        bot_state["logs"].append(log_msg)
+        if len(bot_state["logs"]) > 25: bot_state["logs"].pop(0)
+    print(log_msg)
 
 def init_client():
+    # --- DEBUGOWANIE ZMIENNYCH ---
+    add_log(f"DEBUG: POLY_API_KEY wczytany: {'TAK' if POLY_API_KEY else 'NIE'}")
+    add_log(f"DEBUG: POLY_API_SECRET wczytany: {'TAK' if POLY_API_SECRET else 'NIE'}")
+    add_log(f"DEBUG: POLY_API_PASSPHRASE wczytany: {'TAK' if POLY_API_PASSPHRASE else 'NIE'}")
+    
     if not POLY_API_KEY or not POLY_API_SECRET or not POLY_API_PASSPHRASE:
-        add_log("🚨 BŁĄD: BRAK KLUCZY API! Dodaj w Render: POLY_API_KEY, POLY_API_SECRET, POLY_API_PASSPHRASE")
+        add_log("🚨 BŁĄD: BRAK KLUCZY W RENDER! Sprawdź Environment w panelu.")
         return None
     
     try:
@@ -42,30 +49,33 @@ def init_client():
             chain_id=POLYGON,
             api_keys=ApiCreds(key=POLY_API_KEY, secret=POLY_API_SECRET, passphrase=POLY_API_PASSPHRASE)
         )
-        add_log("✅ Pomyślnie wczytano klucze API. Bot aktywny.")
+        add_log("✅ Klucze API załadowane pomyślnie. Bot jest gotowy.")
         return client
     except Exception as e:
         add_log(f"🚨 BŁĄD AUTORYZACJI: {str(e)}")
         return None
 
 def run_trading_strategy():
-    add_log("Silnik startuje...")
+    add_log("Silnik handlowy uruchamia się...")
     client = init_client()
     while True:
         if client:
             add_log("Monitoruję rynek (Tryb LIVE)...")
-        time.sleep(30)
+        else:
+            add_log("Silnik czeka na poprawne klucze API...")
+        time.sleep(60)
 
 class DashboardHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
-        self.send_header('Content-Type', 'text/html')
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.end_headers()
         with state_lock:
             logs_html = "<br>".join(bot_state["logs"])
-            self.wfile.write(f"<html><body><h1>Bot Status</h1><pre>{logs_html}</pre></body></html>".encode())
+            self.wfile.write(f"<html><body style='background:#0f172a; color:#cbd5e1; font-family:monospace;'><h1>Bot Status</h1><pre>{logs_html}</pre></body></html>".encode('utf-8'))
 
 if __name__ == "__main__":
     threading.Thread(target=run_trading_strategy, daemon=True).start()
     port = int(os.environ.get("PORT", 10000))
+    add_log(f"Serwer Dashboard startuje na porcie {port}")
     ThreadingHTTPServer(('0.0.0.0', port), DashboardHandler).serve_forever()
