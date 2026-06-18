@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 # Wstaw tu swój adres portfela (zaczynający się od 0x...)
 # Możesz też dodać to jako zmienną środowiskową na Renderze
-WALLET_ADDRESS = "TWÓJ_ADRES_0X..." 
+WALLET_ADDRESS = "0x719A47a79Cd81372E5d6163C3E59B7D8Fd310701" 
 
 bot_state = {
     "virtual_balance": 0.0,
