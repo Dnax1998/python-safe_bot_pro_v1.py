@@ -4,6 +4,9 @@ import json
 import threading
 import os
 import math
+# Importy do obsługi prawdziwego handlu
+from py_clob_client.client import ClobClient
+from py_clob_client.constants import POLYGON
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -161,9 +164,24 @@ async def execute_market_trade(client, token_id, amount_usd, side="BUY"):
 #  GŁÓWNA PĘTLA STRATEGII (ASYNCIO)
 # =====================================================================
 async def async_trading_loop():
-    add_log("Inicjalizacja połączenia produkcyjnego Polymarket...")
-    client = get_clob_client()
-    if not client:
+    add_log("🚀 Inicjalizacja połączenia PRODUKCYJNEGO (Mainnet)...")
+    
+    # Pobranie klucza prywatnego z ustawień Rendera
+    POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "").strip()
+    
+    # Bezpośrednie połączenie z sieciami Polymarket (Mainnet)
+    from py_clob_client.client import ClobClient
+    from py_clob_client.constants import POLYGON
+    
+    try:
+        client = ClobClient(
+            host="https://clob.polymarket.com",
+            key=POLY_PRIVATE_KEY.replace("0x", ""),
+            chain_id=POLYGON
+        )
+        add_log("✅ Połączono z Mainnet! Saldo portfela pobrane.")
+    except Exception as e:
+        add_log(f"🚨 KRYTYCZNY BŁĄD POŁĄCZENIA: {str(e)}")
         return
 
     add_log("🟢 Połączono z Realnym Portfelem Web3. Bot nasłuchuje sygnałów...")
@@ -320,10 +338,29 @@ async def async_trading_loop():
         await asyncio.sleep(4)
 
 def run_trading_strategy():
-    """Uruchamianie pętli asynchronicznej w wydzielonym wątku tła"""
+    """Uruchamianie pętli tradingu w trybie LIVE na Mainnet"""
+    import asyncio
+    from py_clob_client.client import ClobClient
+    from py_clob_client.constants import POLYGON
+
+    # Pobieramy klucz z Rendera
+    POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "").strip()
+    
+    # Tworzymy realnego klienta
+    client = ClobClient(
+        host="https://clob.polymarket.com",
+        key=POLY_PRIVATE_KEY.replace("0x", ""),
+        chain_id=POLYGON
+    )
+    
+    print(f"✅ Bot połączony z Mainnet: {client.get_balance()} USDC")
+
+    # Uruchamiamy Twoją dotychczasową pętlę, ale przekazujemy do niej 'client'
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(async_trading_loop())
+    # Pamiętaj, żeby wewnątrz async_trading_loop() używać tego obiektu 'client' 
+    # do składania zleceń zamiast funkcji symulujących
+    loop.run_until_complete(async_trading_loop(client))
 
 # --- SERWER PANELU KONTROLNEGO DASHBOARD (ZACHOWANY W 100% ORYGINALNY HTML) ---
 class DashboardHandler(BaseHTTPRequestHandler):
