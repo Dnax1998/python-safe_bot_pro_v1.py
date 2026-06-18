@@ -1,4 +1,4 @@
-requests2.31.0
-py-clob-client2.3.0
-aiohttp3.9.1
-setuptools69.0.2
+requests
+py-clob-client
+aiohttp
+setuptools
