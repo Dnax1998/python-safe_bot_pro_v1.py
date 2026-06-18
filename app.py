@@ -83,41 +83,50 @@ def auto_discover_btc_tokens():
         pass
 
 def update_real_balance():
-    """Odczytuje saldo przez oficjalne API Polygonscan (Niezawodne)"""
+    """Odczytuje saldo przez oficjalne API Polygonscan z logowaniem błędów"""
     global poly_client
-    if not poly_client: return
+    if not poly_client: 
+        add_log("⚠️ Oczekiwanie na inicjalizację klienta (poly_client to None).")
+        return
 
     POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
     target_address = POLY_ADDRESS if POLY_ADDRESS else poly_client.get_address()
+    
+    POLYGONSCAN_API_KEY = os.environ.get("POLYGONSCAN_API_KEY", "").strip()
+    api_key_param = f"&apikey={POLYGONSCAN_API_KEY}" if POLYGONSCAN_API_KEY else ""
 
     # Podstawowe tokeny Polymarketu na sieci Polygon (USDC.e / pUSD)
     tokens = [
-        "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # Nowy token Polymarket pUSD (Tu leżą Twoje środki!)
-        "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
-        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
+        "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # Nowy token Polymarket pUSD
+        "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", # USDC.e
+        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"  # Native USDC
     ]
 
-    # Ekstrakcja właściwego kontraktu bezpośrednio z biblioteki Polymarket
     try:
         clob_collat = poly_client.get_collateral_address()
         if clob_collat and clob_collat not in tokens:
             tokens.insert(0, clob_collat)
-    except:
-        pass
+    except Exception as e:
+        add_log(f"⚠️ Nie udało się pobrać adresu kolaterali: {e}")
 
     total_balance = 0.0
 
-    # METODA 1: Oficjalne API Polygonscan (Omija wszystkie blokady serwerów)
+    # METODA 1: Oficjalne API Polygonscan
     try:
         for token in tokens:
-            url = f"https://api.polygonscan.com/api?module=account&action=tokenbalance&contractaddress={token}&address={target_address}&tag=latest"
-            res = requests.get(url, timeout=5).json()
-            if res.get("status") == "1":
-                bal = float(res["result"]) / 10**6
+            url = f"https://api.polygonscan.com/api?module=account&action=tokenbalance&contractaddress={token}&address={target_address}&tag=latest{api_key_param}"
+            res = requests.get(url, timeout=5)
+            data = res.json()
+            if data.get("status") == "1":
+                bal = float(data["result"]) / 10**6
                 if bal > 0:
                     total_balance += bal
+            else:
+                msg = data.get("message", "")
+                if "NOTOK" in msg:
+                    add_log(f"⚠️ Polygonscan Limit/Błąd: {data.get('result', msg)}")
     except Exception as e:
-        pass
+        add_log(f"⚠️ Błąd Metody 1 (Polygonscan): {e}")
 
     # METODA 2: Fallback do standardowych RPC
     if total_balance == 0.0:
@@ -133,7 +142,7 @@ def update_real_balance():
                         if val_hex and val_hex != "0x":
                             bal = int(val_hex, 16) / 10**6
                             if bal > 0: total_balance += bal
-            except:
+            except Exception as e:
                 continue
 
     with state_lock:
