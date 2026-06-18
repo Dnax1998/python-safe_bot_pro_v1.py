@@ -45,16 +45,23 @@ async def async_trading_loop(client):
 def run_trading_strategy():
     """Silnik połączenia z portfelem Mainnet"""
     try:
+        # Inicjalizacja klienta
         client = ClobClient(
             host="https://clob.polymarket.com",
             key=POLY_PRIVATE_KEY.replace("0x", ""),
             chain_id=POLYGON
         )
-        # Klient nie ma get_balance(), ale połączenie jest nawiązane
-        add_log(f"✅ Połączono z Mainnet dla adresu: {client.get_address()}")
-        bot_state["balance"] = 0.0 # Możemy zostawić 0.0 lub pominąć tę informację
-
+        add_log(f"✅ Połączono! Adres: {client.get_address()}")
         
+        # DIAGNOSTYKA SALDA - TO POKAŻE NAM PRAWDE
+        try:
+            # Pobieramy pełną listę aktywów na koncie CLOB
+            assets = client.get_balances(client.get_address())
+            add_log(f"DEBUG SALDA: {str(assets)}")
+        except Exception as e:
+            add_log(f"DEBUG SALDA BŁĄD: {str(e)}")
+            
+        # Uruchomienie pętli asynchronicznej
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(async_trading_loop(client))
