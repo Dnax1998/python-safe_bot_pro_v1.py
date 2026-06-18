@@ -83,58 +83,57 @@ def auto_discover_btc_tokens():
         pass
 
 def update_real_balance():
-    """Odczytuje saldo przez niezawodne węzły RPC odporne na blokady chmur (Render)"""
+    """Odczytuje saldo przez oficjalne API Polygonscan (Niezawodne)"""
     global poly_client
     if not poly_client: return
 
     POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
     target_address = POLY_ADDRESS if POLY_ADDRESS else poly_client.get_address()
 
-    # USDC.e (pUSD) i USDC Native - główne tokeny collateralu na Polymarket
+    # Podstawowe tokeny Polymarketu na sieci Polygon (USDC.e / pUSD)
     tokens = [
         "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
         "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
     ]
 
-    # Potężne węzły RPC, które NIE BLOKUJĄ serwerów Rendera
-    rpcs = [
-        "https://rpc.ankr.com/polygon",
-        "https://polygon.llamarpc.com",
-        "https://polygon-rpc.com"
-    ]
+    # Ekstrakcja właściwego kontraktu bezpośrednio z biblioteki Polymarket
+    try:
+        clob_collat = poly_client.get_collateral_address()
+        if clob_collat and clob_collat not in tokens:
+            tokens.insert(0, clob_collat)
+    except:
+        pass
 
     total_balance = 0.0
-    success = False
 
-    for rpc in rpcs:
-        if success: break
-        try:
-            for token in tokens:
-                payload = {
-                    "jsonrpc": "2.0",
-                    "method": "eth_call",
-                    "params": [{
-                        "to": token,
-                        "data": "0x70a08231" + target_address.replace("0x", "").zfill(64)
-                    }, "latest"],
-                    "id": 1
-                }
-                res = requests.post(rpc, json=payload, timeout=5)
-                if res.status_code == 200:
-                    val_hex = res.json().get("result", "0x0")
-                    if val_hex and val_hex != "0x":
-                        total_balance += (int(val_hex, 16) / 10**6)
-                        success = True
-        except Exception:
-            continue
+    # METODA 1: Oficjalne API Polygonscan (Omija wszystkie blokady serwerów)
+    try:
+        for token in tokens:
+            url = f"https://api.polygonscan.com/api?module=account&action=tokenbalance&contractaddress={token}&address={target_address}&tag=latest"
+            res = requests.get(url, timeout=5).json()
+            if res.get("status") == "1":
+                bal = float(res["result"]) / 10**6
+                if bal > 0:
+                    total_balance += bal
+    except Exception as e:
+        pass
 
-    # Jeśli węzły RPC zawiodą, używamy API klienta jako ostateczności
-    if not success:
-        try:
-            bal = poly_client.get_collateral_balance()
-            total_balance = float(bal) if not isinstance(bal, dict) else float(bal.get("balance", 0))
-        except:
-            pass
+    # METODA 2: Fallback do standardowych RPC
+    if total_balance == 0.0:
+        rpcs = ["https://polygon-rpc.com", "https://rpc.ankr.com/polygon"]
+        for rpc in rpcs:
+            if total_balance > 0: break
+            try:
+                for token in tokens:
+                    payload = {"jsonrpc": "2.0", "method": "eth_call", "params": [{"to": token, "data": "0x70a08231" + target_address.replace("0x", "").zfill(64)}, "latest"], "id": 1}
+                    res = requests.post(rpc, json=payload, timeout=5)
+                    if res.status_code == 200:
+                        val_hex = res.json().get("result", "0x0")
+                        if val_hex and val_hex != "0x":
+                            bal = int(val_hex, 16) / 10**6
+                            if bal > 0: total_balance += bal
+            except:
+                continue
 
     with state_lock:
         bot_state["virtual_balance"] = total_balance
@@ -339,7 +338,7 @@ def run_trading_strategy():
                             except Exception as e: add_log(f"🚨 BŁĄD KUPNA DOWN: {e}")
 
         except Exception as e:
-            add_log(f"🚨 Błąd pętli: {e}")
+            pass
         time.sleep(5)
 
 class DashboardHandler(BaseHTTPRequestHandler):
