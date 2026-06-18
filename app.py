@@ -7,26 +7,25 @@ import math
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-# Importy do obsługi prawdziwego handlu (Mainnet)
+# Importy do obsługi prawdziwego handlu
 from py_clob_client.client import ClobClient
 from py_clob_client.constants import POLYGON
 from py_clob_client.clob_types import OrderArgs
 
 # =====================================================================
-#  USTAWIENIA BOTA (Zarządzanie Ryzykiem i Pozycją)
+#  USTAWIENIA BOTA
 # =====================================================================
-USE_DYNAMIC_RISK = True      # True = bot ryzykuje % salda | False = stała kwota w USDC
-RISK_PERCENT = 2.0           # Jaki % salda ryzykować na jedną pozycję
-FIXED_TRADE_AMOUNT = 10.0    # Stała kwota transakcji w USDC (gdy USE_DYNAMIC_RISK = False)
+USE_DYNAMIC_RISK = True      
+RISK_PERCENT = 2.0           
+FIXED_TRADE_AMOUNT = 10.0    
 
-ENABLE_EARLY_EXIT = True     # True = włącza Stop-Loss i Take-Profit
-STOP_LOSS_PRICE = 0.35       # Sprzedaj udziały, jeśli ich wartość spadnie poniżej 35 centów
-TAKE_PROFIT_PRICE = 0.90     # Sprzedaj udziały, jeśli ich wartość wzrośnie do 90 centów
+ENABLE_EARLY_EXIT = True     
+STOP_LOSS_PRICE = 0.35       
+TAKE_PROFIT_PRICE = 0.90     
 
-PRICE_MARGIN = 15.0          # Wymagany dystans BTC od SMA (w USD)
-STRIKE_MARGIN = 10.0         # Wymagany dystans BTC od ceny Strike (w USD)
+PRICE_MARGIN = 15.0          
+STRIKE_MARGIN = 10.0         
 
-# Dynamicznie wykrywane tokeny rynkowe
 active_market_info = {
     "token_id_up": None,
     "token_id_down": None,
@@ -72,7 +71,6 @@ def auto_discover_btc_tokens():
                 if tokens and len(tokens) >= 2 and "above" in title.lower() and "15m" in title.lower():
                     token_up = tokens[0]   
                     token_down = tokens[1] 
-                    
                     if active_market_info["token_id_up"] != token_up:
                         active_market_info["token_id_up"] = token_up
                         active_market_info["token_id_down"] = token_down
@@ -82,74 +80,66 @@ def auto_discover_btc_tokens():
                         add_log(f"   ↳ Token DOWN (NO): {token_down[:15]}...")
                     return
     except Exception as e:
-        add_log(f"⚠️ Błąd automatycznego wykrywania rynków: {e}")
+        pass
 
 def update_real_balance():
-    """Całkowicie przepisana metoda odczytu salda. Używa bezpośredniego połączenia z Blockchainem (odporna na błędy biblioteki)"""
+    """Odczytuje saldo przez niezawodne węzły RPC odporne na blokady chmur (Render)"""
     global poly_client
-    if not poly_client:
-        return
-    try:
-        POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
-        # Ważne: Sprawdzamy portfel główny (Smart Account), a nie portfel klucza.
-        target_address = POLY_ADDRESS if POLY_ADDRESS else poly_client.get_address()
-        
-        # Standardowe adresy używane przez Polymarket na warstwie Polygon
-        collateral_addresses = [
-            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", # Bridged USDC (USDC.e)
-            "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"  # Native USDC
-        ]
-        
-        # Pobieramy również dynamiczny adres pUSD / collateralu przypisany przez Giełdę
+    if not poly_client: return
+
+    POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
+    target_address = POLY_ADDRESS if POLY_ADDRESS else poly_client.get_address()
+
+    # USDC.e (pUSD) i USDC Native - główne tokeny collateralu na Polymarket
+    tokens = [
+        "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
+    ]
+
+    # Potężne węzły RPC, które NIE BLOKUJĄ serwerów Rendera
+    rpcs = [
+        "https://rpc.ankr.com/polygon",
+        "https://polygon.llamarpc.com",
+        "https://polygon-rpc.com"
+    ]
+
+    total_balance = 0.0
+    success = False
+
+    for rpc in rpcs:
+        if success: break
         try:
-            clob_collat = poly_client.get_collateral_address()
-            if clob_collat and clob_collat not in collateral_addresses:
-                collateral_addresses.insert(0, clob_collat)
+            for token in tokens:
+                payload = {
+                    "jsonrpc": "2.0",
+                    "method": "eth_call",
+                    "params": [{
+                        "to": token,
+                        "data": "0x70a08231" + target_address.replace("0x", "").zfill(64)
+                    }, "latest"],
+                    "id": 1
+                }
+                res = requests.post(rpc, json=payload, timeout=5)
+                if res.status_code == 200:
+                    val_hex = res.json().get("result", "0x0")
+                    if val_hex and val_hex != "0x":
+                        total_balance += (int(val_hex, 16) / 10**6)
+                        success = True
+        except Exception:
+            continue
+
+    # Jeśli węzły RPC zawiodą, używamy API klienta jako ostateczności
+    if not success:
+        try:
+            bal = poly_client.get_collateral_balance()
+            total_balance = float(bal) if not isinstance(bal, dict) else float(bal.get("balance", 0))
         except:
             pass
 
-        total_balance = 0.0
-        
-        # Pytamy bezpośrednio blockchain za pomocą metody balanceOf (omijamy błędy py-clob-client)
-        for token_address in collateral_addresses:
-            data = {
-                "jsonrpc": "2.0",
-                "method": "eth_call",
-                "params": [{
-                    "to": token_address,
-                    "data": "0x70a08231000000000000000000000000" + target_address.replace("0x", "").zfill(64)
-                }, "latest"],
-                "id": 1
-            }
-            try:
-                res = requests.post("https://polygon-rpc.com", json=data, timeout=5)
-                if res.status_code == 200:
-                    val_hex = res.json().get("result", "0x0")
-                    if val_hex != "0x" and val_hex is not None:
-                        # Dzielimy wynik do odpowiedniej formy (USDC i pUSD to monety o 6 miejscach po przecinku)
-                        total_balance += (int(val_hex, 16) / 10**6)
-            except:
-                pass
-        
-        if total_balance > 0:
-            with state_lock:
-                bot_state["virtual_balance"] = total_balance
-            return
-            
-        # Zabezpieczenie na wypadek awarii RPC (fallback do wadliwej metody z biblioteki)
-        balance_resp = poly_client.get_collateral_balance()
-        if isinstance(balance_resp, dict):
-            val = float(balance_resp.get("balance", balance_resp.get("amount", 0.0)))
-        else:
-            val = float(balance_resp)
-            
-        with state_lock:
-            bot_state["virtual_balance"] = val
-    except Exception as e:
-        pass
+    with state_lock:
+        bot_state["virtual_balance"] = total_balance
 
 def init_mainnet_client():
-    """Poprawna inicjalizacja klienta Pythona dla kont Proxy/Gmail"""
     global poly_client
     POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "").strip()
     POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
@@ -161,44 +151,37 @@ def init_mainnet_client():
                 "key": POLY_PRIVATE_KEY.replace("0x", ""),
                 "chain_id": POLYGON
             }
-            
-            # W Pythonie portfel Proxy konfigurujemy przez parametry funder i signature_type
             if POLY_ADDRESS:
                 client_kwargs["funder"] = POLY_ADDRESS
                 try:
                     from py_clob_client.clob_types import SignatureType
-                    # 2 to POLY_GNOSIS_SAFE, wymagane dla kont zakładanych przez Gmail
                     client_kwargs["signature_type"] = SignatureType.POLY_GNOSIS_SAFE 
-                except ImportError:
-                    pass
+                except: pass
             
             poly_client = ClobClient(**client_kwargs)
             
             if POLY_ADDRESS:
-                add_log(f"✅ MAINNET: Skonfigurowano konto Gmail/Proxy. Portfel główny: {POLY_ADDRESS}")
+                add_log(f"✅ MAINNET: Skonfigurowano konto Gmail/Proxy: {POLY_ADDRESS}")
             else:
-                add_log(f"✅ MAINNET: Zalogowano standardowo na adres: {poly_client.get_address()}")
+                add_log(f"✅ MAINNET: Zalogowano standardowo na: {poly_client.get_address()}")
             
-            # Pobieramy pierwsze saldo
             update_real_balance()
-            add_log(f"💰 MAINNET: Pobrano saldo startowe: {bot_state['virtual_balance']:.2f} pUSD/USDC")
+            add_log(f"💰 MAINNET: Pobrano saldo startowe: {bot_state['virtual_balance']:.2f} USDC")
                 
         except Exception as e:
-            add_log(f"🚨 KRYTYCZNY BŁĄD MAINNET: {e}")
-    else:
-        add_log("⚠️ Brak POLY_PRIVATE_KEY w Environment. Bot nie wyśle prawdziwych zleceń!")
+            add_log(f"🚨 BŁĄD MAINNET: {e}")
 
 def get_btc_price():
     headers = {'User-Agent': 'Mozilla/5.0'}
     try:
         url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200: return float(response.json()['price'])
+        res = requests.get(url, headers=headers, timeout=5)
+        if res.status_code == 200: return float(res.json()['price'])
     except: pass
     try:
         url = "https://api.coinbase.com/v2/prices/BTC-USD/spot"
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200: return float(response.json()['data']['amount'])
+        res = requests.get(url, headers=headers, timeout=5)
+        if res.status_code == 200: return float(res.json()['data']['amount'])
     except: pass
     return None
 
@@ -237,24 +220,22 @@ def update_candle_logic(current_price):
                 if won:
                     payout = 1.0 * trade["amount_shares"]
                     profit = payout - cost
-                    add_log(f"🎉 Rozliczenie Polymarket: Wygrana. Zysk: +${profit:.2f} USDC")
+                    add_log(f"🎉 Polymarket: Wygrana. Zysk: +${profit:.2f} USDC")
                     trade["status"] = "WYGRANA"
                 else:
                     profit = -cost
-                    add_log(f"📉 Rozliczenie Polymarket: Przegrana. Strata: -${cost:.2f} USDC")
+                    add_log(f"📉 Polymarket: Przegrana. Strata: -${cost:.2f} USDC")
                     trade["status"] = "PRZEGRANA"
                 
                 trade["exit_price"] = current_price
                 trade["profit"] = profit
                 trade["closed_at"] = now.strftime("%H:%M:%S")
-                
                 bot_state["trade_history"].append(trade)
                 bot_state["active_trade"] = None
-                
                 update_real_balance()
 
 def run_trading_strategy():
-    add_log("System analizy rynkowej uruchomiony pomyślnie.")
+    add_log("System uruchomiony pomyślnie.")
     init_mainnet_client()
     
     init_price = get_btc_price()
@@ -264,7 +245,6 @@ def run_trading_strategy():
             bot_state["current_price"] = init_price
         add_log(f"🟢 Pobrano cenę BTC: ${init_price:,.2f}")
 
-    error_count = 0
     while True:
         try:
             auto_discover_btc_tokens()
@@ -272,12 +252,9 @@ def run_trading_strategy():
             
             current_price = get_btc_price()
             if not current_price:
-                error_count += 1
-                if error_count % 6 == 0: add_log("❌ Problem z pobraniem ceny BTC.")
                 time.sleep(5)
                 continue
             
-            error_count = 0
             update_candle_logic(current_price)
             
             with state_lock:
@@ -287,114 +264,82 @@ def run_trading_strategy():
                 strike = bot_state["current_candle_strike"]
                 balance = bot_state["virtual_balance"]
 
-            # --- EXIT ---
+            # --- ZAMYKANIE POZYCJI ---
             if active and ENABLE_EARLY_EXIT:
                 price_diff = current_price - active["strike_price"]
-                volatility_denominator = 5.0 + (m_left * 2.0)
-                
+                vd = 5.0 + (m_left * 2.0)
                 try:
-                    if active["direction"] == "UP": sim_share_price = 1.0 / (1.0 + math.exp(-price_diff / volatility_denominator))
-                    else: sim_share_price = 1.0 / (1.0 + math.exp(price_diff / volatility_denominator))
-                    sim_share_price = min(0.98, max(0.02, sim_share_price))
-                except OverflowError:
-                    sim_share_price = 0.98 if price_diff > 0 else 0.02
+                    if active["direction"] == "UP": sim_price = 1.0 / (1.0 + math.exp(-price_diff / vd))
+                    else: sim_price = 1.0 / (1.0 + math.exp(price_diff / vd))
+                    sim_price = min(0.98, max(0.02, sim_price))
+                except:
+                    sim_price = 0.98 if price_diff > 0 else 0.02
 
-                if sim_share_price <= STOP_LOSS_PRICE or sim_share_price >= TAKE_PROFIT_PRICE:
-                    action_type = "TAKE PROFIT" if sim_share_price >= TAKE_PROFIT_PRICE else "STOP LOSS"
-                    recovered = active["amount_shares"] * sim_share_price
+                if sim_price <= STOP_LOSS_PRICE or sim_price >= TAKE_PROFIT_PRICE:
+                    atype = "TAKE PROFIT" if sim_price >= TAKE_PROFIT_PRICE else "STOP LOSS"
+                    recovered = active["amount_shares"] * sim_price
                     profit = recovered - active["cost"]
                     
                     if poly_client and active["token_id"]:
                         try:
-                            order_args = OrderArgs(price=round(sim_share_price, 2), size=round(active["amount_shares"], 2), side="sell", token_id=active["token_id"])
-                            signed_order = poly_client.create_order(order_args)
-                            poly_client.post_order(signed_order)
-                            add_log(f"📡 Wysłano realne zlecenie sprzedaży na giełdę...")
+                            order = OrderArgs(price=round(sim_price, 2), size=round(active["amount_shares"], 2), side="sell", token_id=active["token_id"])
+                            poly_client.post_order(poly_client.create_order(order))
+                            add_log(f"📡 Wysłano zlecenie sprzedaży...")
                         except Exception as e:
-                            add_log(f"🚨 BŁĄD ZAMYKANIA POZYCJI (MAINNET): {e}")
+                            add_log(f"🚨 BŁĄD SPRZEDAŻY: {e}")
 
                     with state_lock:
-                        active["status"] = action_type
+                        active["status"] = atype
                         active["profit"] = profit
                         active["exit_price"] = current_price
                         active["closed_at"] = datetime.utcnow().strftime("%H:%M:%S")
                         bot_state["trade_history"].append(active)
                         bot_state["active_trade"] = None
                     
-                    add_log(f"⚡ [{action_type}] Zamknięto {active['direction']}. Wynik: {profit:.2f} USDC.")
+                    add_log(f"⚡ [{atype}] Zamknięto. Wynik: {profit:.2f} USDC.")
                     update_real_balance()
                     time.sleep(5)
                     continue
 
-            # --- ENTRY ---
+            # --- OTWIERANIE POZYCJI ---
             if 5 <= m_left <= 10 and not active and sma > 0 and strike > 0:
                 price_diff = current_price - strike
-                
-                if USE_DYNAMIC_RISK:
-                    investment = (balance * RISK_PERCENT) / 100.0
-                    investment = min(balance, max(2.0, investment))
-                else:
-                    investment = min(balance, FIXED_TRADE_AMOUNT)
+                investment = min(balance, max(2.0, (balance * RISK_PERCENT) / 100.0)) if USE_DYNAMIC_RISK else min(balance, FIXED_TRADE_AMOUNT)
 
                 if investment >= 2.0 and active_market_info["token_id_up"] and active_market_info["token_id_down"]:
                     
                     if current_price > sma + PRICE_MARGIN and price_diff > STRIKE_MARGIN:
                         share_price = min(0.90, max(0.55, 0.50 + (price_diff / 100)))
                         shares = investment / share_price
-                        token_id = active_market_info["token_id_up"]
+                        tid = active_market_info["token_id_up"]
                         
                         if poly_client:
                             try:
-                                order_args = OrderArgs(price=round(share_price, 2), size=round(shares, 2), side="buy", token_id=token_id)
-                                signed_order = poly_client.create_order(order_args)
-                                poly_client.post_order(signed_order)
-                                
+                                order = OrderArgs(price=round(share_price, 2), size=round(shares, 2), side="buy", token_id=tid)
+                                poly_client.post_order(poly_client.create_order(order))
                                 with state_lock:
-                                    bot_state["active_trade"] = {
-                                        "direction": "UP",
-                                        "token_id": token_id,
-                                        "entry_price": share_price,
-                                        "strike_price": strike,
-                                        "btc_at_entry": current_price,
-                                        "amount_shares": shares,
-                                        "cost": investment,
-                                        "opened_at": datetime.utcnow().strftime("%H:%M:%S")
-                                    }
-                                add_log(f"🛒 [MAINNET] Kupiono UP za {investment:.2f} USDC. (Cena udziału: ${share_price:.2f})")
+                                    bot_state["active_trade"] = {"direction": "UP", "token_id": tid, "entry_price": share_price, "strike_price": strike, "btc_at_entry": current_price, "amount_shares": shares, "cost": investment, "opened_at": datetime.utcnow().strftime("%H:%M:%S")}
+                                add_log(f"🛒 KUPIONO UP: {investment:.2f} USDC po ${share_price:.2f}")
                                 update_real_balance()
-                            except Exception as e:
-                                add_log(f"🚨 BŁĄD KUPNA UP (MAINNET): {e}")
+                            except Exception as e: add_log(f"🚨 BŁĄD KUPNA UP: {e}")
 
                     elif current_price < sma - PRICE_MARGIN and price_diff < -STRIKE_MARGIN:
                         share_price = min(0.90, max(0.55, 0.50 + (abs(price_diff) / 100)))
                         shares = investment / share_price
-                        token_id = active_market_info["token_id_down"]
+                        tid = active_market_info["token_id_down"]
                         
                         if poly_client:
                             try:
-                                order_args = OrderArgs(price=round(share_price, 2), size=round(shares, 2), side="buy", token_id=token_id)
-                                signed_order = poly_client.create_order(order_args)
-                                poly_client.post_order(signed_order)
-                                
+                                order = OrderArgs(price=round(share_price, 2), size=round(shares, 2), side="buy", token_id=tid)
+                                poly_client.post_order(poly_client.create_order(order))
                                 with state_lock:
-                                    bot_state["active_trade"] = {
-                                        "direction": "DOWN",
-                                        "token_id": token_id,
-                                        "entry_price": share_price,
-                                        "strike_price": strike,
-                                        "btc_at_entry": current_price,
-                                        "amount_shares": shares,
-                                        "cost": investment,
-                                        "opened_at": datetime.utcnow().strftime("%H:%M:%S")
-                                    }
-                                add_log(f"🛒 [MAINNET] Kupiono DOWN za {investment:.2f} USDC. (Cena udziału: ${share_price:.2f})")
+                                    bot_state["active_trade"] = {"direction": "DOWN", "token_id": tid, "entry_price": share_price, "strike_price": strike, "btc_at_entry": current_price, "amount_shares": shares, "cost": investment, "opened_at": datetime.utcnow().strftime("%H:%M:%S")}
+                                add_log(f"🛒 KUPIONO DOWN: {investment:.2f} USDC po ${share_price:.2f}")
                                 update_real_balance()
-                            except Exception as e:
-                                add_log(f"🚨 BŁĄD KUPNA DOWN (MAINNET): {e}")
+                            except Exception as e: add_log(f"🚨 BŁĄD KUPNA DOWN: {e}")
 
         except Exception as e:
-            add_log(f"🚨 Błąd krytyczny pętli: {e}")
-            
+            add_log(f"🚨 Błąd pętli: {e}")
         time.sleep(5)
 
 class DashboardHandler(BaseHTTPRequestHandler):
@@ -431,7 +376,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
         </head>
         <body class="bg-slate-950 text-slate-100 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 py-8">
-                
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-800 pb-6 mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3">
@@ -494,7 +438,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             <i class="fa-solid fa-terminal text-emerald-400"></i> Konsola Bota na żywo
                         </h2>
                         <div id="ui-logs" class="bg-slate-950 p-4 rounded-xl font-mono text-xs text-emerald-400/90 overflow-y-auto flex-1 space-y-1.5 border border-slate-800/40">
-                            Poczekaj, serwer pobiera pierwsze zdarzenia...
+                            Poczekaj...
                         </div>
                     </div>
 
@@ -529,16 +473,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
                         document.getElementById('ui-balance').innerText = data.virtual_balance.toFixed(2) + ' USDC';
                         
-                        if (data.current_price > 0) {
-                            document.getElementById('ui-price').innerText = '$' + data.current_price.toLocaleString('en-US', {minimumFractionDigits: 2});
-                        }
+                        if (data.current_price > 0) document.getElementById('ui-price').innerText = '$' + data.current_price.toLocaleString('en-US', {minimumFractionDigits: 2});
                         document.getElementById('ui-sma').innerText = 'Średnia SMA (30 okresów): $' + data.sma.toLocaleString('en-US', {minimumFractionDigits: 2});
                         
                         const min = data.minutes_left; const sec = data.seconds_remain;
                         document.getElementById('ui-timer').innerText = min + 'm ' + (sec < 10 ? '0' : '') + sec + 's';
-                        
-                        const totalSeconds = (min * 60) + sec;
-                        document.getElementById('ui-progress').style.width = (((900 - totalSeconds) / 900) * 100) + '%';
+                        document.getElementById('ui-progress').style.width = (((900 - (min * 60 + sec)) / 900) * 100) + '%';
 
                         if (data.current_candle_strike > 0) {
                             document.getElementById('ui-strike').innerText = '$' + data.current_candle_strike.toLocaleString('en-US', {minimumFractionDigits: 2});
@@ -550,41 +490,34 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
                         const activeBox = document.getElementById('ui-active-box');
                         if (data.active_trade) {
-                            const trade = data.active_trade;
-                            activeBox.innerHTML = `
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-left bg-slate-950 p-4 rounded-xl border border-indigo-500/20">
-                                    <div><p class="text-xs text-slate-400">KIERUNEK</p><p class="text-lg font-bold ${trade.direction === 'UP' ? 'text-emerald-400' : 'text-rose-400'}">${trade.direction}</p></div>
-                                    <div><p class="text-xs text-slate-400">KURS WEJŚCIA</p><p class="text-lg font-bold text-slate-200">$${trade.entry_price.toFixed(2)}</p></div>
-                                    <div><p class="text-xs text-slate-400">KURS BTC STARTOWY</p><p class="text-lg font-bold text-slate-200">$${trade.btc_at_entry.toLocaleString()}</p></div>
-                                    <div><p class="text-xs text-slate-400">UDZIAŁY / KOSZT</p><p class="text-lg font-bold text-slate-200">${trade.amount_shares.toFixed(1)} / $${trade.cost.toFixed(2)} USDC</p></div>
-                                </div>
-                            `;
-                        } else {
-                            activeBox.innerHTML = `<p class="text-slate-500 py-2">Brak otwartej pozycji. Bot czeka na wejście.</p>`;
-                        }
+                            const t = data.active_trade;
+                            activeBox.innerHTML = `<div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-left bg-slate-950 p-4 rounded-xl border border-indigo-500/20">
+                                <div><p class="text-xs text-slate-400">KIERUNEK</p><p class="text-lg font-bold ${t.direction === 'UP' ? 'text-emerald-400' : 'text-rose-400'}">${t.direction}</p></div>
+                                <div><p class="text-xs text-slate-400">KURS WEJŚCIA</p><p class="text-lg font-bold text-slate-200">$${t.entry_price.toFixed(2)}</p></div>
+                                <div><p class="text-xs text-slate-400">KURS BTC STARTOWY</p><p class="text-lg font-bold text-slate-200">$${t.btc_at_entry.toLocaleString()}</p></div>
+                                <div><p class="text-xs text-slate-400">UDZIAŁY / KOSZT</p><p class="text-lg font-bold text-slate-200">${t.amount_shares.toFixed(1)} / $${t.cost.toFixed(2)} USDC</p></div>
+                            </div>`;
+                        } else activeBox.innerHTML = `<p class="text-slate-500 py-2">Brak otwartej pozycji. Bot czeka na wejście.</p>`;
 
                         const logsDiv = document.getElementById('ui-logs');
-                        logsDiv.innerHTML = data.logs.length > 0 ? data.logs.slice().reverse().map(l => `<div>${l}</div>`).join('') : '<div class="text-slate-500">Łączenie z botem...</div>';
+                        logsDiv.innerHTML = data.logs.length > 0 ? data.logs.slice().reverse().map(l => `<div>${l}</div>`).join('') : '<div class="text-slate-500">...</div>';
 
                         const historyRows = document.getElementById('ui-history-rows');
                         if (data.trade_history.length > 0) {
-                            let totalWins = 0, totalProfit = 0;
+                            let w = 0, p = 0;
                             historyRows.innerHTML = data.trade_history.slice().reverse().map(t => {
-                                if (t.status === "WYGRANA" || t.status === "TAKE PROFIT") totalWins++;
-                                totalProfit += t.profit;
-                                return `
-                                    <tr class="border-b border-slate-800/30">
-                                        <td class="py-3 px-3 font-semibold ${t.direction === 'UP' ? 'text-emerald-400' : 'text-rose-400'}">${t.direction}</td>
-                                        <td class="py-3 px-3">$${t.entry_price.toFixed(2)}</td>
-                                        <td class="py-3 px-3 text-xs text-slate-400">$${t.exit_price.toLocaleString()}</td>
-                                        <td class="py-3 px-3 font-bold ${t.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${t.status} (${t.profit >= 0 ? '+' : ''}$${t.profit.toFixed(2)})</td>
-                                    </tr>`;
+                                if (t.status === "WYGRANA" || t.status === "TAKE PROFIT") w++;
+                                p += t.profit;
+                                return `<tr class="border-b border-slate-800/30">
+                                    <td class="py-3 px-3 font-semibold ${t.direction === 'UP' ? 'text-emerald-400' : 'text-rose-400'}">${t.direction}</td>
+                                    <td class="py-3 px-3">$${t.entry_price.toFixed(2)}</td>
+                                    <td class="py-3 px-3 text-xs text-slate-400">$${t.exit_price.toLocaleString()}</td>
+                                    <td class="py-3 px-3 font-bold ${t.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${t.status} (${t.profit >= 0 ? '+' : ''}$${t.profit.toFixed(2)})</td>
+                                </tr>`;
                             }).join('');
-                            
-                            document.getElementById('ui-stats').innerText = `${totalWins} / ${data.trade_history.length} (${((totalWins / data.trade_history.length) * 100).toFixed(0)}%)`;
-                            const profitEl = document.getElementById('ui-profit');
-                            profitEl.innerText = `Wynik całkowity: ${totalProfit >= 0 ? '+' : ''}$${totalProfit.toFixed(2)} USDC`;
-                            profitEl.className = totalProfit >= 0 ? 'text-xs mt-2 text-emerald-400 font-semibold' : 'text-xs mt-2 text-rose-400 font-semibold';
+                            document.getElementById('ui-stats').innerText = `${w} / ${data.trade_history.length} (${((w / data.trade_history.length) * 100).toFixed(0)}%)`;
+                            document.getElementById('ui-profit').innerText = `Wynik całkowity: ${p >= 0 ? '+' : ''}$${p.toFixed(2)} USDC`;
+                            document.getElementById('ui-profit').className = p >= 0 ? 'text-xs mt-2 text-emerald-400 font-semibold' : 'text-xs mt-2 text-rose-400 font-semibold';
                         }
                     } catch (e) {}
                 }
@@ -597,10 +530,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.wfile.write(html.encode('utf-8'))
 
 if __name__ == "__main__":
-    bot_thread = threading.Thread(target=run_trading_strategy)
-    bot_thread.daemon = True
-    bot_thread.start()
-    port = int(os.environ.get("PORT", 10000))
-    server = ThreadingHTTPServer(('0.0.0.0', port), DashboardHandler)
-    add_log(f"Serwer Dashboard wystartował na porcie {port}")
+    threading.Thread(target=run_trading_strategy, daemon=True).start()
+    server = ThreadingHTTPServer(('0.0.0.0', int(os.environ.get("PORT", 10000))), DashboardHandler)
     server.serve_forever()
