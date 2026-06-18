@@ -1,2 +1,4 @@
 requests
-git+https://github.com/polymarket/pyclob-client.git
+py-clob-client
+aiohttp
+setuptools
