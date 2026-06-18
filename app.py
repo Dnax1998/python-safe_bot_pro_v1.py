@@ -50,9 +50,10 @@ def run_trading_strategy():
             key=POLY_PRIVATE_KEY.replace("0x", ""),
             chain_id=POLYGON
         )
-        balance = client.get_balance()
-        bot_state["balance"] = float(balance)
-        add_log(f"✅ Połączono! Saldo: {balance} USDC")
+        # Klient nie ma get_balance(), ale połączenie jest nawiązane
+        add_log(f"✅ Połączono z Mainnet dla adresu: {client.get_address()}")
+        bot_state["balance"] = 0.0 # Możemy zostawić 0.0 lub pominąć tę informację
+
         
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
