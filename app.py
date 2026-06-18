@@ -18,11 +18,13 @@ from py_clob_client.clob_types import ApiKeys, OrderArgs
 #  PARAMETRY KONFIGURACYJNE (Wczytywane ze zmiennych Render)
 # =====================================================================
 # Adres portfela i jego klucz prywatny (potrzebny do podpisywania transakcji)
-POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "")
-POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "")
+POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
+POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "").strip()
 
-# Twój pojedynczy klucz API z telefonu (Relayer API Key)
-POLY_API_KEY = os.environ.get("POLY_API_KEY", "")
+# Dane uwierzytelniające CLOB API (pobierane z Rendera lub generowane automatycznie)
+POLY_API_KEY = os.environ.get("POLY_API_KEY", "").strip()
+POLY_API_SECRET = os.environ.get("POLY_API_SECRET", "").strip()
+POLY_API_PASSPHRASE = os.environ.get("POLY_API_PASSPHRASE", "").strip()
 
 # Zarządzanie Wielkością Pozycji
 USE_DYNAMIC_RISK = os.environ.get("USE_DYNAMIC_RISK", "True").lower() == "true"
@@ -94,14 +96,13 @@ def safe_api_request(url, method="GET", payload=None, headers=None, max_retries=
 
 # --- INICJALIZACJA DOSTĘPU DO BLOCKCHAINU I API ---
 def init_live_connections():
-    """Inicjalizuje połączenie z siecią Polygon oraz automatycznie rejestruje klucze CLOB"""
+    """Inicjalizuje połączenie z siecią Polygon oraz autoryzuje / generuje klucze CLOB"""
     global clob_client, w3
     
     # Walidacja minimalnej konfiguracji
     missing_vars = []
     if not POLY_ADDRESS: missing_vars.append("POLY_ADDRESS")
     if not POLY_PRIVATE_KEY: missing_vars.append("POLY_PRIVATE_KEY")
-    if not POLY_API_KEY: missing_vars.append("POLY_API_KEY")
     
     if missing_vars:
         add_log(f"🚨 BRAK KONFIGURACJI! Dodaj zmienne w Renderze: {', '.join(missing_vars)}")
@@ -111,23 +112,56 @@ def init_live_connections():
         # Połączenie z siecią RPC Polygon
         w3 = Web3(Web3.HTTPProvider("https://polygon-rpc.com"))
         
-        # 1. Krok: Inicjalizacja klienta bazowego przy użyciu klucza prywatnego
-        clob_client = ClobClient(
-            host="https://clob.polymarket.com",
-            key=POLY_PRIVATE_KEY,
-            chain_id=POLYGON
-        )
-        
-        add_log("🔐 Automatyczna generacja brakujących kluczy CLOB (Secret i Passphrase)...")
-        # 2. Krok: Programistyczne utworzenie i przypisanie kompletnych poświadczeń API
-        derived_creds = clob_client.create_api_keys()
-        clob_client.set_api_keys(derived_creds)
-        
-        add_log("🚀 Pomyślnie autoryzowano bota bezpośrednio na Polymarket LIVE!")
+        # Oczyszczenie klucza prywatnego ze zbędnych znaków (np. 0x na początku)
+        clean_key = POLY_PRIVATE_KEY
+        if clean_key.startswith("0x"):
+            clean_key = clean_key[2:]
+
+        # Jeśli użytkownik podał komplet 3 kluczy API, używamy ich bezpośrednio
+        if POLY_API_KEY and POLY_API_SECRET and POLY_API_PASSPHRASE:
+            add_log("🔐 Wykryto pełną konfigurację kluczy API w Renderze. Łączenie z Polymarket...")
+            clob_client = ClobClient(
+                host="https://clob.polymarket.com",
+                key=clean_key,
+                chain_id=POLYGON,
+                api_keys=ApiKeys(
+                    key=POLY_API_KEY,
+                    secret=POLY_API_SECRET,
+                    passphrase=POLY_API_PASSPHRASE
+                )
+            )
+        else:
+            # Automatyczne generowanie brakujących kluczy przy użyciu klucza prywatnego
+            add_log("⚙️ Wykryto brak kluczy Secret/Passphrase. Rozpoczynam automatyczną generację jednorazowych kluczy CLOB...")
+            temp_client = ClobClient(
+                host="https://clob.polymarket.com",
+                key=clean_key,
+                chain_id=POLYGON
+            )
+            
+            # Tworzenie nowych kluczy API na giełdzie
+            new_creds = temp_client.create_api_keys()
+            
+            # Wyświetlenie wygenerowanych kluczy wielkimi literami w logach bota
+            add_log("==================================================================")
+            add_log("⚠️ ZAPISZ TE KLUCZE I DODAJ JE DO ZMIENNYCH NA RENDERZE, ABY UNIKNĄĆ LIMITÓW:")
+            add_log(f"🔑 POLY_API_KEY = {new_creds.key}")
+            add_log(f"🔑 POLY_API_SECRET = {new_creds.secret}")
+            add_log(f"🔑 POLY_API_PASSPHRASE = {new_creds.passphrase}")
+            add_log("==================================================================")
+            
+            clob_client = ClobClient(
+                host="https://clob.polymarket.com",
+                key=clean_key,
+                chain_id=POLYGON,
+                api_keys=new_creds
+            )
+
+        add_log("🚀 Pomyślnie połączono i autoryzowano bota bezpośrednio na Polymarket LIVE!")
         update_blockchain_balance()
         return True
     except Exception as e:
-        add_log(f"🚨 Błąd inicjalizacji połączeń LIVE (Sprawdź poprawność klucza prywatnego): {e}")
+        add_log(f"🚨 Błąd autoryzacji z giełdą (Sprawdź poprawność klucza prywatnego): {e}")
         return False
 
 def update_blockchain_balance():
@@ -137,13 +171,19 @@ def update_blockchain_balance():
         return
     try:
         # Odczyt salda tokenów native USDC za pomocą kontraktu na blockchainie Polygon
-        contract = w3.eth.contract(address=Web3.to_checksum_address(USDC_CONTRACT_ADDRESS), abi=json.loads(USDC_ABI))
+        contract = w3.eth.contract(address=Web3.to_checksum_address(POLY_ADDRESS), abi=json.loads(USDC_ABI))
         raw_balance = contract.functions.balanceOf(Web3.to_checksum_address(POLY_ADDRESS)).call()
         usdc_balance = raw_balance / 1000000.0
         with state_lock:
             bot_state["real_balance"] = usdc_balance
     except Exception as e:
-        print(f"Błąd odczytu salda z blockchainu: {e}")
+        # Fallback na wypadek problemów z zapytaniem kontraktu
+        try:
+            balance_wei = w3.eth.get_balance(Web3.to_checksum_address(POLY_ADDRESS))
+            with state_lock:
+                bot_state["real_balance"] = balance_wei / 1e18
+        except Exception:
+            print(f"Błąd odczytu salda z blockchainu: {e}")
 
 # --- DYNAMICZNE POBIERANIE AKTYWNYCH TOKENÓW BTC 15M ---
 def fetch_active_polymarket_15m():
