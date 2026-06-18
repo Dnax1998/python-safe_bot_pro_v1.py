@@ -1,81 +1,57 @@
 import time
-import requests
-import json
 import threading
 import os
-import math
-from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-
-from eth_account import Account
-from web3 import Web3
 from py_clob_client.client import ClobClient
 from py_clob_client.constants import POLYGON
-from py_clob_client.clob_types import ApiCreds, OrderArgs
 
-# --- KONFIGURACJA Z RENDER ---
+# Wczytujemy tylko klucz prywatny i adres
 POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "").strip()
 POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "").strip()
-POLY_API_KEY = os.environ.get("POLY_API_KEY", "").strip()
-POLY_API_SECRET = os.environ.get("POLY_API_SECRET", "").strip()
-POLY_API_PASSPHRASE = os.environ.get("POLY_API_PASSPHRASE", "").strip()
 
-bot_state = {"logs": ["SYSTEM: Uruchamiam diagnostykę..."], "active_trade": None, "trade_history": [], "real_balance": 0.0}
+bot_state = {"logs": ["SYSTEM: Uruchamiam tryb bezpośredni..."], "status": "Czekam..."}
 state_lock = threading.RLock()
 
 def add_log(msg):
     with state_lock:
-        timestamp = datetime.utcnow().strftime('%H:%M:%S')
-        log_msg = f"[{timestamp}] {msg}"
-        bot_state["logs"].append(log_msg)
-        if len(bot_state["logs"]) > 25: bot_state["logs"].pop(0)
-    print(log_msg)
+        bot_state["logs"].append(f"[{time.strftime('%H:%M:%S')}] {msg}")
+    print(msg)
 
-def init_client():
-    # --- DEBUGOWANIE ZMIENNYCH ---
-    add_log(f"DEBUG: POLY_API_KEY wczytany: {'TAK' if POLY_API_KEY else 'NIE'}")
-    add_log(f"DEBUG: POLY_API_SECRET wczytany: {'TAK' if POLY_API_SECRET else 'NIE'}")
-    add_log(f"DEBUG: POLY_API_PASSPHRASE wczytany: {'TAK' if POLY_API_PASSPHRASE else 'NIE'}")
-    
-    if not POLY_API_KEY or not POLY_API_SECRET or not POLY_API_PASSPHRASE:
-        add_log("🚨 BŁĄD: BRAK KLUCZY W RENDER! Sprawdź Environment w panelu.")
+def init_direct_client():
+    if not POLY_PRIVATE_KEY:
+        add_log("🚨 BŁĄD: Brak POLY_PRIVATE_KEY w Environment!")
         return None
-    
     try:
-        clean_key = POLY_PRIVATE_KEY.replace("0x", "")
+        # Usuwamy 0x jeśli jest
+        key = POLY_PRIVATE_KEY.replace("0x", "")
+        # Łączymy się bezpośrednio kluczem, bez API Secret
         client = ClobClient(
             host="https://clob.polymarket.com",
-            key=clean_key,
-            chain_id=POLYGON,
-            api_keys=ApiCreds(key=POLY_API_KEY, secret=POLY_API_SECRET, passphrase=POLY_API_PASSPHRASE)
+            key=key,
+            chain_id=POLYGON
         )
-        add_log("✅ Klucze API załadowane pomyślnie. Bot jest gotowy.")
+        add_log("✅ Połączono bezpośrednio kluczem prywatnym!")
         return client
     except Exception as e:
-        add_log(f"🚨 BŁĄD AUTORYZACJI: {str(e)}")
+        add_log(f"🚨 BŁĄD: {str(e)}")
         return None
 
-def run_trading_strategy():
-    add_log("Silnik handlowy uruchamia się...")
-    client = init_client()
+def run_bot():
+    client = init_direct_client()
     while True:
         if client:
-            add_log("Monitoruję rynek (Tryb LIVE)...")
-        else:
-            add_log("Silnik czeka na poprawne klucze API...")
+            add_log("Monitoruję rynek (Tryb bezpośredni)...")
         time.sleep(60)
 
-class DashboardHandler(BaseHTTPRequestHandler):
+class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
-        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Content-Type', 'text/html')
         self.end_headers()
         with state_lock:
-            logs_html = "<br>".join(bot_state["logs"])
-            self.wfile.write(f"<html><body style='background:#0f172a; color:#cbd5e1; font-family:monospace;'><h1>Bot Status</h1><pre>{logs_html}</pre></body></html>".encode('utf-8'))
+            self.wfile.write(f"<html><body><h1>Bot Status</h1><pre>{'<br>'.join(bot_state['logs'])}</pre></body></html>".encode())
 
 if __name__ == "__main__":
-    threading.Thread(target=run_trading_strategy, daemon=True).start()
+    threading.Thread(target=run_bot, daemon=True).start()
     port = int(os.environ.get("PORT", 10000))
-    add_log(f"Serwer Dashboard startuje na porcie {port}")
-    ThreadingHTTPServer(('0.0.0.0', port), DashboardHandler).serve_forever()
+    ThreadingHTTPServer(('0.0.0.0', port), SimpleHandler).serve_forever()
