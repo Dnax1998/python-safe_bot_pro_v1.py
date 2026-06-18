@@ -15,23 +15,21 @@ from py_clob_client.constants import POLYGON
 from py_clob_client.clob_types import ApiKeys, OrderArgs
 
 # =====================================================================
-#  PARAMETRY KONFIGURACYJNE (Wczytywane z bezpiecznych zmiennych Render)
+#  PARAMETRY KONFIGURACYJNE (Wczytywane ze zmiennych Render)
 # =====================================================================
 # Adres portfela i jego klucz prywatny (potrzebny do podpisywania transakcji)
 POLY_ADDRESS = os.environ.get("POLY_ADDRESS", "")
 POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "")
 
-# Dane uwierzytelniające CLOB API (wygenerowane na Polymarkecie)
+# Twój pojedynczy klucz API z telefonu (Relayer API Key)
 POLY_API_KEY = os.environ.get("POLY_API_KEY", "")
-POLY_API_SECRET = os.environ.get("POLY_API_SECRET", "")
-POLY_API_PASSPHRASE = os.environ.get("POLY_API_PASSPHRASE", "")
 
 # Zarządzanie Wielkością Pozycji
 USE_DYNAMIC_RISK = os.environ.get("USE_DYNAMIC_RISK", "True").lower() == "true"
 RISK_PERCENT = float(os.environ.get("RISK_PERCENT", "5.0"))  # Domyślnie 5% całego salda portfela
 FIXED_TRADE_AMOUNT = float(os.environ.get("FIXED_TRADE_AMOUNT", "10.0"))  # Stała stawka w USDC
 
-# Automatyczne Zarządzanie Otwartej Pozycji
+# Automatyczne Zarządzanie Otwartą Pozycją
 ENABLE_EARLY_EXIT = True
 STOP_LOSS_PRICE = 0.30       # Jeśli cena udziału spadnie do 30 centów, tniemy stratę
 TAKE_PROFIT_PRICE = 0.90     # Jeśli cena udziału wzrośnie do 90 centów, bierzemy pewny zysk
@@ -72,43 +70,64 @@ def add_log(message):
         if len(bot_state["logs"]) > 50:
             bot_state["logs"].pop(0)
 
+# --- WYKONYWANIE ZAPYTAŃ Z EXPONENTIAL BACKOFF ---
+def safe_api_request(url, method="GET", payload=None, headers=None, max_retries=5):
+    """Wykonuje zapytanie HTTP z mechanizmem wykładniczego opóźnienia w razie błędu sieci"""
+    delay = 1
+    for attempt in range(max_retries):
+        try:
+            if method == "GET":
+                response = requests.get(url, headers=headers, timeout=5)
+            else:
+                response = requests.post(url, json=payload, headers=headers, timeout=5)
+                
+            if response.status_code == 200:
+                return response.json()
+        except Exception:
+            pass
+        
+        if attempt < max_retries - 1:
+            time.sleep(delay)
+            delay *= 2
+            
+    return None
+
 # --- INICJALIZACJA DOSTĘPU DO BLOCKCHAINU I API ---
 def init_live_connections():
-    """Inicjalizuje połączenie z siecią Polygon oraz autoryzuje klienta Polymarket"""
+    """Inicjalizuje połączenie z siecią Polygon oraz automatycznie rejestruje klucze CLOB"""
     global clob_client, w3
     
-    # Walidacja konfiguracji
+    # Walidacja minimalnej konfiguracji
     missing_vars = []
     if not POLY_ADDRESS: missing_vars.append("POLY_ADDRESS")
     if not POLY_PRIVATE_KEY: missing_vars.append("POLY_PRIVATE_KEY")
     if not POLY_API_KEY: missing_vars.append("POLY_API_KEY")
-    if not POLY_API_SECRET: missing_vars.append("POLY_API_SECRET")
-    if not POLY_API_PASSPHRASE: missing_vars.append("POLY_API_PASSPHRASE")
     
     if missing_vars:
         add_log(f"🚨 BRAK KONFIGURACJI! Dodaj zmienne w Renderze: {', '.join(missing_vars)}")
         return False
 
     try:
-        # Połączenie z siecią RPC Polygon (używamy stabilnego publicznego endpointu)
+        # Połączenie z siecią RPC Polygon
         w3 = Web3(Web3.HTTPProvider("https://polygon-rpc.com"))
         
-        # Inicjalizacja klienta Polymarket CLOB API
+        # 1. Krok: Inicjalizacja klienta bazowego przy użyciu klucza prywatnego
         clob_client = ClobClient(
             host="https://clob.polymarket.com",
             key=POLY_PRIVATE_KEY,
-            chain_id=POLYGON,
-            api_keys=ApiKeys(
-                key=POLY_API_KEY,
-                secret=POLY_API_SECRET,
-                passphrase=POLY_API_PASSPHRASE
-            )
+            chain_id=POLYGON
         )
-        add_log("🔐 Pomyślnie autoryzowano klucze portfela i API Polymarket!")
+        
+        add_log("🔐 Automatyczna generacja brakujących kluczy CLOB (Secret i Passphrase)...")
+        # 2. Krok: Programistyczne utworzenie i przypisanie kompletnych poświadczeń API
+        derived_creds = clob_client.create_api_keys()
+        clob_client.set_api_keys(derived_creds)
+        
+        add_log("🚀 Pomyślnie autoryzowano bota bezpośrednio na Polymarket LIVE!")
         update_blockchain_balance()
         return True
     except Exception as e:
-        add_log(f"🚨 Błąd inicjalizacji połączeń LIVE: {e}")
+        add_log(f"🚨 Błąd inicjalizacji połączeń LIVE (Sprawdź poprawność klucza prywatnego): {e}")
         return False
 
 def update_blockchain_balance():
@@ -120,7 +139,6 @@ def update_blockchain_balance():
         # Odczyt salda tokenów native USDC za pomocą kontraktu na blockchainie Polygon
         contract = w3.eth.contract(address=Web3.to_checksum_address(USDC_CONTRACT_ADDRESS), abi=json.loads(USDC_ABI))
         raw_balance = contract.functions.balanceOf(Web3.to_checksum_address(POLY_ADDRESS)).call()
-        # Native USDC na Polygonie ma 6 miejsc po przecinku
         usdc_balance = raw_balance / 1000000.0
         with state_lock:
             bot_state["real_balance"] = usdc_balance
@@ -137,7 +155,6 @@ def fetch_active_polymarket_15m():
             markets = response.json()
             for m in markets:
                 title = m.get("title", "")
-                # Szukamy aktywnego rynku z interwałem 15-minutowym
                 if "Bitcoin Price at" in title and m.get("active") is True:
                     clob_token_ids = m.get("clobTokenIds")
                     if clob_token_ids:
@@ -206,7 +223,7 @@ def update_candle_logic(current_price):
                 trade["status"] = "ZAKOŃCZONA (EXPIRED)"
                 trade["exit_price"] = current_price
                 trade["closed_at"] = now.strftime("%H:%M:%S")
-                trade["profit"] = 0.0 # Dokładną wartość zysku/straty weryfikujemy po zmianie salda portfela
+                trade["profit"] = 0.0
                 
                 bot_state["trade_history"].append(trade)
                 bot_state["active_trade"] = None
@@ -242,7 +259,6 @@ def run_trading_strategy():
                 price_diff = current_price - active["strike_price"]
                 volatility_denominator = 5.0 + (m_left * 2.0)
                 
-                # Matematyczna kalkulacja prawdopodobieństwa i ceny rynkowej (Krzywa Sigmoidalna)
                 try:
                     if active["direction"] == "UP":
                         sim_share_price = 1.0 / (1.0 + math.exp(-price_diff / volatility_denominator))
@@ -252,14 +268,13 @@ def run_trading_strategy():
                 except OverflowError:
                     sim_share_price = 0.98 if price_diff > 0 else 0.02
 
-                # A. STOP-LOSS (Cięcie strat na poziomie STOP_LOSS_PRICE)
+                # A. STOP-LOSS
                 if sim_share_price <= STOP_LOSS_PRICE:
                     recovered_amount = active["amount_shares"] * sim_share_price
                     loss = recovered_amount - active["cost"]
                     
                     add_log(f"🛡️ [STOP LOSS] Uruchamiam natychmiastowe wyjście z pozycji {active['direction']}...")
                     try:
-                        # Zlecenie natychmiastowej sprzedaży udziałów YES/NO na giełdzie
                         order_args = OrderArgs(
                             price=sim_share_price,
                             size=active["amount_shares"],
@@ -283,7 +298,7 @@ def run_trading_strategy():
                     time.sleep(10)
                     continue
 
-                # B. TAKE-PROFIT (Realizacja pewnego zysku na poziomie TAKE_PROFIT_PRICE)
+                # B. TAKE-PROFIT
                 elif sim_share_price >= TAKE_PROFIT_PRICE:
                     secured_amount = active["amount_shares"] * sim_share_price
                     profit = secured_amount - active["cost"]
@@ -314,7 +329,7 @@ def run_trading_strategy():
                     continue
 
             # -----------------------------------------------------------------
-            # 2. OTWIERANIE NOWYCH TRANSAKCJI (Timing i Trend Krajekisa)
+            # 2. OTWIERANIE NOWYCH TRANSAKCJI
             # -----------------------------------------------------------------
             if 5 <= m_left <= 10 and not active and sma > 0 and strike > 0:
                 price_diff = current_price - strike
@@ -322,11 +337,10 @@ def run_trading_strategy():
                 # Obliczanie wielkości stawki z zarządzaniem kapitałem
                 if USE_DYNAMIC_RISK:
                     investment = (balance * RISK_PERCENT) / 100.0
-                    investment = min(balance, max(2.0, investment))  # Min. 2 USDC, max. całe saldo
+                    investment = min(balance, max(2.0, investment))
                 else:
                     investment = min(balance, FIXED_TRADE_AMOUNT)
 
-                # Bezpiecznik przed próbą wejścia z zerowym saldem
                 if investment < 2.0:
                     time.sleep(10)
                     continue
@@ -335,14 +349,14 @@ def run_trading_strategy():
                 token_to_buy = None
                 direction = None
                 
-                # Scenariusz UP (Kupujemy YES)
+                # Scenariusz UP
                 if current_price > sma + PRICE_MARGIN and price_diff > STRIKE_MARGIN:
                     direction = "UP"
                     if market_info:
                         token_to_buy = market_info["yes_token"]
                         strike = market_info["strike"]
 
-                # Scenariusz DOWN (Kupujemy NO)
+                # Scenariusz DOWN
                 elif current_price < sma - PRICE_MARGIN and price_diff < -STRIKE_MARGIN:
                     direction = "DOWN"
                     if market_info:
@@ -350,7 +364,6 @@ def run_trading_strategy():
                         strike = market_info["strike"]
 
                 if direction and token_to_buy and clob_client:
-                    # Wyliczanie dynamicznej ceny udziału na wejściu
                     share_price = min(0.90, max(0.55, 0.50 + (abs(price_diff) / 100)))
                     shares = investment / share_price
 
@@ -416,7 +429,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             <script src="https://cdn.tailwindcss.com"></script>
             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
                 body { font-family: 'Plus Jakarta Sans', sans-serif; }
             </style>
         </head>
@@ -472,7 +485,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
                         <p class="text-sm font-medium text-slate-400">Skuteczność systemu</p>
                         <p id="ui-stats" class="text-2xl font-extrabold mt-2 text-white">0 / 0 (0%)</p>
-                        <p id="ui-profit" class="text-xs mt-2 text-emerald-400">Brak pozycji</p>
+                        <p id="ui-profit" class="text-xs mt-2 text-emerald-400">Rynek LIVE</p>
                     </div>
                 </div>
 
