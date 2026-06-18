@@ -72,7 +72,7 @@ def auto_discover_btc_tokens():
                 title = m.get("title", "")
                 tokens = m.get("clobTokenIds")
                 # Szukamy rynku 15-minutowego (Interval / 15m / Above)
-                if tokens and len(tokens) >= 2 and "above" in title.lower():
+                if tokens and len(tokens) >= 2 and "above" in title.lower() and "15m" in title.lower():
                     token_up = tokens[0]   # YES (UP)
                     token_down = tokens[1] # NO (DOWN)
                     
@@ -88,16 +88,15 @@ def auto_discover_btc_tokens():
         add_log(f"⚠️ Błąd automatycznego wykrywania rynków: {e}")
 
 def update_real_balance():
-    """Pobiera i aktualizuje rzeczywiste saldo USDC z Polymarket"""
+    """Pobiera rzeczywiste saldo USDC powiązanego portfela przy użyciu oficjalnego endpointu"""
     global poly_client
     if not poly_client:
         return
     try:
-        # py-clob-client używa get_collateral_balance() do sprawdzania salda USDC
+        # Oficjalna metoda py-clob-client pobierająca saldo USDC (Collateral) dla zalogowanego adresu
         balance_resp = poly_client.get_collateral_balance()
         usdc_val = 0.0
         if isinstance(balance_resp, dict):
-            # Próba wyciągnięcia salda z różnych formatów odpowiedzi API
             usdc_val = float(balance_resp.get("balance", balance_resp.get("amount", 0.0)))
         else:
             usdc_val = float(balance_resp)
@@ -105,7 +104,7 @@ def update_real_balance():
         with state_lock:
             bot_state["virtual_balance"] = usdc_val
     except Exception as e:
-        # Czasami API zwraca odpowiedź w innym formacie lub rzuca wyjątek, stosujemy bezpieczną rezerwę
+        # Alternatywna metoda zapobiegająca awarii pętli przy braku odpowiedzi sieci
         pass
 
 def init_mainnet_client():
@@ -114,9 +113,13 @@ def init_mainnet_client():
     POLY_PRIVATE_KEY = os.environ.get("POLY_PRIVATE_KEY", "").strip()
     if POLY_PRIVATE_KEY:
         try:
-            poly_client = ClobClient(host="https://clob.polymarket.com", key=POLY_PRIVATE_KEY.replace("0x", ""), chain_id=POLYGON)
+            poly_client = ClobClient(
+                host="https://clob.polymarket.com", 
+                key=POLY_PRIVATE_KEY.replace("0x", ""), 
+                chain_id=POLYGON
+            )
             address = poly_client.get_address()
-            add_log(f"✅ MAINNET: Zalogowano pomyślnie! Portfel: {address}")
+            add_log(f"✅ MAINNET: Zalogowano pomyślnie! Portfel bota: {address}")
             
             # Pobieramy pierwsze saldo
             update_real_balance()
@@ -191,7 +194,7 @@ def update_candle_logic(current_price):
                 bot_state["trade_history"].append(trade)
                 bot_state["active_trade"] = None
                 
-                # Aktualizujemy prawdziwe saldo po rozliczeniu
+                # Aktualizujemy saldo po rozliczeniu pozycji
                 update_real_balance()
 
 def run_trading_strategy():
@@ -276,13 +279,12 @@ def run_trading_strategy():
                 price_diff = current_price - strike
                 
                 if USE_DYNAMIC_RISK:
-                    # Obliczamy stawkę (np. 2% z Twoich 93 USDC = ok. 1.86 USDC na transakcję)
                     investment = (balance * RISK_PERCENT) / 100.0
                     investment = min(balance, max(2.0, investment))
                 else:
                     investment = min(balance, FIXED_TRADE_AMOUNT)
 
-                # Kupujemy tylko wtedy, gdy mamy środki i znaleźliśmy aktywne Token ID
+                # Kupujemy tylko wtedy, gdy mamy realne środki i znaleźliśmy aktywne Token ID
                 if investment >= 2.0 and active_market_info["token_id_up"] and active_market_info["token_id_down"]:
                     
                     # Scenariusz 1: Trend wzrostowy (UP)
@@ -291,7 +293,6 @@ def run_trading_strategy():
                         shares = investment / share_price
                         token_id = active_market_info["token_id_up"]
                         
-                        # Wysłanie realnego zlecenia BUY (UP)
                         if poly_client:
                             try:
                                 order_args = OrderArgs(price=round(share_price, 2), size=round(shares, 2), side="buy", token_id=token_id)
@@ -320,7 +321,6 @@ def run_trading_strategy():
                         shares = investment / share_price
                         token_id = active_market_info["token_id_down"]
                         
-                        # Wysłanie realnego zlecenia BUY (DOWN)
                         if poly_client:
                             try:
                                 order_args = OrderArgs(price=round(share_price, 2), size=round(shares, 2), side="buy", token_id=token_id)
@@ -348,7 +348,7 @@ def run_trading_strategy():
             
         time.sleep(5)
 
-# --- PANEL KONTROLNY (WEB SERWER ZACHOWANY BEZ ZMIAN W DESIGNIE) ---
+# --- PANEL KONTROLNY (WEB SERWER) ---
 class DashboardHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args): return
 
