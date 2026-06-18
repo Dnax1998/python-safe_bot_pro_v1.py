@@ -12,7 +12,8 @@ from eth_account import Account
 from web3 import Web3
 from py_clob_client.client import ClobClient
 from py_clob_client.constants import POLYGON
-from py_clob_client.clob_types import ApiKeys, OrderArgs
+# Zmiana z ApiKeys na ApiCreds zgodnie z najnowszą wersją biblioteki Polymarketu
+from py_clob_client.clob_types import ApiCreds, OrderArgs
 
 # =====================================================================
 #  PARAMETRY KONFIGURACYJNE (Wczytywane ze zmiennych Render)
@@ -124,7 +125,7 @@ def init_live_connections():
                 host="https://clob.polymarket.com",
                 key=clean_key,
                 chain_id=POLYGON,
-                api_keys=ApiKeys(
+                api_keys=ApiCreds(
                     key=POLY_API_KEY,
                     secret=POLY_API_SECRET,
                     passphrase=POLY_API_PASSPHRASE
@@ -535,7 +536,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         <i class="fa-solid fa-chart-line text-indigo-400"></i> Aktywne Zlecenie w Arkuszu Polymarket
                     </h2>
                     <div id="ui-active-box" class="text-slate-400 py-4 text-center">
-                        Brak aktywnego zlecenia na giełdzie. Bot czeka na optymalny moment.
+                        Brak aktywnego zlecenia na giełdzie. Bot czeka na optymalne moment.
                     </div>
                 </div>
 
