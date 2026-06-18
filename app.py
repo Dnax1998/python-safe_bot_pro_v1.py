@@ -17,7 +17,7 @@ from py_clob_client.clob_types import OrderArgs
 # =====================================================================
 USE_DYNAMIC_RISK = True      # True = bot ryzykuje % salda | False = stała kwota w USDC
 RISK_PERCENT = 2.0           # Jaki % salda ryzykować na jedną pozycję
-FIXED_TRADE_AMOUNT = 5.0    # Stała kwota transakcji w USDC
+FIXED_TRADE_AMOUNT = 10.0    # Stała kwota transakcji w USDC (gdy USE_DYNAMIC_RISK = False)
 
 ENABLE_EARLY_EXIT = True     # True = włącza Stop-Loss i Take-Profit
 STOP_LOSS_PRICE = 0.35       # Sprzedaj udziały, jeśli ich wartość spadnie poniżej 35 centów
@@ -26,10 +26,12 @@ TAKE_PROFIT_PRICE = 0.90     # Sprzedaj udziały, jeśli ich wartość wzrośnie
 PRICE_MARGIN = 15.0          # Wymagany dystans BTC od SMA (w USD)
 STRIKE_MARGIN = 10.0         # Wymagany dystans BTC od ceny Strike (w USD)
 
-# !!! WAŻNE: Wpisz tutaj Token ID dla rynku na którym handlujesz !!!
-# Token ID znajdziesz w dokumentacji Polymarketu lub API dla danego rynku.
-MARKET_TOKEN_ID_UP = "TUTAJ_WKLEJ_TOKEN_ID_DLA_UP"
-MARKET_TOKEN_ID_DOWN = "TUTAJ_WKLEJ_TOKEN_ID_DLA_DOWN"
+# Dynamicznie wykrywane tokeny rynkowe (nie musisz już ich wpisywać ręcznie!)
+active_market_info = {
+    "token_id_up": None,
+    "token_id_down": None,
+    "title": "Wyszukiwanie aktywnego rynku..."
+}
 # =====================================================================
 
 bot_state = {
@@ -57,6 +59,55 @@ def add_log(message):
         if len(bot_state["logs"]) > 50:
             bot_state["logs"].pop(0)
 
+def auto_discover_btc_tokens():
+    """Automatycznie wyszukuje najnowszy aktywny rynek BTC 15m na Polymarket"""
+    global active_market_info
+    try:
+        # Odpytujemy publiczne API Gamma o aktywne rynki Bitcoin
+        url = "https://gamma-api.polymarket.com/markets?active=true&closed=false&q=Bitcoin"
+        r = requests.get(url, timeout=5)
+        if r.status_code == 200:
+            markets = r.json()
+            for m in markets:
+                title = m.get("title", "")
+                tokens = m.get("clobTokenIds")
+                # Szukamy rynku 15-minutowego (Interval / 15m / Above)
+                if tokens and len(tokens) >= 2 and "above" in title.lower():
+                    token_up = tokens[0]   # YES (UP)
+                    token_down = tokens[1] # NO (DOWN)
+                    
+                    if active_market_info["token_id_up"] != token_up:
+                        active_market_info["token_id_up"] = token_up
+                        active_market_info["token_id_down"] = token_down
+                        active_market_info["title"] = title
+                        add_log(f"🎯 WYKRYTO NOWY RYNEK: {title}")
+                        add_log(f"   ↳ UP Token ID: {token_up[:15]}...")
+                        add_log(f"   ↳ DOWN Token ID: {token_down[:15]}...")
+                    return
+    except Exception as e:
+        add_log(f"⚠️ Błąd automatycznego wykrywania rynków: {e}")
+
+def update_real_balance():
+    """Pobiera i aktualizuje rzeczywiste saldo USDC z Polymarket"""
+    global poly_client
+    if not poly_client:
+        return
+    try:
+        # py-clob-client używa get_collateral_balance() do sprawdzania salda USDC
+        balance_resp = poly_client.get_collateral_balance()
+        usdc_val = 0.0
+        if isinstance(balance_resp, dict):
+            # Próba wyciągnięcia salda z różnych formatów odpowiedzi API
+            usdc_val = float(balance_resp.get("balance", balance_resp.get("amount", 0.0)))
+        else:
+            usdc_val = float(balance_resp)
+            
+        with state_lock:
+            bot_state["virtual_balance"] = usdc_val
+    except Exception as e:
+        # Czasami API zwraca odpowiedź w innym formacie lub rzuca wyjątek, stosujemy bezpieczną rezerwę
+        pass
+
 def init_mainnet_client():
     """Inicjalizacja połączenia z portfelem na starcie"""
     global poly_client
@@ -67,14 +118,9 @@ def init_mainnet_client():
             address = poly_client.get_address()
             add_log(f"✅ MAINNET: Zalogowano pomyślnie! Portfel: {address}")
             
-            try:
-                assets = poly_client.get_balances(address)
-                usdc_balance = next((float(b['balance']) for b in assets if b['asset'] == 'USDC'), 0.0)
-                with state_lock:
-                    bot_state["virtual_balance"] = usdc_balance
-                add_log(f"💰 MAINNET: Pobrano saldo startowe: {usdc_balance:.2f} USDC")
-            except Exception as e:
-                add_log(f"⚠️ MAINNET: Błąd pobierania salda (kontynuuję): {e}")
+            # Pobieramy pierwsze saldo
+            update_real_balance()
+            add_log(f"💰 MAINNET: Pobrano saldo startowe: {bot_state['virtual_balance']:.2f} USDC")
                 
         except Exception as e:
             add_log(f"🚨 KRYTYCZNY BŁĄD MAINNET: {e}")
@@ -93,15 +139,6 @@ def get_btc_price():
         url = "https://api.coinbase.com/v2/prices/BTC-USD/spot"
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200: return float(response.json()['data']['amount'])
-    except: pass
-
-    try:
-        url = "https://api.kraken.com/0/public/Ticker?pair=XBTUSD"
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200:
-            result = response.json().get('result', {})
-            pair_key = list(result.keys())[0] if result else None
-            if pair_key: return float(result[pair_key]['c'][0])
     except: pass
     return None
 
@@ -140,7 +177,6 @@ def update_candle_logic(current_price):
                 if won:
                     payout = 1.0 * trade["amount_shares"]
                     profit = payout - cost
-                    bot_state["virtual_balance"] += payout
                     add_log(f"🎉 Rozliczenie Polymarket: Wygrana. Zysk: +${profit:.2f} USDC")
                     trade["status"] = "WYGRANA"
                 else:
@@ -154,6 +190,9 @@ def update_candle_logic(current_price):
                 
                 bot_state["trade_history"].append(trade)
                 bot_state["active_trade"] = None
+                
+                # Aktualizujemy prawdziwe saldo po rozliczeniu
+                update_real_balance()
 
 def run_trading_strategy():
     add_log("System analizy rynkowej uruchomiony pomyślnie.")
@@ -169,6 +208,12 @@ def run_trading_strategy():
     error_count = 0
     while True:
         try:
+            # 1. Automatycznie szukamy najświeższego aktywnego rynku na ten kwadrans
+            auto_discover_btc_tokens()
+            
+            # 2. Aktualizujemy realne saldo USDC w tle co pętlę
+            update_real_balance()
+            
             current_price = get_btc_price()
             if not current_price:
                 error_count += 1
@@ -204,16 +249,16 @@ def run_trading_strategy():
                     profit = recovered - active["cost"]
                     
                     # Wysłanie realnego zlecenia SELL
-                    if poly_client:
+                    if poly_client and active["token_id"]:
                         try:
                             order_args = OrderArgs(price=round(sim_share_price, 2), size=round(active["amount_shares"], 2), side="sell", token_id=active["token_id"])
                             signed_order = poly_client.create_order(order_args)
                             poly_client.post_order(signed_order)
+                            add_log(f"📡 Wysłano realne zlecenie sprzedaży na giełdę...")
                         except Exception as e:
                             add_log(f"🚨 BŁĄD ZAMYKANIA POZYCJI (MAINNET): {e}")
 
                     with state_lock:
-                        bot_state["virtual_balance"] += recovered
                         active["status"] = action_type
                         active["profit"] = profit
                         active["exit_price"] = current_price
@@ -222,6 +267,7 @@ def run_trading_strategy():
                         bot_state["active_trade"] = None
                     
                     add_log(f"⚡ [{action_type}] Zamknięto {active['direction']}. Wynik: {profit:.2f} USDC.")
+                    update_real_balance()
                     time.sleep(5)
                     continue
 
@@ -230,64 +276,72 @@ def run_trading_strategy():
                 price_diff = current_price - strike
                 
                 if USE_DYNAMIC_RISK:
+                    # Obliczamy stawkę (np. 2% z Twoich 93 USDC = ok. 1.86 USDC na transakcję)
                     investment = (balance * RISK_PERCENT) / 100.0
                     investment = min(balance, max(2.0, investment))
                 else:
                     investment = min(balance, FIXED_TRADE_AMOUNT)
 
-                if current_price > sma + PRICE_MARGIN and price_diff > STRIKE_MARGIN:
-                    share_price = min(0.90, max(0.55, 0.50 + (price_diff / 100)))
-                    shares = investment / share_price
+                # Kupujemy tylko wtedy, gdy mamy środki i znaleźliśmy aktywne Token ID
+                if investment >= 2.0 and active_market_info["token_id_up"] and active_market_info["token_id_down"]:
                     
-                    # Wysłanie realnego zlecenia BUY (UP)
-                    if poly_client:
-                        try:
-                            order_args = OrderArgs(price=round(share_price, 2), size=round(shares, 2), side="buy", token_id=MARKET_TOKEN_ID_UP)
-                            signed_order = poly_client.create_order(order_args)
-                            poly_client.post_order(signed_order)
-                        except Exception as e:
-                            add_log(f"🚨 BŁĄD KUPNA UP (MAINNET): {e}")
+                    # Scenariusz 1: Trend wzrostowy (UP)
+                    if current_price > sma + PRICE_MARGIN and price_diff > STRIKE_MARGIN:
+                        share_price = min(0.90, max(0.55, 0.50 + (price_diff / 100)))
+                        shares = investment / share_price
+                        token_id = active_market_info["token_id_up"]
+                        
+                        # Wysłanie realnego zlecenia BUY (UP)
+                        if poly_client:
+                            try:
+                                order_args = OrderArgs(price=round(share_price, 2), size=round(shares, 2), side="buy", token_id=token_id)
+                                signed_order = poly_client.create_order(order_args)
+                                poly_client.post_order(signed_order)
+                                
+                                with state_lock:
+                                    bot_state["active_trade"] = {
+                                        "direction": "UP",
+                                        "token_id": token_id,
+                                        "entry_price": share_price,
+                                        "strike_price": strike,
+                                        "btc_at_entry": current_price,
+                                        "amount_shares": shares,
+                                        "cost": investment,
+                                        "opened_at": datetime.utcnow().strftime("%H:%M:%S")
+                                    }
+                                add_log(f"🛒 [MAINNET] Kupiono UP za {investment:.2f} USDC. (Cena udziału: ${share_price:.2f})")
+                                update_real_balance()
+                            except Exception as e:
+                                add_log(f"🚨 BŁĄD KUPNA UP (MAINNET): {e}")
 
-                    with state_lock:
-                        bot_state["active_trade"] = {
-                            "direction": "UP",
-                            "token_id": MARKET_TOKEN_ID_UP,
-                            "entry_price": share_price,
-                            "strike_price": strike,
-                            "btc_at_entry": current_price,
-                            "amount_shares": shares,
-                            "cost": investment,
-                            "opened_at": datetime.utcnow().strftime("%H:%M:%S")
-                        }
-                        bot_state["virtual_balance"] -= investment
-                    add_log(f"🛒 [MAINNET] Kupiono UP za {investment:.2f} USDC. (Cena udziału: ${share_price:.2f})")
-
-                elif current_price < sma - PRICE_MARGIN and price_diff < -STRIKE_MARGIN:
-                    share_price = min(0.90, max(0.55, 0.50 + (abs(price_diff) / 100)))
-                    shares = investment / share_price
-                    
-                    # Wysłanie realnego zlecenia BUY (DOWN)
-                    if poly_client:
-                        try:
-                            order_args = OrderArgs(price=round(share_price, 2), size=round(shares, 2), side="buy", token_id=MARKET_TOKEN_ID_DOWN)
-                            signed_order = poly_client.create_order(order_args)
-                            poly_client.post_order(signed_order)
-                        except Exception as e:
-                            add_log(f"🚨 BŁĄD KUPNA DOWN (MAINNET): {e}")
-
-                    with state_lock:
-                        bot_state["active_trade"] = {
-                            "direction": "DOWN",
-                            "token_id": MARKET_TOKEN_ID_DOWN,
-                            "entry_price": share_price,
-                            "strike_price": strike,
-                            "btc_at_entry": current_price,
-                            "amount_shares": shares,
-                            "cost": investment,
-                            "opened_at": datetime.utcnow().strftime("%H:%M:%S")
-                        }
-                        bot_state["virtual_balance"] -= investment
-                    add_log(f"🛒 [MAINNET] Kupiono DOWN za {investment:.2f} USDC. (Cena udziału: ${share_price:.2f})")
+                    # Scenariusz 2: Trend spadkowy (DOWN)
+                    elif current_price < sma - PRICE_MARGIN and price_diff < -STRIKE_MARGIN:
+                        share_price = min(0.90, max(0.55, 0.50 + (abs(price_diff) / 100)))
+                        shares = investment / share_price
+                        token_id = active_market_info["token_id_down"]
+                        
+                        # Wysłanie realnego zlecenia BUY (DOWN)
+                        if poly_client:
+                            try:
+                                order_args = OrderArgs(price=round(share_price, 2), size=round(shares, 2), side="buy", token_id=token_id)
+                                signed_order = poly_client.create_order(order_args)
+                                poly_client.post_order(signed_order)
+                                
+                                with state_lock:
+                                    bot_state["active_trade"] = {
+                                        "direction": "DOWN",
+                                        "token_id": token_id,
+                                        "entry_price": share_price,
+                                        "strike_price": strike,
+                                        "btc_at_entry": current_price,
+                                        "amount_shares": shares,
+                                        "cost": investment,
+                                        "opened_at": datetime.utcnow().strftime("%H:%M:%S")
+                                    }
+                                add_log(f"🛒 [MAINNET] Kupiono DOWN za {investment:.2f} USDC. (Cena udziału: ${share_price:.2f})")
+                                update_real_balance()
+                            except Exception as e:
+                                add_log(f"🚨 BŁĄD KUPNA DOWN (MAINNET): {e}")
 
         except Exception as e:
             add_log(f"🚨 Błąd krytyczny pętli: {e}")
