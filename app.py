@@ -3,7 +3,7 @@ import requests
 import json
 import threading
 import os
-import math  # Potrzebne do zaawansowanych obliczeń prawdopodobieństwa (Sigmoidy)
+import math  
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from web3 import Web3
@@ -61,7 +61,7 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def update_real_balance():
-    """Pobiera stan konta USDC (Natywnego oraz Bridged) na Polygon przy użyciu wielowęzłowego systemu ratunkowego"""
+    """Pobiera stan konta USDC (Natywnego oraz Bridged) na Polygon przy użyciu systemu ratunkowego"""
     if not IS_LIVE:
         return
     
@@ -92,9 +92,9 @@ def update_real_balance():
             with state_lock:
                 bot_state["real_balance"] = total_balance
                 bot_state["virtual_balance"] = total_balance
-            return  # Udało się pobrać dane, przerywamy pętlę i kończymy funkcję sukcesem
+            return  
         except:
-            continue  # Ten węzeł zawiódł, sprawdzamy kolejny z listy RPC_URLS
+            continue  
             
     add_log("⚠️ Węzły sieci Polygon są przeciążone. Spróbuję ponownie pobrać saldo za minutę...")
 
@@ -125,7 +125,6 @@ def get_btc_price():
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
 
-    # Metoda 1: Binance
     try:
         url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
         response = requests.get(url, headers=headers, timeout=5)
@@ -134,7 +133,6 @@ def get_btc_price():
     except:
         pass
 
-    # Metoda 2: Coinbase (Bardzo odporna na blokady chmur / Render)
     try:
         url = "https://api.coinbase.com/v2/prices/BTC-USD/spot"
         response = requests.get(url, headers=headers, timeout=5)
@@ -143,7 +141,6 @@ def get_btc_price():
     except:
         pass
 
-    # Metoda 3: Kraken
     try:
         url = "https://api.kraken.com/0/public/Ticker?pair=XBTUSD"
         response = requests.get(url, headers=headers, timeout=5)
@@ -239,7 +236,6 @@ def run_trading_strategy():
             
             update_candle_logic(current_price)
             
-            # Nowość: Automatyczne odświeżanie salda w tle co około 60 sekund (12 pętli po 5s)
             balance_ticker += 1
             if balance_ticker >= 12:
                 update_real_balance()
@@ -354,7 +350,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             <script src="https://cdn.tailwindcss.com"></script>
             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700&display=swap');
                 body { font-family: 'Plus Jakarta Sans', sans-serif; }
             </style>
         </head>
@@ -386,13 +382,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
                 <!-- STATYSTYKI GŁÓWNE -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <!-- CENA BTC -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
                         <p class="text-sm font-medium text-slate-400">Aktualna cena BTC (Binance/Coinbase)</p>
                         <p id="ui-price" class="text-2xl font-extrabold mt-2 text-white">Wczytywanie...</p>
                         <p id="ui-sma" class="text-xs text-slate-500 mt-2">Średnia SMA: --</p>
                     </div>
-                    <!-- ZEGAREK ŚWIECY -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
                         <p class="text-sm font-medium text-slate-400">Czas do końca świecy 15m</p>
                         <p id="ui-timer" class="text-2xl font-extrabold mt-2 text-amber-400">Wczytywanie...</p>
@@ -400,13 +394,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             <div id="ui-progress" class="bg-amber-400 h-1.5 rounded-full" style="width: 0%"></div>
                         </div>
                     </div>
-                    <!-- CENA STRIKE -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
                         <p class="text-sm font-medium text-slate-400">Cena Strike (Początek 15m)</p>
                         <p id="ui-strike" class="text-2xl font-extrabold mt-2 text-slate-200">Wczytywanie...</p>
                         <p id="ui-diff" class="text-xs mt-2">Różnica: --</p>
                     </div>
-                    <!-- SKUTECZNOŚĆ -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
                         <p class="text-sm font-medium text-slate-400">Skuteczność systemu</p>
                         <p id="ui-stats" class="text-2xl font-extrabold mt-2 text-white">0 / 0 (0%)</p>
@@ -469,23 +461,23 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         const res = await fetch('/api/status');
                         const data = await res.json();
 
-                        document.getElementById('ui-balance').innerText = '$' + data.virtual_balance.toFixed(2) + ' USDC';
+                        document.getElementById('ui-balance').innerText = `$${data.virtual_balance.toFixed(2)} USDC`;
                         
                         if (data.current_price > 0) {
-                            document.getElementById('ui-price').innerText = '$' + data.current_price.toLocaleString('en-US', {minimumFractionDigits: 2});
+                            document.getElementById('ui-price').innerText = `$${data.current_price.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                         } else {
                             document.getElementById('ui-price').innerText = 'Łączenie z API...';
                         }
                         
-                        document.getElementById('ui-sma').innerText = 'Średnia SMA (30 okresów): $' + data.sma.toLocaleString('en-US', {minimumFractionDigits: 2});
+                        document.getElementById('ui-sma').innerText = `Średnia SMA (30 okresów): $${data.sma.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                         
                         const min = data.minutes_left;
                         const sec = data.seconds_remain;
-                        document.getElementById('ui-timer').innerText = min + 'm ' + (sec < 10 ? '0' : '') + sec + 's';
+                        document.getElementById('ui-timer').innerText = `${min}m ${sec < 10 ? '0' : ''}${sec}s`;
                         
                         const totalSeconds = (min * 60) + sec;
                         const percent = ((900 - totalSeconds) / 900) * 100;
-                        document.getElementById('ui-progress').style.width = percent + '%';
+                        document.getElementById('ui-progress').style.width = `${percent}%`;
 
                         const timerEl = document.getElementById('ui-timer');
                         if (min >= 5 && min <= 10) {
@@ -495,15 +487,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         }
 
                         if (data.current_candle_strike > 0) {
-                            document.getElementById('ui-strike').innerText = '$' + data.current_candle_strike.toLocaleString('en-US', {minimumFractionDigits: 2});
+                            document.getElementById('ui-strike').innerText = `$${data.current_candle_strike.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                             const diff = data.current_price - data.current_candle_strike;
                             const diffEl = document.getElementById('ui-diff');
                             if (diff >= 0) {
                                 diffEl.className = "text-xs mt-2 text-emerald-400";
-                                diffEl.innerText = 'Różnica: +$' + diff.toFixed(2);
+                                diffEl.innerText = `Różnica: +$${diff.toFixed(2)}`;
                             } else {
                                 diffEl.className = "text-xs mt-2 text-rose-400";
-                                diffEl.innerText = 'Różnica: -$' + Math.abs(diff).toFixed(2);
+                                diffEl.innerText = `Różnica: -$${Math.abs(diff).toFixed(2)}`;
                             }
                         } else {
                             document.getElementById('ui-strike').innerText = 'Czekam na nową świecę...';
@@ -516,19 +508,19 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-left bg-slate-950 p-4 rounded-xl border border-indigo-500/20">
                                     <div>
                                         <p class="text-xs text-slate-400">KIERUNEK</p>
-                                        <p class="text-lg font-bold ` + (trade.direction === 'UP' ? 'text-emerald-400' : 'text-rose-400') + `">` + trade.direction + `</p>
+                                        <p class="text-lg font-bold ${trade.direction === 'UP' ? 'text-emerald-400' : 'text-rose-400'}">${trade.direction}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-400">KURS WEJŚCIA</p>
-                                        <p class="text-lg font-bold text-slate-200">$` + trade.entry_price.toFixed(2) + `</p>
+                                        <p class="text-lg font-bold text-slate-200">$${trade.entry_price.toFixed(2)}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-400">KURS BTC W CHWILI ZAKUPU</p>
-                                        <p class="text-lg font-bold text-slate-200">$` + trade.btc_at_entry.toLocaleString() + `</p>
+                                        <p class="text-lg font-bold text-slate-200">$${trade.btc_at_entry.toLocaleString()}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-400">ILOŚĆ UDZIAŁÓW / KOSZT</p>
-                                        <p class="text-lg font-bold text-slate-200">` + trade.amount_shares.toFixed(1) + ` szt. / $` + trade.cost.toFixed(2) + ` USDC</p>
+                                        <p class="text-lg font-bold text-slate-200">${trade.amount_shares.toFixed(1)} szt. / $${trade.cost.toFixed(2)} USDC</p>
                                     </div>
                                 </div>
                             `;
@@ -538,31 +530,30 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
                         const logsDiv = document.getElementById('ui-logs');
                         if (data.logs.length > 0) {
-                            logsDiv.innerHTML = data.logs.slice().reverse().map(function(l) {
-                                return '<div>' + l + '</div>';
-                            }).join('');
+                            logsDiv.innerHTML = data.logs.slice().reverse().map(l => `<div>${l}</div>`).join('');
                         } else {
                             logsDiv.innerHTML = '<div class="text-slate-500">Łączenie z botem...</div>';
                         }
 
                         const historyRows = document.getElementById('ui-history-rows');
-                        if (data.trade_history.length > 0) {
+                        if (data.trade_history && data.trade_history.length > 0) {
                             let totalWins = 0;
                             let totalProfit = 0;
                             
-                            const rowsHtml = data.trade_history.slice().reverse().map(function(t) {
+                            const rowsHtml = data.trade_history.slice().reverse().map(t => {
                                 if (t.status === "WYGRANA" || t.status === "TAKE PROFIT") totalWins++;
                                 totalProfit += t.profit;
                                 
                                 const profitColor = t.profit >= 0 ? 'text-emerald-400' : 'text-rose-400';
                                 const dirColor = t.direction === 'UP' ? 'text-emerald-400' : 'text-rose-400';
+                                const sign = t.profit >= 0 ? '+' : '';
                                 
                                 return `
                                     <tr class="border-b border-slate-800/30">
-                                        <td class="py-3 px-3 font-semibold ` + dirColor + `">` + t.direction + `</td>
-                                        <td class="py-3 px-3">$` + t.entry_price.toFixed(2) + `</td>
-                                        <td class="py-3 px-3 text-xs text-slate-400">$` + t.strike_price.toLocaleString() + ` vs $` + t.exit_price.toLocaleString() + `</td>
-                                        <td class="py-3 px-3 font-bold ` + profitColor + `">` + t.status + ` (` + (t.profit >= 0 ? '+' : '') + `$' + t.profit.toFixed(2) + `)</td>
+                                        <td class="py-3 px-3 font-semibold ${dirColor}">${t.direction}</td>
+                                        <td class="py-3 px-3">$${t.entry_price.toFixed(2)}</td>
+                                        <td class="py-3 px-3 text-xs text-slate-400">$${t.strike_price.toLocaleString()} vs $${t.exit_price.toLocaleString()}</td>
+                                        <td class="py-3 px-3 font-bold ${profitColor}">${t.status} (${sign}$${t.profit.toFixed(2)})</td>
                                     </tr>
                                 `;
                             }).join('');
@@ -570,10 +561,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             historyRows.innerHTML = rowsHtml;
                             
                             const winRate = (totalWins / data.trade_history.length) * 100;
-                            document.getElementById('ui-stats').innerText = totalWins + ' / ' + data.trade_history.length + ' (' + winRate.toFixed(0) + '%)';
+                            document.getElementById('ui-stats').innerText = `${totalWins} / ${data.trade_history.length} (${winRate.toFixed(0)}%)`;
                             
                             const profitEl = document.getElementById('ui-profit');
-                            profitEl.innerText = 'Wynik całkowity: ' + (totalProfit >= 0 ? '+' : '') + '$' + totalProfit.toFixed(2) + ' USDC';
+                            const totalSign = totalProfit >= 0 ? '+' : '';
+                            profitEl.innerText = `Wynik całkowity: ${totalSign}$${totalProfit.toFixed(2)} USDC`;
                             profitEl.className = totalProfit >= 0 ? 'text-xs mt-2 text-emerald-400 font-semibold' : 'text-xs mt-2 text-rose-400 font-semibold';
                         } else {
                             document.getElementById('ui-stats').innerText = "0 / 0 (0%)";
