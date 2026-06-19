@@ -94,7 +94,7 @@ def init_clob_client():
         api_passphrase = os.environ.get("POLY_API_PASSPHRASE")
 
         if api_key and api_secret and api_passphrase:
-            # Jawne przekazanie nazwanych argumentów (kwargs) wymagane przez strukturę BaseModel Pydantic
+            # Poprawna inicjalizacja za pomocą argumentów nazwanych (kwargs) dla Pydantica
             explicit_creds = ApiCreds(
                 api_key=api_key, 
                 api_secret=api_secret, 
@@ -473,7 +473,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         const res = await fetch('/api/status');
                         const data = await res.json();
 
-                        document.getElementById('ui-balance').innerText = `$${data.virtual_balance.toFixed(2)} USDC`;
+                        // Dynamiczne dopasowanie salda (realne vs wirtualne)
+                        const currentBalance = data.real_balance > 0 ? data.real_balance : data.virtual_balance;
+                        document.getElementById('ui-balance').innerText = `$${currentBalance.toFixed(2)} USDC`;
+
                         if (data.current_price > 0) {
                             document.getElementById('ui-price').innerText = `$${data.current_price.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                         }
@@ -498,7 +501,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             activeBox.innerHTML = `
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-left bg-slate-950 p-4 rounded-xl border border-indigo-500/20">
                                     <div><p class="text-xs text-slate-400">KIERUNEK</p><p class="text-lg font-bold text-emerald-400">${trade.direction}</p></div>
-                                    <div><p class="text-xs text-slate-400">KURS WEJŚCIA</p><p class="text-lg font-bold text-slate-200">$${trade.entry_price.toFixed(2)}</p></div>
+                                    <div><p class="text-xs text-slate-400">KURS WEJŚCIA</p><p class="text-lg font-bold text-slate-200">$${trade.btc_at_entry.toLocaleString()}</p></div>
                                     <div><p class="text-xs text-slate-400">KURS BTC OBECNY</p><p class="text-lg font-bold text-slate-200">$${data.current_price.toLocaleString()}</p></div>
                                     <div><p class="text-xs text-slate-400">KOSZT TRANSAKCJI</p><p class="text-lg font-bold text-slate-200">$${trade.cost.toFixed(2)} USDC</p></div>
                                 </div>`;
