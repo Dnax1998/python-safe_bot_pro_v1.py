@@ -55,8 +55,7 @@ RPC_URLS.extend([
     "https://polygon-rpc.com",
     "https://rpc.ankr.com/polygon",
     "https://1rpc.io/matic",
-    "https://polygon.llamarpc.com",
-    "https://gateway.tenderly.co/public/polygon"
+    "https://polygon.llamarpc.com"
 ])
 
 def add_log(message):
@@ -79,7 +78,6 @@ def update_real_balance():
         add_log("⚠️ Błąd konfiguracji: Brak zmiennej WALLET_ADDRESS w panelu Render!")
         return
         
-    # Oficjalne i zaktualizowane adresy kontraktów dla Polymarket V2 na sieci Polygon
     usdc_contracts = [
         "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # Oficjalny Polymarket pUSD (V2)
         "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", # Nowe Natywne USDC
@@ -123,82 +121,73 @@ def update_real_balance():
 
 def get_polymarket_15m_market():
     """
-    Dynamicznie i elastycznie odpytuje API Polymarket. 
-    Uwzględnia potencjalne zmiany w nazewnictwie struktur i pytań giełdy.
+    Stabilne pobieranie aktywnych rynków za pomocą Gamma API z filtrowaniem 
+    pod kątem struktury rynków 15-minutowych Bitcoina.
     """
     try:
-        url = "https://clob.polymarket.com/markets"
-        response = requests.get(url, timeout=5)
+        # Odpytujemy stabilniejsze Gamma API szukając frazy "Bitcoin" i aktywnych rynków
+        url = "https://gamma-api.polymarket.com/markets?closed=false&order=volume&direction=desc&limit=100&slug=bitcoin"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=5)
+        
         if response.status_code == 200:
-            data_json = response.json()
+            markets_list = response.json()
             
-            markets_list = []
-            if isinstance(data_json, list):
-                markets_list = data_json
-            elif isinstance(data_json, dict):
-                markets_list = data_json.get("data", [])
-                if not markets_list and "markets" in data_json:
-                    markets_list = data_json.get("markets", [])
-            
-            # KROK 1: Szukamy idealnego dopasowania (Bitcoin oraz fraza 15m)
+            if not isinstance(markets_list, list):
+                return None
+
+            # KROK 1: Precyzyjne szukanie rynku 15-minutowego
             for market in markets_list:
                 if not isinstance(market, dict):
                     continue
                 q = market.get("question", "")
-                if "Bitcoin" in q and ("15m" in q or "15-min" in q or "15 min" in q):
-                    tokens = market.get("tokens", [])
-                    if len(tokens) >= 2:
+                title = market.get("title", "")
+                
+                # Szukamy powiązania z interwałem 15-minutowym w pytaniu lub tytule świecy
+                if "Bitcoin" in q and any(x in q.lower() or x in title.lower() for x in ["15m", "15-min", "15 min", "quarter"]):
+                    clob_token_ids = market.get("clobTokenIds")
+                    # Gamma API zapisuje tokeny jako string w formacie JSON lub listę bezpośrednią
+                    if clob_token_ids and isinstance(clob_token_ids, str):
+                        try:
+                            clob_token_ids = json.loads(clob_token_ids)
+                        except:
+                            continue
+                            
+                    if clob_token_ids and len(clob_token_ids) >= 2:
                         return {
-                            "UP_TOKEN": tokens[0].get("token_id"),    
-                            "DOWN_TOKEN": tokens[1].get("token_id"),  
-                            "market_id": market.get("condition_id"),
-                            "found_by": "IDEAL_15M"
+                            "UP_TOKEN": clob_token_ids[0],    
+                            "DOWN_TOKEN": clob_token_ids[1],  
+                            "market_id": market.get("conditionId"),
+                            "found_by": "GAMMA_15M"
                         }
             
-            # KROK 2: Jeśli API zmieniło strukturę pytań dla 15m, szukamy czegokolwiek z "Bitcoin"
-            # i sprawdzamy czy w tytule lub slugach nie ukryto informacji o interwale.
-            for market in markets_list:
-                if not isinstance(market, dict):
-                    continue
-                q = market.get("question", "")
-                slug = market.get("slug", "")
-                if "Bitcoin" in q or "BTC" in q:
-                    # Elastyczne sprawdzenie słów kluczowych powiązanych z szybkimi zakładami
-                    if any(x in q.lower() or x in slug.lower() for x in ["15m", "15min", "quarter", "minut"]):
-                        tokens = market.get("tokens", [])
-                        if len(tokens) >= 2:
-                            return {
-                                "UP_TOKEN": tokens[0].get("token_id"),    
-                                "DOWN_TOKEN": tokens[1].get("token_id"),  
-                                "market_id": market.get("condition_id"),
-                                "found_by": "FLEXIBLE_15M"
-                            }
-
-            # KROK 3: Ostateczny fallback (Zabezpieczenie przed brakiem rynku). 
-            # Jeśli rynek 15m nie istnieje w danej sekundzie na API, bierzemy ogólny aktywny wykres BTC.
+            # KROK 2: Jeśli rynki 15m akurat wygasły/są odświeżane, bierzemy najbliższy godzinowy/szybki wykres BTC jako zabezpieczenie działania bota
             for market in markets_list:
                 if not isinstance(market, dict):
                     continue
                 q = market.get("question", "")
                 if "Bitcoin" in q:
-                    tokens = market.get("tokens", [])
-                    if len(tokens) >= 2:
+                    clob_token_ids = market.get("clobTokenIds")
+                    if clob_token_ids and isinstance(clob_token_ids, str):
+                        try:
+                            clob_token_ids = json.loads(clob_token_ids)
+                        except:
+                            continue
+                    if clob_token_ids and len(clob_token_ids) >= 2:
                         return {
-                            "UP_TOKEN": tokens[0].get("token_id"),    
-                            "DOWN_TOKEN": tokens[1].get("token_id"),  
-                            "market_id": market.get("condition_id"),
-                            "found_by": "FALLBACK_GENERAL"
+                            "UP_TOKEN": clob_token_ids[0],    
+                            "DOWN_TOKEN": clob_token_ids[1],  
+                            "market_id": market.get("conditionId"),
+                            "found_by": "GAMMA_FALLBACK"
                         }
                         
     except Exception as e:
-        add_log(f"⚠️ Nie udało się powiązać ID rynku Polymarket: {e}")
+        add_log(f"⚠️ Błąd podczas odpytywania Gamma API: {e}")
     return None
 
 def get_btc_price():
-    """Bezpieczne pobieranie ceny BTC z obsługą fallbacków (Binance -> Coinbase -> Kraken)"""
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
+    """Bezpieczne pobieranie ceny BTC z obsługą fallbacków (Binance -> Coinbase)"""
+    headers = {'User-Agent': 'Mozilla/5.0'}
     try:
         url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
         response = requests.get(url, headers=headers, timeout=5)
@@ -301,9 +290,7 @@ def run_trading_strategy():
                 strike = bot_state["current_candle_strike"]
                 balance = bot_state["real_balance"] if IS_LIVE else bot_state["virtual_balance"]
 
-            # =====================================================================
-            # 🚨 MODUŁ WYMUSZENIA TESTOWEGO (DO WERYFIKACJI CZY DZIAŁA)
-            # =====================================================================
+            # Sprawdzanie i symulowanie transakcji testowych
             if not active:  
                 investment = (balance * RISK_PERCENT) / 100.0 if USE_DYNAMIC_RISK else FIXED_TRADE_AMOUNT
                 investment = min(balance, max(2.0, investment))
@@ -312,8 +299,8 @@ def run_trading_strategy():
                 
                 if markets_data and investment >= 2.0:
                     method = markets_data.get("found_by", "UNKNOWN")
-                    add_log(f"🚨 [TEST INTELLIGENT] Wykryto wykres BTC metodą: {method}! Kupuję!")
-                    share_price = 0.52  
+                    add_log(f"📡 [SUKCES] Wykryto rynek BTC metodą: {method}! Dokonuję zakupu.")
+                    share_price = 0.50  
                     
                     success = execute_polymarket_order(markets_data["UP_TOKEN"], investment, side="BUY")
                     if success:
@@ -330,15 +317,14 @@ def run_trading_strategy():
                             if not IS_LIVE: 
                                 bot_state["virtual_balance"] -= investment
                 elif not markets_data:
-                    add_log("⏳ [TEST] Brak odpowiedzi z API Polymarket. Ponawianie próby przeszukiwania...")
-            # =====================================================================
-
+                    add_log("⏳ API Polymarket nie zwróciło w tej chwili aktywnego rynku 15m BTC. Ponawianie...")
+            
         except Exception as e:
             add_log(f"🚨 Awaria pętli decyzyjnej: {e}")
             
         time.sleep(5)
 
-# --- PANEL KONTROLNY (WIELOWĄTKOWY WEB SERWER) ---
+# --- PANEL KONTROLNY (WEB SERWER) ---
 class DashboardHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args): return 
 
