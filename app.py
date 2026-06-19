@@ -49,7 +49,7 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def update_real_balance():
-    """Pobiera realne saldo portfela prosto z blockchaina (sieci Polygon). Odporne na błędy formatowania."""
+    """Pobiera realne saldo portfela, rotując po stabilnych serwerach RPC Polygon"""
     raw_address = os.environ.get("POLY_ADDRESS", "").strip()
     
     if not raw_address:
@@ -58,49 +58,59 @@ def update_real_balance():
                 bot_state["virtual_balance"] = 500.0
         return
 
-    try:
-        # Pancerne czyszczenie i walidacja formatu adresu hex
-        clean_address = raw_address.replace(" ", "").lower()
-        if clean_address.startswith("0x"):
-            clean_address = clean_address[2:]
+    # Pancerne czyszczenie adresu portfela
+    clean_address = raw_address.replace(" ", "").lower()
+    if clean_address.startswith("0x"):
+        clean_address = clean_address[2:]
+        
+    if len(clean_address) != 40:
+        return
+
+    data_payload = "0x70a08231" + clean_address.zfill(64)
+    
+    # Lista zapasowych, stabilnych węzłów RPC (Polygon)
+    rpc_endpoints = [
+        "https://polygon-rpc.com",
+        "https://rpc.ankr.com/polygon",
+        "https://polygon.llamarpc.com",
+        "https://1rpc.io/matic"
+    ]
+    
+    usdc_contracts = [
+        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", # Natywny USDC
+        "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"  # Zmostkowany USDC.e
+    ]
+
+    # Próbujemy po kolei serwery RPC z listy, dopóki któryś nie odpowie prawidłowo
+    for rpc_url in rpc_endpoints:
+        try:
+            total_balance = 0.0
+            success_count = 0
             
-        # Zabezpieczenie przed niepełnym/błędnym adresem hex
-        if len(clean_address) != 40:
-            # Jeśli adres ma złą długość, nie wykonujemy zapytania rpc, by uniknąć ValueError
-            return
-
-        # Konstrukcja poprawnego payloadu 64-znakowego (Padding)
-        data_payload = "0x70a08231" + clean_address.zfill(64)
-        rpc_url = "https://polygon-rpc.com"
-        
-        # Kontrakty USDC (Natywny oraz Zmostkowany USDC.e) na Polygonie
-        usdc_contracts = [
-            "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", 
-            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"  
-        ]
-
-        total_balance = 0.0
-        
-        for token in usdc_contracts:
-            payload = {
-                "jsonrpc": "2.0",
-                "method": "eth_call",
-                "params": [{"to": token, "data": data_payload}, "latest"],
-                "id": 1
-            }
-            res = requests.post(rpc_url, json=payload, timeout=5)
-            if res.status_code == 200:
-                result_hex = res.json().get("result", "0x0")
-                if result_hex and result_hex != "0x":
-                    balance_int = int(result_hex, 16)
-                    total_balance += (balance_int / 1000000.0)
-
-        with state_lock:
-            bot_state["virtual_balance"] = total_balance
-
-    except Exception as e:
-        # Loguje błąd tylko do konsoli, żeby nie śmiecić głównego widoku UI
-        print(f"⚠️ RPC Balance Fetch Error: {e}")
+            for token in usdc_contracts:
+                payload = {
+                    "jsonrpc": "2.0",
+                    "method": "eth_call",
+                    "params": [{"to": token, "data": data_payload}, "latest"],
+                    "id": 1
+                }
+                res = requests.post(rpc_url, json=payload, timeout=4)
+                if res.status_code == 200:
+                    result_hex = res.json().get("result", "0x")
+                    if result_hex and result_hex != "0x":
+                        balance_int = int(result_hex, 16)
+                        total_balance += (balance_int / 1000000.0)
+                        success_count += 1
+            
+            # Jeśli pomyślnie sprawdziliśmy chociaż jeden kontrakt, zapisujemy i kończymy pętlę rpc
+            if success_count > 0:
+                with state_lock:
+                    bot_state["virtual_balance"] = total_balance
+                return
+                
+        except Exception:
+            # Jeśli ten konkretny serwer rpc zgłosi błąd, pętla idzie do następnego
+            continue
 
 def get_btc_price():
     """Bezpieczne pobieranie ceny BTC z obsługą fallbacków (Binance -> Coinbase)"""
@@ -402,7 +412,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         <i class="fa-solid fa-chart-line text-indigo-400"></i> Aktywna Pozycja (Polymarket)
                     </h2>
                     <div id="ui-active-box" class="text-slate-400 py-4 text-center">
-                        Brak otwartej pozycji. Skonfiguruj POLY_ADDRESS w Renderze.
+                        Brak otwartej pozycji. Bot skanuje wykres.
                     </div>
                 </div>
 
