@@ -15,7 +15,7 @@ RISK_PERCENT = 2.0           # Jaki % salda ryzykować na jedną pozycję (zalec
 FIXED_TRADE_AMOUNT = 20.0    # Stała kwota transakcji w USDC (gdy USE_DYNAMIC_RISK = False)
 
 ENABLE_EARLY_EXIT = True     # True = włącza Stop-Loss i Take-Profit w trakcie świecy
-STOP_LOSS_PRICE = 0.35       # Sprzedaj udziały, jeśli ich wartość spadnie poniżej 35 centów (tniemy straty!)
+STOP_LOSS_PRICE = 0.35       # Sprzedaj udziały, jeśli ich wartość spadnie poniżej 35 centów
 TAKE_PROFIT_PRICE = 0.90     # Sprzedaj udziały i weź pewny zysk, jeśli ich wartość wzrośnie do 90 centów
 
 PRICE_MARGIN = 15.0          # Wymagany dystans BTC od SMA (w USD)
@@ -49,32 +49,38 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def update_real_balance():
-    """Pobiera realne saldo portfela prosto z blockchaina (sieci Polygon). Omija błędy 404 API Polymarketu."""
-    target_address = os.environ.get("POLY_ADDRESS", "").strip()
+    """Pobiera realne saldo portfela prosto z blockchaina (sieci Polygon). Odporne na błędy formatowania."""
+    raw_address = os.environ.get("POLY_ADDRESS", "").strip()
     
-    if not target_address:
-        # Awaryjne przypisanie środków startowych, gdyby zapomniano wkleić adresu w Renderze
+    if not raw_address:
         with state_lock:
             if bot_state["virtual_balance"] == 0.0 and len(bot_state["trade_history"]) == 0:
                 bot_state["virtual_balance"] = 500.0
         return
 
     try:
-        # Czyszczenie adresu z prefiksu '0x' i formatowanie do długości 64 znaków (standard zapytania w web3)
-        clean_address = target_address[2:] if target_address.startswith("0x") else target_address
+        # Pancerne czyszczenie i walidacja formatu adresu hex
+        clean_address = raw_address.replace(" ", "").lower()
+        if clean_address.startswith("0x"):
+            clean_address = clean_address[2:]
+            
+        # Zabezpieczenie przed niepełnym/błędnym adresem hex
+        if len(clean_address) != 40:
+            # Jeśli adres ma złą długość, nie wykonujemy zapytania rpc, by uniknąć ValueError
+            return
+
+        # Konstrukcja poprawnego payloadu 64-znakowego (Padding)
         data_payload = "0x70a08231" + clean_address.zfill(64)
-        
         rpc_url = "https://polygon-rpc.com"
         
-        # Polymarket przechowuje środki w kontraktach USDC (Natywnym i Zmostkowanym USDC.e) na sieci Polygon.
+        # Kontrakty USDC (Natywny oraz Zmostkowany USDC.e) na Polygonie
         usdc_contracts = [
-            "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", # Nowy natywny USDC Polymarket
-            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"  # Stary zmostkowany USDC.e
+            "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", 
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"  
         ]
 
         total_balance = 0.0
         
-        # Pytamy blockchain o stan obydwu kontraktów dla wgranego portfela
         for token in usdc_contracts:
             payload = {
                 "jsonrpc": "2.0",
@@ -85,8 +91,7 @@ def update_real_balance():
             res = requests.post(rpc_url, json=payload, timeout=5)
             if res.status_code == 200:
                 result_hex = res.json().get("result", "0x0")
-                if result_hex != "0x":
-                    # USDC ma 6 miejsc po przecinku w smart kontraktach, stąd dzielenie przez milion.
+                if result_hex and result_hex != "0x":
                     balance_int = int(result_hex, 16)
                     total_balance += (balance_int / 1000000.0)
 
@@ -94,13 +99,12 @@ def update_real_balance():
             bot_state["virtual_balance"] = total_balance
 
     except Exception as e:
-        add_log(f"⚠️ Błąd połączenia RPC w trakcie sprawdzania blockchaina: {e}")
+        # Loguje błąd tylko do konsoli, żeby nie śmiecić głównego widoku UI
+        print(f"⚠️ RPC Balance Fetch Error: {e}")
 
 def get_btc_price():
-    """Bezpieczne pobieranie ceny BTC z obsługą fallbacków (Binance -> Coinbase -> Kraken)"""
+    """Bezpieczne pobieranie ceny BTC z obsługą fallbacków (Binance -> Coinbase)"""
     headers = {'User-Agent': 'Mozilla/5.0'}
-    
-    # Metoda 1: Binance
     try:
         url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
         response = requests.get(url, headers=headers, timeout=5)
@@ -109,7 +113,6 @@ def get_btc_price():
     except Exception:
         pass
 
-    # Metoda 2: Coinbase
     try:
         url = "https://api.coinbase.com/v2/prices/BTC-USD/spot"
         response = requests.get(url, headers=headers, timeout=5)
@@ -121,7 +124,7 @@ def get_btc_price():
     return None
 
 def update_candle_logic(current_price):
-    """Zarządza logiką 15-minutowych rynków oraz rozliczaniem pozycji na koniec świecy"""
+    """Zarządza logiką rynków 15-minutowych i rozliczeniami"""
     global price_history
     now = datetime.utcnow()
     
@@ -144,7 +147,6 @@ def update_candle_logic(current_price):
                 bot_state["current_candle_strike"] = current_price
                 add_log(f"🆕 Rozpoczęcie nowej świecy 15m. Strike: ${current_price:,.2f}")
 
-        # ROZSTRZYGNIĘCIE TRANSAKCJI NA KOŃCU ŚWIECY
         if minutes_passed == 14 and seconds_passed >= 55:
             if bot_state["active_trade"]:
                 trade = bot_state["active_trade"]
@@ -164,11 +166,11 @@ def update_candle_logic(current_price):
                     profit = payout - cost
                     bot_state["virtual_balance"] += payout
                     status = "WYGRANA"
-                    add_log(f"🎉 Sukces! Transakcja {direction} przetrwana do końca. Zysk: +${profit:.2f} USDC")
+                    add_log(f"🎉 Sukces! Transakcja {direction} utrzymana. Zysk: +${profit:.2f} USDC")
                 else:
                     profit = -cost
                     status = "PRZEGRANA"
-                    add_log(f"📉 Porażka. Transakcja {direction} na koniec świecy była stratna. Strata: -${cost:.2f} USDC")
+                    add_log(f"📉 Porażka. Transakcja {direction} zamknięta na stracie: -${cost:.2f} USDC")
                 
                 trade["exit_price"] = final_price
                 trade["status"] = status
@@ -177,21 +179,18 @@ def update_candle_logic(current_price):
                 
                 bot_state["trade_history"].append(trade)
                 bot_state["active_trade"] = None
-                
-                # Zmuszamy skrypt do weryfikacji blockchaina od razu po zamknięciu zysku/straty
                 update_real_balance()
 
 def run_trading_strategy():
     """Główna pętla handlowa bota oparta o timing i trend Krajekisa"""
     add_log("System analizy rynkowej uruchomiony pomyślnie.")
     
-    # Inicjalne pobranie salda i weryfikacja podłączenia portfela
     poly_address = os.environ.get("POLY_ADDRESS", "").strip()
     if poly_address:
-        add_log(f"💰 Wykryto adres portfela: {poly_address[:6]}...{poly_address[-4:]}. Odpytuję blockchain (Polygon RPC)...")
+        add_log(f"💰 Wykryto portfel: {poly_address[:6]}...{poly_address[-4:]}. Łączenie z Polygon RPC...")
         update_real_balance()
     else:
-        add_log("⚠️ Brak zmiennej POLY_ADDRESS! Uruchomiono tryb demonstracyjny z saldem wirtualnym.")
+        add_log("⚠️ Brak zmiennej POLY_ADDRESS! Uruchomiono tryb demonstracyjny.")
         update_real_balance()
     
     init_price = get_btc_price()
@@ -203,9 +202,7 @@ def run_trading_strategy():
 
     while True:
         try:
-            # W trybie rzeczywistym odpytuj sieć o saldo co cykl
             update_real_balance()
-            
             current_price = get_btc_price()
             if not current_price:
                 time.sleep(5)
@@ -220,7 +217,7 @@ def run_trading_strategy():
                 strike = bot_state["current_candle_strike"]
                 balance = bot_state["virtual_balance"]
 
-            # ZARZĄDZANIE W CZASIE RZECZYWISTYM: STOP-LOSS / TAKE-PROFIT
+            # POZYCJE EARLY EXIT
             if active and ENABLE_EARLY_EXIT:
                 price_diff = current_price - active["strike_price"]
                 volatility_denominator = 5.0 + (m_left * 2.0)
@@ -234,7 +231,6 @@ def run_trading_strategy():
                 except OverflowError:
                     sim_share_price = 0.98 if price_diff > 0 else 0.02
 
-                # Stop-Loss
                 if sim_share_price <= STOP_LOSS_PRICE:
                     recovered_amount = active["amount_shares"] * sim_share_price
                     loss = recovered_amount - active["cost"]
@@ -246,12 +242,11 @@ def run_trading_strategy():
                         active["closed_at"] = datetime.utcnow().strftime("%H:%M:%S")
                         bot_state["trade_history"].append(active)
                         bot_state["active_trade"] = None
-                    add_log(f"🛡️ [STOP LOSS] Ucieczka z pozycji {active['direction']}. Wynik: {loss:.2f} USDC")
+                    add_log(f"🛡️ [STOP LOSS] Awaryjne wyjście z {active['direction']}. Wynik: {loss:.2f} USDC")
                     update_real_balance()
                     time.sleep(5)
                     continue
 
-                # Take-Profit
                 elif sim_share_price >= TAKE_PROFIT_PRICE:
                     secured_amount = active["amount_shares"] * sim_share_price
                     profit = secured_amount - active["cost"]
@@ -263,12 +258,12 @@ def run_trading_strategy():
                         active["closed_at"] = datetime.utcnow().strftime("%H:%M:%S")
                         bot_state["trade_history"].append(active)
                         bot_state["active_trade"] = None
-                    add_log(f"💰 [TAKE PROFIT] Zamknięcie przed czasem z zyskiem: +{profit:.2f} USDC!")
+                    add_log(f"💰 [TAKE PROFIT] Zrealizowano zysk przed czasem: +{profit:.2f} USDC!")
                     update_real_balance()
                     time.sleep(5)
                     continue
 
-            # OTWIERANIE NOWYCH KONTRAKTÓW W OKNIE ZAKUPU (ZASADA KRAJEKISA)
+            # OTWIERANIE NOWYCH POZYCJI (ZASADA KRAJEKISA)
             if 5 <= m_left <= 10 and not active and sma > 0 and strike > 0:
                 price_diff = current_price - strike
                 
@@ -278,12 +273,10 @@ def run_trading_strategy():
                 else:
                     investment = min(balance, FIXED_TRADE_AMOUNT)
 
-                # Mamy za mało USDC, żeby cokolwiek otworzyć
                 if investment < 1.0:
                     time.sleep(5)
                     continue
 
-                # Rynek leci w górę (Trend byczy)
                 if current_price > sma + PRICE_MARGIN and price_diff > STRIKE_MARGIN:
                     share_price = min(0.90, max(0.55, 0.50 + (price_diff / 100)))
                     shares = investment / share_price
@@ -300,7 +293,6 @@ def run_trading_strategy():
                         bot_state["virtual_balance"] -= investment
                     add_log(f"🛒 [OTWARCIE] Kupiono udziały UP za {investment:.2f} USDC.")
 
-                # Rynek leci w dół (Trend niedźwiedzi)
                 elif current_price < sma - PRICE_MARGIN and price_diff < -STRIKE_MARGIN:
                     share_price = min(0.90, max(0.55, 0.50 + (abs(price_diff) / 100)))
                     shares = investment / share_price
@@ -318,14 +310,13 @@ def run_trading_strategy():
                     add_log(f"🛒 [OTWARCIE] Kupiono udziały DOWN za {investment:.2f} USDC.")
 
         except Exception as e:
-            add_log(f"🚨 Błąd logiczny w głównej pętli strategii: {e}")
+            print(f"🚨 Strategy Loop Error: {e}")
             
         time.sleep(5)
 
-# --- WEB SERWER (UI PANEL KONTROLNY) ---
+# --- WEB SERWER PANELU ---
 class DashboardHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
-        # Wyciszamy irytujące komunikaty HTTP z logów konsoli
         return
 
     def do_GET(self):
@@ -400,7 +391,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         <p id="ui-diff" class="text-xs mt-2">Różnica: --</p>
                     </div>
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
-                        <p class="text-sm font-medium text-slate-400">Skuteczność systemu</p>
+                        <p class="text-sm font-medium text-slate-400">Skuteczność bota</p>
                         <p id="ui-stats" class="text-2xl font-extrabold mt-2 text-white">0 / 0 (0%)</p>
                         <p id="ui-profit" class="text-xs mt-2 text-emerald-400">Wynik: $0.00 USDC</p>
                     </div>
@@ -411,7 +402,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         <i class="fa-solid fa-chart-line text-indigo-400"></i> Aktywna Pozycja (Polymarket)
                     </h2>
                     <div id="ui-active-box" class="text-slate-400 py-4 text-center">
-                        Brak otwartej pozycji. Bot skanuje rynek (okno 5-10m).
+                        Brak otwartej pozycji. Skonfiguruj POLY_ADDRESS w Renderze.
                     </div>
                 </div>
 
@@ -421,7 +412,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             <i class="fa-solid fa-terminal text-emerald-400"></i> Konsola Bota na żywo
                         </h2>
                         <div id="ui-logs" class="bg-slate-950 p-4 rounded-xl font-mono text-xs text-emerald-400/90 overflow-y-auto flex-1 space-y-1.5 border border-slate-800/40">
-                            Poczekaj, serwer pobiera pierwsze zdarzenia...
+                            Poczekaj na odświeżenie danych...
                         </div>
                     </div>
 
@@ -512,7 +503,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                 </div>
                             `;
                         } else {
-                            activeBox.innerHTML = `<p class="text-slate-500 py-2">Brak otwartej pozycji. Bot skanuje rynek pod kątem trendów.</p>`;
+                            activeBox.innerHTML = `<p class="text-slate-500 py-2">Brak otwartej pozycji. Bot skanuje wykres.</p>`;
                         }
 
                         const logsDiv = document.getElementById('ui-logs');
@@ -558,7 +549,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     }
                 }
 
-                setInterval(updateDashboard, 2000);
+                setInterval(updateDashboard, 2500);
                 updateDashboard();
             </script>
         </body>
