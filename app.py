@@ -94,12 +94,12 @@ def init_clob_client():
         api_passphrase = os.environ.get("POLY_API_PASSPHRASE")
 
         if api_key and api_secret and api_passphrase:
-            # Poprawiono argument klucza prywatnego na 'private_key' zgodnie ze specyfikacją SDK
+            # Parametry ApiCreds podane pozycyjnie w celu uniknięcia konfliktów nazw argumentów w SDK
             poly_client = ClobClient(
                 host="https://clob.polymarket.com",
-                private_key=private_key,
                 chain_id=POLYGON,
-                api_creds=ApiCreds(key=api_key, secret=api_secret, passphrase=api_passphrase)
+                private_key=private_key,
+                api_creds=ApiCreds(api_key, api_secret, api_passphrase)
             )
             add_log("✅ Autoryzacja CLOB powiodła się. Moduł handlowy aktywny.")
         else:
