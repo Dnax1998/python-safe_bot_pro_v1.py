@@ -45,6 +45,7 @@ state_lock = threading.RLock()
 
 # Rozszerzona, ultra-stabilna lista węzłów RPC dla sieci Polygon
 RPC_URLS = [
+    "https://polygon-mainnet.g.alchemy.com/v2/GgV6bskYPafh8Shs5W2LY
     "https://polygon-rpc.com",
     "https://rpc.ankr.com/polygon",
     "https://1rpc.io/matic",
