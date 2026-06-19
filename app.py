@@ -82,41 +82,51 @@ def auto_discover_btc_tokens():
         pass
 
 def update_real_balance():
-    """Wymusza odczyt salda poprzez autoryzowane API Polymarket"""
+    """Wymusza odczyt salda przez zautoryzowane API Gamma Polymarketu."""
     global poly_client
+    target_address = os.environ.get("POLY_ADDRESS", "").strip()
     
-    # 1. Próbujemy przez ClobClient (najpewniejsza metoda przy Twoim kluczu)
-    if poly_client:
+    # Jeśli mamy klienta, możemy spróbować pobrać adres z niego
+    if not target_address and poly_client:
         try:
-            # Ta metoda wykorzystuje Twoje autoryzowane połączenie
-            bal = poly_client.get_collateral_balance()
-            if bal:
-                # ClobClient zwraca saldo jako string lub dict
-                val = float(bal) if isinstance(bal, (int, float, str)) else float(bal.get("balance", 0))
-                with state_lock:
-                    bot_state["virtual_balance"] = val
-                return
-        except Exception as e:
-            add_log(f"Debug Salda (ClobClient): {e}")
-
-    # 2. Fallback: Jeśli client nie działa, próbujemy przez bezpośredni endpoint
-    target_address = os.environ.get("POLY_ADDRESS")
-    if target_address:
-        try:
-            url = f"https://gamma-api.polymarket.com/balance/{target_address}"
-            headers = {
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "application/json"
-            }
-            res = requests.get(url, headers=headers, timeout=10)
-            if res.status_code == 200:
-                data = res.json()
-                total = sum(float(item.get("balance", 0)) for item in data if item.get("token") in ["pUSD", "USDC"])
-                with state_lock:
-                    bot_state["virtual_balance"] = total
-        except Exception:
+            target_address = poly_client.get_address()
+        except:
             pass
+
+    if not target_address:
+        return
+
+    try:
+        # Polymarket blokuje proste zapytania, musimy udawać przeglądarkę
+        url = f"https://gamma-api.polymarket.com/balance/{target_address}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json",
+            "Referer": "https://polymarket.com/"
+        }
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            total_balance = 0.0
             
+            # W API Gamma saldo to lista obiektów: {"token": "pUSD", "balance": "93.00"}
+            for asset in data:
+                token_name = asset.get("token", "")
+                balance = float(asset.get("balance", 0))
+                # Sumujemy USDC oraz pUSD (często używane zamiennie jako depozyt)
+                if token_name in ["pUSD", "USDC", "USDC.e"]:
+                    total_balance += balance
+            
+            with state_lock:
+                bot_state["virtual_balance"] = total_balance
+        else:
+            add_log(f"API Saldo zwróciło błąd: {response.status_code}")
+            
+    except Exception as e:
+        add_log(f"Błąd krytyczny odczytu salda: {e}")
+        
 def init_mainnet_client():
     """Poprawna inicjalizacja klienta Pythona dla portfeli Proxy/Gmail (Gnosis Safe)"""
     global poly_client
