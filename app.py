@@ -49,68 +49,48 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def update_real_balance():
-    """Pobiera realne saldo portfela, rotując po stabilnych serwerach RPC Polygon"""
-    raw_address = os.environ.get("POLY_ADDRESS", "").strip()
+    """Niezawodne pobieranie salda (pUSD/USDC) z uwzględnieniem zabezpieczeń Polymarketu"""
+    global poly_client
+    target_address = os.environ.get("POLY_ADDRESS", "").strip()
     
-    if not raw_address:
-        with state_lock:
-            if bot_state["virtual_balance"] == 0.0 and len(bot_state["trade_history"]) == 0:
-                bot_state["virtual_balance"] = 500.0
+    if not target_address and poly_client:
+        target_address = poly_client.get_address()
+
+    if not target_address:
         return
 
-    # Pancerne czyszczenie adresu portfela
-    clean_address = raw_address.replace(" ", "").lower()
-    if clean_address.startswith("0x"):
-        clean_address = clean_address[2:]
+    try:
+        # Pancerne pobieranie salda przez sesję (omijające blokady 403/404)
+        session = requests.Session()
+        session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0.0.0",
+            "Accept": "application/json"
+        })
+        url = f"https://gamma-api.polymarket.com/balance/{target_address}"
+        res = session.get(url, timeout=10)
         
-    if len(clean_address) != 40:
-        return
+        if res.status_code == 200:
+            data = res.json()
+            total = 0.0
+            for item in data:
+                if item.get("token") in ["pUSD", "USDC"]:
+                    total += float(item.get("balance", 0))
+            
+            with state_lock:
+                bot_state["virtual_balance"] = total
+            return  # Zakończ z sukcesem
+    except Exception:
+        pass
 
-    data_payload = "0x70a08231" + clean_address.zfill(64)
-    
-    # Lista zapasowych, stabilnych węzłów RPC (Polygon)
-    rpc_endpoints = [
-        "https://polygon-rpc.com",
-        "https://rpc.ankr.com/polygon",
-        "https://polygon.llamarpc.com",
-        "https://1rpc.io/matic"
-    ]
-    
-    usdc_contracts = [
-        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", # Natywny USDC
-        "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"  # Zmostkowany USDC.e
-    ]
-
-    # Próbujemy po kolei serwery RPC z listy, dopóki któryś nie odpowie prawidłowo
-    for rpc_url in rpc_endpoints:
+    # Jeśli API zawiedzie, próbujemy zaciągnąć z klienta ClobClient (Fallback)
+    if poly_client:
         try:
-            total_balance = 0.0
-            success_count = 0
-            
-            for token in usdc_contracts:
-                payload = {
-                    "jsonrpc": "2.0",
-                    "method": "eth_call",
-                    "params": [{"to": token, "data": data_payload}, "latest"],
-                    "id": 1
-                }
-                res = requests.post(rpc_url, json=payload, timeout=4)
-                if res.status_code == 200:
-                    result_hex = res.json().get("result", "0x")
-                    if result_hex and result_hex != "0x":
-                        balance_int = int(result_hex, 16)
-                        total_balance += (balance_int / 1000000.0)
-                        success_count += 1
-            
-            # Jeśli pomyślnie sprawdziliśmy chociaż jeden kontrakt, zapisujemy i kończymy pętlę rpc
-            if success_count > 0:
-                with state_lock:
-                    bot_state["virtual_balance"] = total_balance
-                return
-                
+            bal = poly_client.get_collateral_balance(target_address)
+            val = float(bal) if not isinstance(bal, dict) else float(bal.get("balance", 0))
+            with state_lock:
+                bot_state["virtual_balance"] = val
         except Exception:
-            # Jeśli ten konkretny serwer rpc zgłosi błąd, pętla idzie do następnego
-            continue
+            pass
 
 def get_btc_price():
     """Bezpieczne pobieranie ceny BTC z obsługą fallbacków (Binance -> Coinbase)"""
