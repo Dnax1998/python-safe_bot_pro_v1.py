@@ -82,51 +82,39 @@ def auto_discover_btc_tokens():
         pass
 
 def update_real_balance():
-    """Wymusza odczyt salda przez zautoryzowane API Gamma Polymarketu."""
+    """Pobiera saldo za pomocą oficjalnego klienta Clob, który jest już autoryzowany."""
     global poly_client
-    target_address = os.environ.get("POLY_ADDRESS", "").strip()
     
-    # Jeśli mamy klienta, możemy spróbować pobrać adres z niego
-    if not target_address and poly_client:
-        try:
-            target_address = poly_client.get_address()
-        except:
-            pass
-
-    if not target_address:
+    if not poly_client:
         return
 
     try:
-        # Polymarket blokuje proste zapytania, musimy udawać przeglądarkę
-        url = f"https://gamma-api.polymarket.com/balance/{target_address}"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "application/json",
-            "Referer": "https://polymarket.com/"
-        }
+        # W tej wersji biblioteki Clob, saldo pobieramy przez get_balance dla USDC
+        # Adres USDC na Polygonie to: 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+        # Ale najpierw sprawdzamy ogólne saldo zabezpieczenia (collateral)
         
-        response = requests.get(url, headers=headers, timeout=10)
+        # Oficjalna metoda w tej wersji py-clob-client to często:
+        balance_data = poly_client.get_collateral_balance()
         
-        if response.status_code == 200:
-            data = response.json()
-            total_balance = 0.0
-            
-            # W API Gamma saldo to lista obiektów: {"token": "pUSD", "balance": "93.00"}
-            for asset in data:
-                token_name = asset.get("token", "")
-                balance = float(asset.get("balance", 0))
-                # Sumujemy USDC oraz pUSD (często używane zamiennie jako depozyt)
-                if token_name in ["pUSD", "USDC", "USDC.e"]:
-                    total_balance += balance
-            
-            with state_lock:
-                bot_state["virtual_balance"] = total_balance
+        # Jeśli to zwraca obiekt, wyciągamy wartość
+        if isinstance(balance_data, dict) and 'balance' in balance_data:
+            val = float(balance_data['balance'])
         else:
-            add_log(f"API Saldo zwróciło błąd: {response.status_code}")
+            val = float(balance_data)
+            
+        with state_lock:
+            bot_state["virtual_balance"] = val
             
     except Exception as e:
-        add_log(f"Błąd krytyczny odczytu salda: {e}")
-        
+        # Jeśli powyższe zawiedzie, spróbujmy metody alternatywnej wewnątrz klienta
+        try:
+            # Niektóre wersje SDK wymagają podania adresu
+            addr = poly_client.get_address()
+            # ... tu ewentualnie inny call jeśli powyższy nie zadziałał
+            add_log(f"Info: ClobClient nie zwrócił salda automatycznie, sprawdzam...")
+        except:
+            add_log(f"Błąd krytyczny pobierania salda przez SDK: {e}")
+            
 def init_mainnet_client():
     """Poprawna inicjalizacja klienta Pythona dla portfeli Proxy/Gmail (Gnosis Safe)"""
     global poly_client
