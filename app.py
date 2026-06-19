@@ -82,39 +82,49 @@ def auto_discover_btc_tokens():
         pass
 
 def update_real_balance():
-    """Pobiera saldo za pomocą oficjalnego klienta Clob, który jest już autoryzowany."""
+    """Pobiera saldo poprzez API z uwzględnieniem Twojego adresu portfela."""
     global poly_client
     
-    if not poly_client:
+    # Pobieramy adres z klienta lub ze zmiennej środowiskowej
+    target_address = os.environ.get("POLY_ADDRESS", "")
+    if not target_address and poly_client:
+        target_address = poly_client.get_address()
+
+    if not target_address:
+        add_log("Błąd: Brak adresu portfela do sprawdzenia salda!")
         return
 
     try:
-        # W tej wersji biblioteki Clob, saldo pobieramy przez get_balance dla USDC
-        # Adres USDC na Polygonie to: 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
-        # Ale najpierw sprawdzamy ogólne saldo zabezpieczenia (collateral)
+        # Używamy oficjalnego API Polymarketu do sprawdzania salda USDC/pUSD
+        # To jest endpoint, który zawsze zwraca aktualne dane dla danego adresu
+        url = f"https://api.polymarket.com/collateral-balances?address={target_address}"
         
-        # Oficjalna metoda w tej wersji py-clob-client to często:
-        balance_data = poly_client.get_collateral_balance()
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json"
+        }
         
-        # Jeśli to zwraca obiekt, wyciągamy wartość
-        if isinstance(balance_data, dict) and 'balance' in balance_data:
-            val = float(balance_data['balance'])
-        else:
-            val = float(balance_data)
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            # API zwraca listę, np: [{"token": "pUSD", "balance": "93.0"}]
+            total = 0.0
+            for item in data:
+                # Sumujemy saldo
+                total += float(item.get("balance", 0))
             
-        with state_lock:
-            bot_state["virtual_balance"] = val
+            with state_lock:
+                bot_state["virtual_balance"] = total
+            
+            if total == 0:
+                add_log("UWAGA: API zwróciło saldo 0. Czy środki są na depozycie CLOB?")
+        else:
+            add_log(f"API salda nie odpowiedziało poprawnie: {response.status_code}")
             
     except Exception as e:
-        # Jeśli powyższe zawiedzie, spróbujmy metody alternatywnej wewnątrz klienta
-        try:
-            # Niektóre wersje SDK wymagają podania adresu
-            addr = poly_client.get_address()
-            # ... tu ewentualnie inny call jeśli powyższy nie zadziałał
-            add_log(f"Info: ClobClient nie zwrócił salda automatycznie, sprawdzam...")
-        except:
-            add_log(f"Błąd krytyczny pobierania salda przez SDK: {e}")
-            
+        add_log(f"Błąd podczas sprawdzania salda przez API: {e}")
+        
 def init_mainnet_client():
     """Poprawna inicjalizacja klienta Pythona dla portfeli Proxy/Gmail (Gnosis Safe)"""
     global poly_client
