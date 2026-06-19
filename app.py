@@ -17,7 +17,7 @@ from py_clob_client.clob_types import OrderArgs
 # =====================================================================
 USE_DYNAMIC_RISK = True      # True = bot ryzykuje % salda | False = stała kwota w USDC
 RISK_PERCENT = 2.0           # Jaki % salda ryzykować na jedną pozycję (zalecane: 2% - 5%)
-FIXED_TRADE_AMOUNT = 5.0    # Stała kwota transakcji w USDC (gdy USE_DYNAMIC_RISK = False)
+FIXED_TRADE_AMOUNT = 20.0    # Stała kwota transakcji w USDC (gdy USE_DYNAMIC_RISK = False)
 
 ENABLE_EARLY_EXIT = True     # True = włącza Stop-Loss i Take-Profit w trakcie świecy
 STOP_LOSS_PRICE = 0.35       # Sprzedaj udziały, jeśli ich wartość spadnie poniżej 35 centów (tniemy straty!)
@@ -85,7 +85,7 @@ def auto_discover_btc_tokens():
         pass
 
 def update_real_balance():
-    """Niezawodne pobieranie salda (pUSD/USDC) z uwzględnieniem zabezpieczeń Polymarketu"""
+    """Moduł odczytu salda, który z sukcesem przebił się przez API (pUSD)"""
     global poly_client
     target_address = os.environ.get("POLY_ADDRESS", "").strip()
     
@@ -96,37 +96,21 @@ def update_real_balance():
         return
 
     try:
-        # Pancerne pobieranie salda przez sesję (omijające blokady 403/404)
-        session = requests.Session()
-        session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0.0.0",
-            "Accept": "application/json"
-        })
         url = f"https://gamma-api.polymarket.com/balance/{target_address}"
-        res = session.get(url, timeout=10)
+        response = requests.get(url, timeout=10)
         
-        if res.status_code == 200:
-            data = res.json()
+        if response.status_code == 200:
+            data = response.json()
             total = 0.0
             for item in data:
+                # Zliczamy zarowno zablokowane pUSD jak i USDC
                 if item.get("token") in ["pUSD", "USDC"]:
                     total += float(item.get("balance", 0))
             
             with state_lock:
                 bot_state["virtual_balance"] = total
-            return  # Zakończ z sukcesem
     except Exception:
-        pass
-
-    # Jeśli API zawiedzie, próbujemy zaciągnąć z klienta ClobClient (Fallback)
-    if poly_client:
-        try:
-            bal = poly_client.get_collateral_balance(target_address)
-            val = float(bal) if not isinstance(bal, dict) else float(bal.get("balance", 0))
-            with state_lock:
-                bot_state["virtual_balance"] = val
-        except Exception:
-            pass
+        pass # Ciche ignorowanie błędów sieci w głównej pętli
 
 def init_mainnet_client():
     """Poprawna inicjalizacja klienta Pythona dla portfeli Proxy/Gmail (Gnosis Safe)"""
@@ -158,8 +142,9 @@ def init_mainnet_client():
             else:
                 add_log(f"✅ MAINNET: Zalogowano standardowo na: {poly_client.get_address()}")
             
+            # Pierwsze, mocne odczytanie salda
             update_real_balance()
-            add_log(f"💰 MAINNET: Pobrano saldo startowe: {bot_state['virtual_balance']:.2f} USDC")
+            add_log(f"💰 MAINNET: Pobrano saldo startowe: {bot_state['virtual_balance']:.2f} USDC/pUSD")
                 
         except Exception as e:
             add_log(f"🚨 KRYTYCZNY BŁĄD MAINNET: {e}")
@@ -247,7 +232,7 @@ def update_candle_logic(current_price):
                 bot_state["trade_history"].append(trade)
                 bot_state["active_trade"] = None
                 
-                # Aktualizacja salda po rozliczeniu (często zajmuje Polymarketowi kilka sekund)
+                # Aktualizacja salda po rozliczeniu
                 update_real_balance()
 
 def run_trading_strategy():
@@ -265,7 +250,7 @@ def run_trading_strategy():
     error_count = 0
     while True:
         try:
-            # Okresowo wykrywamy tokeny i weryfikujemy saldo
+            # Okresowo wykrywamy tokeny i weryfikujemy saldo w tle
             auto_discover_btc_tokens()
             update_real_balance()
             
@@ -342,7 +327,7 @@ def run_trading_strategy():
                 else:
                     investment = min(balance, FIXED_TRADE_AMOUNT)
 
-                # Warunek wejścia: Mamy kapitał > 2$ i mamy namierzone tokeny
+                # Warunek wejścia: Mamy kapitał >= 2$ i mamy namierzone tokeny
                 if investment >= 2.0 and active_market_info["token_id_up"] and active_market_info["token_id_down"]:
                     
                     # Scenariusz wzrostowy (UP)
@@ -370,6 +355,7 @@ def run_trading_strategy():
                                     }
                                     bot_state["virtual_balance"] -= investment # Optymistyczna korekta salda w UI
                                 add_log(f"🛒 MAINNET: Kupiono UP za {investment:.2f} USDC (Kurs udziału: ${share_price:.2f})")
+                                update_real_balance()
                             except Exception as e:
                                 add_log(f"🚨 MAINNET BŁĄD KUPNA UP: {e}")
 
@@ -398,6 +384,7 @@ def run_trading_strategy():
                                     }
                                     bot_state["virtual_balance"] -= investment
                                 add_log(f"🛒 MAINNET: Kupiono DOWN za {investment:.2f} USDC (Kurs udziału: ${share_price:.2f})")
+                                update_real_balance()
                             except Exception as e:
                                 add_log(f"🚨 MAINNET BŁĄD KUPNA DOWN: {e}")
 
