@@ -1,4 +1,4 @@
 requests
-py-clob-client
-aiohttp
-setuptools
+pyclob
+web3
+
