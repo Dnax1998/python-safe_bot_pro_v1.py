@@ -122,7 +122,10 @@ def update_real_balance():
             continue  
 
 def get_polymarket_15m_market():
-    """Dynamicznie odpytuje rynek Polymarket w poszukiwaniu aktualnej świecy 15m BTC"""
+    """
+    Dynamicznie i elastycznie odpytuje API Polymarket. 
+    Uwzględnia potencjalne zmiany w nazewnictwie struktur i pytań giełdy.
+    """
     try:
         url = "https://clob.polymarket.com/markets"
         response = requests.get(url, timeout=5)
@@ -137,19 +140,56 @@ def get_polymarket_15m_market():
                 if not markets_list and "markets" in data_json:
                     markets_list = data_json.get("markets", [])
             
+            # KROK 1: Szukamy idealnego dopasowania (Bitcoin oraz fraza 15m)
             for market in markets_list:
                 if not isinstance(market, dict):
                     continue
-                    
-                question = market.get("question", "")
-                if "Bitcoin" in question and "15m" in question:
+                q = market.get("question", "")
+                if "Bitcoin" in q and ("15m" in q or "15-min" in q or "15 min" in q):
                     tokens = market.get("tokens", [])
                     if len(tokens) >= 2:
                         return {
                             "UP_TOKEN": tokens[0].get("token_id"),    
                             "DOWN_TOKEN": tokens[1].get("token_id"),  
-                            "market_id": market.get("condition_id")
+                            "market_id": market.get("condition_id"),
+                            "found_by": "IDEAL_15M"
                         }
+            
+            # KROK 2: Jeśli API zmieniło strukturę pytań dla 15m, szukamy czegokolwiek z "Bitcoin"
+            # i sprawdzamy czy w tytule lub slugach nie ukryto informacji o interwale.
+            for market in markets_list:
+                if not isinstance(market, dict):
+                    continue
+                q = market.get("question", "")
+                slug = market.get("slug", "")
+                if "Bitcoin" in q or "BTC" in q:
+                    # Elastyczne sprawdzenie słów kluczowych powiązanych z szybkimi zakładami
+                    if any(x in q.lower() or x in slug.lower() for x in ["15m", "15min", "quarter", "minut"]):
+                        tokens = market.get("tokens", [])
+                        if len(tokens) >= 2:
+                            return {
+                                "UP_TOKEN": tokens[0].get("token_id"),    
+                                "DOWN_TOKEN": tokens[1].get("token_id"),  
+                                "market_id": market.get("condition_id"),
+                                "found_by": "FLEXIBLE_15M"
+                            }
+
+            # KROK 3: Ostateczny fallback (Zabezpieczenie przed brakiem rynku). 
+            # Jeśli rynek 15m nie istnieje w danej sekundzie na API, bierzemy ogólny aktywny wykres BTC.
+            for market in markets_list:
+                if not isinstance(market, dict):
+                    continue
+                q = market.get("question", "")
+                if "Bitcoin" in q:
+                    tokens = market.get("tokens", [])
+                    if len(tokens) >= 2:
+                        return {
+                            "UP_TOKEN": tokens[0].get("token_id"),    
+                            "DOWN_TOKEN": tokens[1].get("token_id"),  
+                            "market_id": market.get("condition_id"),
+                            "found_by": "FALLBACK_GENERAL"
+                        }
+                        
     except Exception as e:
         add_log(f"⚠️ Nie udało się powiązać ID rynku Polymarket: {e}")
     return None
@@ -262,23 +302,24 @@ def run_trading_strategy():
                 balance = bot_state["real_balance"] if IS_LIVE else bot_state["virtual_balance"]
 
             # =====================================================================
-            # 🚨 MODUŁ WYMUSZENIA TESTOWEGO (ZMIENIONO DLA TESTU "CZY WGL DZIAŁA")
+            # 🚨 MODUŁ WYMUSZENIA TESTOWEGO (DO WERYFIKACJI CZY DZIAŁA)
             # =====================================================================
-            if not active:  # Jeśli pozycja jest pusta, kupuj OD RAZU bez patrzenia na algorytm
+            if not active:  
                 investment = (balance * RISK_PERCENT) / 100.0 if USE_DYNAMIC_RISK else FIXED_TRADE_AMOUNT
                 investment = min(balance, max(2.0, investment))
 
                 markets_data = get_polymarket_15m_market()
                 
                 if markets_data and investment >= 2.0:
-                    add_log("🚨 [TEST BEZPIECZEŃSTWA] Wymuszam natychmiastowy zakup UP, aby potwierdzić działanie bota!")
-                    share_price = 0.52  # Cena bazowa dla testu
+                    method = markets_data.get("found_by", "UNKNOWN")
+                    add_log(f"🚨 [TEST INTELLIGENT] Wykryto wykres BTC metodą: {method}! Kupuję!")
+                    share_price = 0.52  
                     
                     success = execute_polymarket_order(markets_data["UP_TOKEN"], investment, side="BUY")
                     if success:
                         with state_lock:
                             bot_state["active_trade"] = {
-                                "direction": "UP (TEST)",
+                                "direction": f"UP ({method})",
                                 "token_id": markets_data["UP_TOKEN"],
                                 "entry_price": share_price,
                                 "strike_price": strike if strike > 0 else current_price,
@@ -289,7 +330,7 @@ def run_trading_strategy():
                             if not IS_LIVE: 
                                 bot_state["virtual_balance"] -= investment
                 elif not markets_data:
-                    add_log("⏳ [TEST] Próba wymuszenia zakupu... Oczekiwanie aż Polymarket wygeneruje rynki...")
+                    add_log("⏳ [TEST] Brak odpowiedzi z API Polymarket. Ponawianie próby przeszukiwania...")
             # =====================================================================
 
         except Exception as e:
@@ -387,7 +428,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         <i class="fa-solid fa-chart-line text-indigo-400"></i> Aktywna Pozycja (Polymarket)
                     </h2>
                     <div id="ui-active-box" class="text-slate-400 py-4 text-center">
-                        Brak otwartej pozycji. Bot czeka na optymalne warunki (okno 5-10m).
+                        Brak otwartej pozycji. Bot czeka na optymalne warunki.
                     </div>
                 </div>
 
