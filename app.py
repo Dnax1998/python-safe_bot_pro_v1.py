@@ -43,8 +43,12 @@ bot_state = {
 price_history = []
 state_lock = threading.RLock()
 
-# Konfiguracja sieci Polygon do odczytu danych on-chain
-w3 = Web3(Web3.HTTPProvider("https://polygon-rpc.com"))
+# Niezależne węzły dostępowe blockchainu Polygon dla stabilności danych
+RPC_URLS = [
+    "https://rpc.ankr.com/polygon",
+    "https://polygon-mainnet.public.blastapi.io",
+    "https://polygon-rpc.com"
+]
 
 def add_log(message):
     """Dodaje wpis do konsoli bota na żywo oraz do logów systemowych"""
@@ -57,37 +61,42 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def update_real_balance():
-    """Pobiera stan konta USDC (Natywnego oraz Bridged) na Polygon dla Twojego adresu"""
+    """Pobiera stan konta USDC (Natywnego oraz Bridged) na Polygon przy użyciu wielowęzłowego systemu ratunkowego"""
     if not IS_LIVE:
         return
-    try:
-        wallet_address = os.environ.get("WALLET_ADDRESS")
-        if not wallet_address:
-            return
+    
+    wallet_address = os.environ.get("WALLET_ADDRESS")
+    if not wallet_address:
+        add_log("⚠️ Błąd konfiguracji: Brak zmiennej WALLET_ADDRESS w panelu Render!")
+        return
+        
+    usdc_contracts = [
+        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", # Nowe Natywne USDC (Polymarket)
+        "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"  # Starsze Bridged USDC.e
+    ]
+    
+    min_abi = [
+        {"constant": True, "inputs": [{"name": "_owner", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "balance", "type": "uint256"}], "type": "function"}
+    ]
+    
+    for rpc in RPC_URLS:
+        try:
+            temp_w3 = Web3(Web3.HTTPProvider(rpc, request_kwargs={'timeout': 4}))
+            total_balance = 0.0
             
-        # Adresy kontraktów USDC na Polygonie (0x3c49... to nowy natywny, 0x2791... to stary USDC.e)
-        usdc_contracts = [
-            "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", 
-            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
-        ]
-        
-        min_abi = [
-            {"constant": True, "inputs": [{"name": "_owner", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "balance", "type": "uint256"}], "type": "function"}
-        ]
-        
-        total_balance = 0.0
-        for contract_addr in usdc_contracts:
-            try:
-                contract = w3.eth.contract(address=w3.to_checksum_address(contract_addr), abi=min_abi)
-                balance_raw = contract.functions.balanceOf(w3.to_checksum_address(wallet_address)).call()
+            for contract_addr in usdc_contracts:
+                contract = temp_w3.eth.contract(address=temp_w3.to_checksum_address(contract_addr), abi=min_abi)
+                balance_raw = contract.functions.balanceOf(temp_w3.to_checksum_address(wallet_address)).call()
                 total_balance += (balance_raw / 1_000_000.0)
-            except:
-                continue
-        
-        with state_lock:
-            bot_state["real_balance"] = total_balance
-    except Exception as e:
-        print(f"Błąd podczas pobierania salda z blockchainu: {e}")
+            
+            with state_lock:
+                bot_state["real_balance"] = total_balance
+                bot_state["virtual_balance"] = total_balance
+            return  # Udało się pobrać dane, przerywamy pętlę i kończymy funkcję sukcesem
+        except:
+            continue  # Ten węzeł zawiódł, sprawdzamy kolejny z listy RPC_URLS
+            
+    add_log("⚠️ Węzły sieci Polygon są przeciążone. Spróbuję ponownie pobrać saldo za minutę...")
 
 def get_polymarket_15m_market():
     """Dynamicznie odpytuje rynek Polymarket w poszukiwaniu aktualnej świecy 15m BTC"""
@@ -220,6 +229,7 @@ def run_trading_strategy():
             bot_state["current_price"] = init_price
         add_log(f"🟢 Połączono z serwerem cenowym! Początkowe BTC: ${init_price:,.2f}")
 
+    balance_ticker = 0
     while True:
         try:
             current_price = get_btc_price()
@@ -228,6 +238,12 @@ def run_trading_strategy():
                 continue
             
             update_candle_logic(current_price)
+            
+            # Nowość: Automatyczne odświeżanie salda w tle co około 60 sekund (12 pętli po 5s)
+            balance_ticker += 1
+            if balance_ticker >= 12:
+                update_real_balance()
+                balance_ticker = 0
             
             with state_lock:
                 m_left = bot_state["minutes_left"]
@@ -546,7 +562,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                         <td class="py-3 px-3 font-semibold ` + dirColor + `">` + t.direction + `</td>
                                         <td class="py-3 px-3">$` + t.entry_price.toFixed(2) + `</td>
                                         <td class="py-3 px-3 text-xs text-slate-400">$` + t.strike_price.toLocaleString() + ` vs $` + t.exit_price.toLocaleString() + `</td>
-                                        <td class="py-3 px-3 font-bold ` + profitColor + `">` + t.status + ` (` + (t.profit >= 0 ? '+' : '') + `$` + t.profit.toFixed(2) + `)</td>
+                                        <td class="py-3 px-3 font-bold ` + profitColor + `">` + t.status + ` (` + (t.profit >= 0 ? '+' : '') + `$' + t.profit.toFixed(2) + `)</td>
                                     </tr>
                                 `;
                             }).join('');
