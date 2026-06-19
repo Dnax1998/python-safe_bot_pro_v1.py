@@ -64,7 +64,7 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def update_real_balance():
-    """Pobiera stan konta USDC z Polygon przy użyciu wielowęzłowego systemu z obsługą PoA"""
+    """Pobiera stan konta z Polygon przy użyciu wielowęzłowego systemu z obsługą pUSD oraz PoA"""
     if not IS_LIVE:
         return
     
@@ -73,8 +73,10 @@ def update_real_balance():
         add_log("⚠️ Błąd konfiguracji: Brak zmiennej WALLET_ADDRESS w panelu Render!")
         return
         
+    # Dodano adres kontraktu Polymarket pUSD, na którym leżą Twoje środki
     usdc_contracts = [
-        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", # Nowe Natywne USDC (Polymarket)
+        "0x4B5C2D3cf0D21E4A55d491C62F8a43f8A4cc72DE", # Polymarket pUSD (TUTAJ LEŻĄ TWOJE ŚRODKI)
+        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", # Nowe Natywne USDC
         "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"  # Starsze Bridged USDC.e
     ]
     
@@ -108,7 +110,7 @@ def update_real_balance():
             with state_lock:
                 bot_state["real_balance"] = total_balance
                 bot_state["virtual_balance"] = total_balance
-            return  # Sukces, przerywamy pętlę
+            return  
         except Exception as e:
             last_error = str(e)
             continue  
