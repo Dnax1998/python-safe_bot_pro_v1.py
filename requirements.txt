@@ -1,3 +1,1 @@
 requests
-pyclob-client
-web3
