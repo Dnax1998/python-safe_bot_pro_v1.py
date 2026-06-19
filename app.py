@@ -24,15 +24,15 @@ STRIKE_MARGIN = 10.0         # Wymagany dystans BTC od ceny Strike (w USD)
 
 # --- GLOBALNY STAN BOTA ---
 bot_state = {
-    "virtual_balance": 0.0,         # Startowo ustawione na 0.0, zostanie nadpisane przez realne saldo
-    "current_price": 0.0,           # Aktualna cena BTC
-    "sma": 0.0,                     # Średnia krocząca (SMA)
-    "minutes_left": 0,              # Minuty do końca świecy
-    "seconds_remain": 0,            # Sekundy do końca świecy
-    "current_candle_strike": 0.0,   # Cena początkowa świecy 15m (Strike)
-    "active_trade": None,           # Aktualnie otwarta pozycja
-    "trade_history": [],            # Historia zamkniętych transakcji
-    "logs": []                      # Logi bota wyświetlane w konsoli
+    "virtual_balance": 0.0,         # Nadpisywane przez realne saldo portfela na sieci Polygon
+    "current_price": 0.0,           
+    "sma": 0.0,                     
+    "minutes_left": 0,              
+    "seconds_remain": 0,            
+    "current_candle_strike": 0.0,   
+    "active_trade": None,           
+    "trade_history": [],            
+    "logs": []                      
 }
 
 price_history = []
@@ -49,44 +49,58 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def update_real_balance():
-    """Pobiera realne saldo (pUSD/USDC) bezpośrednio z API Polymarketu"""
+    """Pobiera realne saldo portfela prosto z blockchaina (sieci Polygon). Omija błędy 404 API Polymarketu."""
     target_address = os.environ.get("POLY_ADDRESS", "").strip()
     
     if not target_address:
-        # Jeśli nie ustawiono adresu, bot korzysta z trybu demo/wirtualnego (np. 500 USDC startowo)
+        # Awaryjne przypisanie środków startowych, gdyby zapomniano wkleić adresu w Renderze
         with state_lock:
             if bot_state["virtual_balance"] == 0.0 and len(bot_state["trade_history"]) == 0:
                 bot_state["virtual_balance"] = 500.0
         return
 
     try:
-        session = requests.Session()
-        session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json"
-        })
-        url = f"https://gamma-api.polymarket.com/balance/{target_address}"
-        res = session.get(url, timeout=10)
+        # Czyszczenie adresu z prefiksu '0x' i formatowanie do długości 64 znaków (standard zapytania w web3)
+        clean_address = target_address[2:] if target_address.startswith("0x") else target_address
+        data_payload = "0x70a08231" + clean_address.zfill(64)
         
-        if res.status_code == 200:
-            data = res.json()
-            total = 0.0
-            for item in data:
-                if item.get("token") in ["pUSD", "USDC"]:
-                    total += float(item.get("balance", 0))
-            
-            with state_lock:
-                bot_state["virtual_balance"] = total
-        else:
-            add_log(f"⚠️ Problem z API Polymarket (Status {res.status_code}). Nie udało się pobrać salda.")
+        rpc_url = "https://polygon-rpc.com"
+        
+        # Polymarket przechowuje środki w kontraktach USDC (Natywnym i Zmostkowanym USDC.e) na sieci Polygon.
+        usdc_contracts = [
+            "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", # Nowy natywny USDC Polymarket
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"  # Stary zmostkowany USDC.e
+        ]
+
+        total_balance = 0.0
+        
+        # Pytamy blockchain o stan obydwu kontraktów dla wgranego portfela
+        for token in usdc_contracts:
+            payload = {
+                "jsonrpc": "2.0",
+                "method": "eth_call",
+                "params": [{"to": token, "data": data_payload}, "latest"],
+                "id": 1
+            }
+            res = requests.post(rpc_url, json=payload, timeout=5)
+            if res.status_code == 200:
+                result_hex = res.json().get("result", "0x0")
+                if result_hex != "0x":
+                    # USDC ma 6 miejsc po przecinku w smart kontraktach, stąd dzielenie przez milion.
+                    balance_int = int(result_hex, 16)
+                    total_balance += (balance_int / 1000000.0)
+
+        with state_lock:
+            bot_state["virtual_balance"] = total_balance
+
     except Exception as e:
-        add_log(f"⚠️ Błąd połączenia podczas pobierania salda: {e}")
+        add_log(f"⚠️ Błąd połączenia RPC w trakcie sprawdzania blockchaina: {e}")
 
 def get_btc_price():
     """Bezpieczne pobieranie ceny BTC z obsługą fallbacków (Binance -> Coinbase -> Kraken)"""
     headers = {'User-Agent': 'Mozilla/5.0'}
     
-    # Binance
+    # Metoda 1: Binance
     try:
         url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
         response = requests.get(url, headers=headers, timeout=5)
@@ -95,7 +109,7 @@ def get_btc_price():
     except Exception:
         pass
 
-    # Coinbase
+    # Metoda 2: Coinbase
     try:
         url = "https://api.coinbase.com/v2/prices/BTC-USD/spot"
         response = requests.get(url, headers=headers, timeout=5)
@@ -164,20 +178,20 @@ def update_candle_logic(current_price):
                 bot_state["trade_history"].append(trade)
                 bot_state["active_trade"] = None
                 
-                # Odświeżenie realnego salda po rozliczeniu kontraktu
+                # Zmuszamy skrypt do weryfikacji blockchaina od razu po zamknięciu zysku/straty
                 update_real_balance()
 
 def run_trading_strategy():
     """Główna pętla handlowa bota oparta o timing i trend Krajekisa"""
     add_log("System analizy rynkowej uruchomiony pomyślnie.")
     
-    # Pierwsza próba pobrania realnego salda przy starcie bota
+    # Inicjalne pobranie salda i weryfikacja podłączenia portfela
     poly_address = os.environ.get("POLY_ADDRESS", "").strip()
     if poly_address:
-        add_log(f"💰 Wykryto adres portfela: {poly_address}. Pobieram saldo z portfela...")
+        add_log(f"💰 Wykryto adres portfela: {poly_address[:6]}...{poly_address[-4:]}. Odpytuję blockchain (Polygon RPC)...")
         update_real_balance()
     else:
-        add_log("⚠️ Brak POLY_ADDRESS w zmiennych środowiskowych! Uruchomiono tryb demonstracyjny z wirtualnym kontem.")
+        add_log("⚠️ Brak zmiennej POLY_ADDRESS! Uruchomiono tryb demonstracyjny z saldem wirtualnym.")
         update_real_balance()
     
     init_price = get_btc_price()
@@ -189,7 +203,7 @@ def run_trading_strategy():
 
     while True:
         try:
-            # Odświeżaj saldo w pętli (co każdą iterację), aby panel zawsze pokazywał prawdę
+            # W trybie rzeczywistym odpytuj sieć o saldo co cykl
             update_real_balance()
             
             current_price = get_btc_price()
@@ -206,7 +220,7 @@ def run_trading_strategy():
                 strike = bot_state["current_candle_strike"]
                 balance = bot_state["virtual_balance"]
 
-            # MONITOROWANIE POSITION EARLY EXIT (STOP-LOSS / TAKE-PROFIT)
+            # ZARZĄDZANIE W CZASIE RZECZYWISTYM: STOP-LOSS / TAKE-PROFIT
             if active and ENABLE_EARLY_EXIT:
                 price_diff = current_price - active["strike_price"]
                 volatility_denominator = 5.0 + (m_left * 2.0)
@@ -254,7 +268,7 @@ def run_trading_strategy():
                     time.sleep(5)
                     continue
 
-            # OTWIERANIE NOWYCH POZYCJI
+            # OTWIERANIE NOWYCH KONTRAKTÓW W OKNIE ZAKUPU (ZASADA KRAJEKISA)
             if 5 <= m_left <= 10 and not active and sma > 0 and strike > 0:
                 price_diff = current_price - strike
                 
@@ -264,11 +278,12 @@ def run_trading_strategy():
                 else:
                     investment = min(balance, FIXED_TRADE_AMOUNT)
 
+                # Mamy za mało USDC, żeby cokolwiek otworzyć
                 if investment < 1.0:
                     time.sleep(5)
                     continue
 
-                # UP
+                # Rynek leci w górę (Trend byczy)
                 if current_price > sma + PRICE_MARGIN and price_diff > STRIKE_MARGIN:
                     share_price = min(0.90, max(0.55, 0.50 + (price_diff / 100)))
                     shares = investment / share_price
@@ -283,9 +298,9 @@ def run_trading_strategy():
                             "opened_at": datetime.utcnow().strftime("%H:%M:%S")
                         }
                         bot_state["virtual_balance"] -= investment
-                    add_log(f"🛒 [OTWARCIE] Kupiono UP za {investment:.2f} USDC.")
+                    add_log(f"🛒 [OTWARCIE] Kupiono udziały UP za {investment:.2f} USDC.")
 
-                # DOWN
+                # Rynek leci w dół (Trend niedźwiedzi)
                 elif current_price < sma - PRICE_MARGIN and price_diff < -STRIKE_MARGIN:
                     share_price = min(0.90, max(0.55, 0.50 + (abs(price_diff) / 100)))
                     shares = investment / share_price
@@ -300,16 +315,17 @@ def run_trading_strategy():
                             "opened_at": datetime.utcnow().strftime("%H:%M:%S")
                         }
                         bot_state["virtual_balance"] -= investment
-                    add_log(f"🛒 [OTWARCIE] Kupiono DOWN za {investment:.2f} USDC.")
+                    add_log(f"🛒 [OTWARCIE] Kupiono udziały DOWN za {investment:.2f} USDC.")
 
         except Exception as e:
-            add_log(f"🚨 Błąd w pętli strategii: {e}")
+            add_log(f"🚨 Błąd logiczny w głównej pętli strategii: {e}")
             
         time.sleep(5)
 
-# --- PANEL KONTROLNY (WEB SERWER) ---
+# --- WEB SERWER (UI PANEL KONTROLNY) ---
 class DashboardHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
+        # Wyciszamy irytujące komunikaty HTTP z logów konsoli
         return
 
     def do_GET(self):
@@ -395,7 +411,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         <i class="fa-solid fa-chart-line text-indigo-400"></i> Aktywna Pozycja (Polymarket)
                     </h2>
                     <div id="ui-active-box" class="text-slate-400 py-4 text-center">
-                        Brak otwartej pozycji. Bot czeka na optymalne warunki.
+                        Brak otwartej pozycji. Bot skanuje rynek (okno 5-10m).
                     </div>
                 </div>
 
@@ -496,7 +512,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                 </div>
                             `;
                         } else {
-                            activeBox.innerHTML = `<p class="text-slate-500 py-2">Brak otwartej pozycji. Bot szuka optymalnych warunków.</p>`;
+                            activeBox.innerHTML = `<p class="text-slate-500 py-2">Brak otwartej pozycji. Bot skanuje rynek pod kątem trendów.</p>`;
                         }
 
                         const logsDiv = document.getElementById('ui-logs');
@@ -523,7 +539,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                         <td class="py-3 px-3 font-semibold ` + dirColor + `">` + t.direction + `</td>
                                         <td class="py-3 px-3">$` + t.entry_price.toFixed(2) + `</td>
                                         <td class="py-3 px-3 text-xs text-slate-400">$` + t.strike_price.toLocaleString() + ` vs $` + t.exit_price.toLocaleString() + `</td>
-                                        <td class="py-3 px-3 font-bold ` + profitColor + `">` + t.status + ` (` + (t.profit >= 0 ? '+' : '') + `$" + t.profit.toFixed(2) + ")</td>
+                                        <td class="py-3 px-3 font-bold ` + profitColor + `">` + t.status + ` (` + (t.profit >= 0 ? '+' : '') + `$` + t.profit.toFixed(2) + `)</td>
                                     </tr>
                                 `;
                             }).join('');
@@ -557,5 +573,5 @@ if __name__ == "__main__":
     
     port = int(os.environ.get("PORT", 10000))
     server = ThreadingHTTPServer(('0.0.0.0', port), DashboardHandler)
-    add_log(f"Serwer HTTP Dashboard wystartował na porcie {port}")
+    add_log(f"Serwer Dashboard wystartował na porcie {port}")
     server.serve_forever()
