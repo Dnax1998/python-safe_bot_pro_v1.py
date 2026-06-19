@@ -134,8 +134,22 @@ def get_polymarket_15m_market():
         url = "https://clob.polymarket.com/markets"
         response = requests.get(url, timeout=5)
         if response.status_code == 200:
-            markets = response.json()
-            for market in markets:
+            data_json = response.json()
+            
+            # Inteligentne wyciąganie listy rynków w zależności od formatu API
+            markets_list = []
+            if isinstance(data_json, list):
+                markets_list = data_json
+            elif isinstance(data_json, dict):
+                markets_list = data_json.get("data", [])
+                if not markets_list and "markets" in data_json:
+                    markets_list = data_json.get("markets", [])
+            
+            # Bezpieczna iteracja tylko po obiektach typu słownik (dict)
+            for market in markets_list:
+                if not isinstance(market, dict):
+                    continue
+                    
                 question = market.get("question", "")
                 if "Bitcoin" in question and "15m" in question:
                     tokens = market.get("tokens", [])
@@ -387,6 +401,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         <body class="bg-slate-950 text-slate-100 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 py-8">
                 
+                <!-- NAGŁÓWEK -->
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-800 pb-6 mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3">
@@ -409,6 +424,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     </div>
                 </div>
 
+                <!-- STATYSTYKI GŁÓWNE -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
                         <p class="text-sm font-medium text-slate-400">Aktualna cena BTC</p>
@@ -434,6 +450,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     </div>
                 </div>
 
+                <!-- AKTYWNA TRANSAKCJA -->
                 <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 mb-8 shadow-xl">
                     <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-white">
                         <i class="fa-solid fa-chart-line text-indigo-400"></i> Aktywna Pozycja (Polymarket)
@@ -444,6 +461,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- KONSOLA NA ŻYWO -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-white">
                             <i class="fa-solid fa-terminal text-emerald-400"></i> Konsola Bota na żywo
@@ -453,6 +471,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         </div>
                     </div>
 
+                    <!-- HISTORIA TRANSAKCJI -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-white">
                             <i class="fa-solid fa-history text-indigo-400"></i> Ostatnie zamknięte pozycje
@@ -479,6 +498,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
             </div>
 
+            <!-- SKRYPT AKTUALIZACJI DASHBOARDU -->
             <script>
                 async function updateDashboard() {
                     try {
