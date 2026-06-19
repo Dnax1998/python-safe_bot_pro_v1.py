@@ -8,6 +8,17 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from web3 import Web3
 
+# =====================================================================
+# --- POPRAWKA IMPORTÓW DLA OFICJALNEGO KLIENTA POLYMARKET ---
+# =====================================================================
+try:
+    from py_clob_client.client import ClobClient
+    from py_clob_client.constants import POLYGON
+    from py_clob_client.clob_types import OrderArgs
+except ImportError:
+    # Zabezpieczenie, jeśli pakiet instaluje się dynamicznie
+    pass
+
 # Sprawdzanie czy bot działa na żywo (Render), czy lokalnie/testowo
 IS_LIVE = os.environ.get("WALLET_PRIVATE_KEY") is not None
 
@@ -42,6 +53,7 @@ bot_state = {
 
 price_history = []
 state_lock = threading.RLock()
+poly_client = None  # Globalny obiekt klienta Polymarket
 
 # Inteligentne zarządzanie węzłami RPC (pobiera Twój prywatny link z ustawień Rendera)
 PRIVATE_RPC = os.environ.get("POLYGON_RPC_URL")
@@ -67,6 +79,22 @@ def add_log(message):
         bot_state["logs"].append(log_entry)
         if len(bot_state["logs"]) > 50:
             bot_state["logs"].pop(0)
+
+def init_clob_client():
+    """Inicjalizuje klienta ClobClient, jeśli bot działa w trybie LIVE"""
+    global poly_client
+    if not IS_LIVE:
+        return
+    try:
+        private_key = os.environ.get("WALLET_PRIVATE_KEY", "").replace("0x", "")
+        poly_client = ClobClient(
+            host="https://clob.polymarket.com",
+            key=private_key,
+            chain_id=POLYGON
+        )
+        add_log("✅ Zainicjalizowano moduł ClobClient do automatycznego zawierania transakcji!")
+    except Exception as e:
+        add_log(f"⚠️ Nie udało się wdrożyć modułu ClobClient ({e}). Używam podstawowego API.")
 
 def update_real_balance():
     """Pobiera stan konta z Polygon przy użyciu wielowęzłowego systemu z obsługą pUSD oraz PoA"""
@@ -125,7 +153,6 @@ def get_polymarket_15m_market():
     pod kątem struktury rynków 15-minutowych Bitcoina.
     """
     try:
-        # Odpytujemy stabilniejsze Gamma API szukając frazy "Bitcoin" i aktywnych rynków
         url = "https://gamma-api.polymarket.com/markets?closed=false&order=volume&direction=desc&limit=100&slug=bitcoin"
         headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(url, headers=headers, timeout=5)
@@ -143,10 +170,8 @@ def get_polymarket_15m_market():
                 q = market.get("question", "")
                 title = market.get("title", "")
                 
-                # Szukamy powiązania z interwałem 15-minutowym w pytaniu lub tytule świecy
                 if "Bitcoin" in q and any(x in q.lower() or x in title.lower() for x in ["15m", "15-min", "15 min", "quarter"]):
                     clob_token_ids = market.get("clobTokenIds")
-                    # Gamma API zapisuje tokeny jako string w formacie JSON lub listę bezpośrednią
                     if clob_token_ids and isinstance(clob_token_ids, str):
                         try:
                             clob_token_ids = json.loads(clob_token_ids)
@@ -161,7 +186,7 @@ def get_polymarket_15m_market():
                             "found_by": "GAMMA_15M"
                         }
             
-            # KROK 2: Jeśli rynki 15m akurat wygasły/są odświeżane, bierzemy najbliższy godzinowy/szybki wykres BTC jako zabezpieczenie działania bota
+            # KROK 2: Fallback rynków szybkiego handlu BTC
             for market in markets_list:
                 if not isinstance(market, dict):
                     continue
@@ -209,6 +234,22 @@ def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
     if not IS_LIVE:
         add_log(f"🤖 [SYMULACJA] Wykonano zlecenie {side} dla tokenu {token_id[:6]}... za {amount_usdc} USDC")
         return True
+
+    # Jeżeli moduł ClobClient jest gotowy, wysyłamy przez bezpieczne SDK
+    global poly_client
+    if poly_client:
+        try:
+            estimated_price = 0.50
+            shares_count = round(amount_usdc / estimated_price, 2)
+            order_response = poly_client.create_order(OrderArgs(
+                price=estimated_price,
+                size=shares_count,
+                side=side,
+                token_id=token_id
+            ))
+            return order_response
+        except Exception as sdk_err:
+            add_log(f"⚠️ Próba zapytania przez SDK zwróciła błąd: {sdk_err}. Uruchamiam fallback REST...")
 
     api_key = os.environ.get("POLY_API_KEY")
     url = "https://clob.polymarket.com/order"
@@ -260,6 +301,7 @@ def update_candle_logic(current_price):
 
 def run_trading_strategy():
     add_log(f"System analizy rynkowej uruchomiony. Tryb: {'PRODUKCYJNY (LIVE)' if IS_LIVE else 'TESTOWY (PAPER TRADING)'}")
+    init_clob_client()
     update_real_balance()
     
     init_price = get_btc_price()
@@ -290,7 +332,7 @@ def run_trading_strategy():
                 strike = bot_state["current_candle_strike"]
                 balance = bot_state["real_balance"] if IS_LIVE else bot_state["virtual_balance"]
 
-            # Sprawdzanie i symulowanie transakcji testowych
+            # Analiza i wykonywanie pozycji handlowych
             if not active:  
                 investment = (balance * RISK_PERCENT) / 100.0 if USE_DYNAMIC_RISK else FIXED_TRADE_AMOUNT
                 investment = min(balance, max(2.0, investment))
