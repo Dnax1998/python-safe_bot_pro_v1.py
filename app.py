@@ -57,7 +57,7 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def update_real_balance():
-    """Pobiera rzeczywisty stan konta USDC na Polygon dla Twojego adresu"""
+    """Pobiera stan konta USDC (Natywnego oraz Bridged) na Polygon dla Twojego adresu"""
     if not IS_LIVE:
         return
     try:
@@ -65,20 +65,27 @@ def update_real_balance():
         if not wallet_address:
             return
             
-        # Adres kontraktu USDC.e (Bridged USDC) używanego na Polymarket
-        usdc_contract_address = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+        # Adresy kontraktów USDC na Polygonie (0x3c49... to nowy natywny, 0x2791... to stary USDC.e)
+        usdc_contracts = [
+            "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", 
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+        ]
         
         min_abi = [
             {"constant": True, "inputs": [{"name": "_owner", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "balance", "type": "uint256"}], "type": "function"}
         ]
         
-        contract = w3.eth.contract(address=w3.to_checksum_address(usdc_contract_address), abi=min_abi)
-        balance_raw = contract.functions.balanceOf(w3.to_checksum_address(wallet_address)).call()
-        
-        balance_usdc = balance_raw / 1_000_000.0
+        total_balance = 0.0
+        for contract_addr in usdc_contracts:
+            try:
+                contract = w3.eth.contract(address=w3.to_checksum_address(contract_addr), abi=min_abi)
+                balance_raw = contract.functions.balanceOf(w3.to_checksum_address(wallet_address)).call()
+                total_balance += (balance_raw / 1_000_000.0)
+            except:
+                continue
         
         with state_lock:
-            bot_state["real_balance"] = balance_usdc
+            bot_state["real_balance"] = total_balance
     except Exception as e:
         print(f"Błąd podczas pobierania salda z blockchainu: {e}")
 
@@ -104,7 +111,12 @@ def get_polymarket_15m_market():
     return None
 
 def get_btc_price():
-    headers = {'User-Agent': 'Mozilla/5.0'}
+    """Bezpieczne pobieranie ceny BTC z obsługą fallbacków (Binance -> Coinbase -> Kraken)"""
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+
+    # Metoda 1: Binance
     try:
         url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
         response = requests.get(url, headers=headers, timeout=5)
@@ -112,6 +124,28 @@ def get_btc_price():
             return float(response.json()['price'])
     except:
         pass
+
+    # Metoda 2: Coinbase (Bardzo odporna na blokady chmur / Render)
+    try:
+        url = "https://api.coinbase.com/v2/prices/BTC-USD/spot"
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            return float(response.json()['data']['amount'])
+    except:
+        pass
+
+    # Metoda 3: Kraken
+    try:
+        url = "https://api.kraken.com/0/public/Ticker?pair=XBTUSD"
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            result = response.json().get('result', {})
+            pair_key = list(result.keys())[0] if result else None
+            if pair_key:
+                return float(result[pair_key]['c'][0])
+    except:
+        pass
+
     return None
 
 def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
@@ -311,6 +345,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         <body class="bg-slate-950 text-slate-100 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 py-8">
                 
+                <!-- NAGŁÓWEK -->
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-800 pb-6 mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3">
@@ -333,12 +368,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     </div>
                 </div>
 
+                <!-- STATYSTYKI GŁÓWNE -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <!-- CENA BTC -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
                         <p class="text-sm font-medium text-slate-400">Aktualna cena BTC (Binance/Coinbase)</p>
                         <p id="ui-price" class="text-2xl font-extrabold mt-2 text-white">Wczytywanie...</p>
                         <p id="ui-sma" class="text-xs text-slate-500 mt-2">Średnia SMA: --</p>
                     </div>
+                    <!-- ZEGAREK ŚWIECY -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
                         <p class="text-sm font-medium text-slate-400">Czas do końca świecy 15m</p>
                         <p id="ui-timer" class="text-2xl font-extrabold mt-2 text-amber-400">Wczytywanie...</p>
@@ -346,11 +384,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             <div id="ui-progress" class="bg-amber-400 h-1.5 rounded-full" style="width: 0%"></div>
                         </div>
                     </div>
+                    <!-- CENA STRIKE -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
                         <p class="text-sm font-medium text-slate-400">Cena Strike (Początek 15m)</p>
                         <p id="ui-strike" class="text-2xl font-extrabold mt-2 text-slate-200">Wczytywanie...</p>
                         <p id="ui-diff" class="text-xs mt-2">Różnica: --</p>
                     </div>
+                    <!-- SKUTECZNOŚĆ -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
                         <p class="text-sm font-medium text-slate-400">Skuteczność systemu</p>
                         <p id="ui-stats" class="text-2xl font-extrabold mt-2 text-white">0 / 0 (0%)</p>
@@ -358,6 +398,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     </div>
                 </div>
 
+                <!-- AKTYWNA TRANSAKCJA -->
                 <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 mb-8 shadow-xl">
                     <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-white">
                         <i class="fa-solid fa-chart-line text-indigo-400"></i> Aktywna Pozycja (Polymarket)
@@ -368,6 +409,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- KONSOLA NA ŻYWO -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-white">
                             <i class="fa-solid fa-terminal text-emerald-400"></i> Konsola Bota na żywo
@@ -377,6 +419,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         </div>
                     </div>
 
+                    <!-- HISTORIA TRANSAKCJI -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-white">
                             <i class="fa-solid fa-history text-indigo-400"></i> Ostatnie zamknięte pozycje
@@ -403,6 +446,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
             </div>
 
+            <!-- SKRYPT AKTUALIZACJI DASHBOARDU -->
             <script>
                 async function updateDashboard() {
                     try {
