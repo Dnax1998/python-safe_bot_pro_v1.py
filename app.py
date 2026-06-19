@@ -43,15 +43,14 @@ bot_state = {
 price_history = []
 state_lock = threading.RLock()
 
-# Rozszerzona, ultra-stabilna lista węzłów RPC dla sieci Polygon
+# Twoja spersonalizowana lista węzłów RPC z Alchemy na samym przedzie!
 RPC_URLS = [
-    "https://polygon-mainnet.g.alchemy.com/v2/GgV6bskYPafh8Shs5W2LY
+    "https://polygon-mainnet.g.alchemy.com/v2/GgV6bskYPafh8Shs5W2LY",
     "https://polygon-rpc.com",
     "https://rpc.ankr.com/polygon",
     "https://1rpc.io/matic",
     "https://polygon.llamarpc.com",
-    "https://gateway.tenderly.co/public/polygon",
-    "https://polygon-mainnet.public.blastapi.io"
+    "https://gateway.tenderly.co/public/polygon"
 ]
 
 def add_log(message):
@@ -74,9 +73,9 @@ def update_real_balance():
         add_log("⚠️ Błąd konfiguracji: Brak zmiennej WALLET_ADDRESS w panelu Render!")
         return
         
-    # Dodano adres kontraktu Polymarket pUSD, na którym leżą Twoje środki
+    # Adresy kontraktów USDC, w tym najważniejszy pUSD od Polymarketu
     usdc_contracts = [
-        "0x4B5C2D3cf0D21E4A55d491C62F8a43f8A4cc72DE", # Polymarket pUSD (TUTAJ LEŻĄ TWOJE ŚRODKI)
+        "0x4B5C2D3cf0D21E4A55d491C62F8a43f8A4cc72DE", # Polymarket pUSD (Tutaj masz środki)
         "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", # Nowe Natywne USDC
         "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"  # Starsze Bridged USDC.e
     ]
@@ -91,7 +90,7 @@ def update_real_balance():
         try:
             temp_w3 = Web3(Web3.HTTPProvider(rpc, request_kwargs={'timeout': 4}))
             
-            # Bezpieczne wstrzyknięcie kompatybilnego middleware dla sieci PoA (Polygon)
+            # Bezpieczne wstrzyknięcie middleware dla sieci Polygon (PoA)
             try:
                 from web3.middleware import geth_poa_middleware
                 temp_w3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -377,7 +376,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
         <body class="bg-slate-950 text-slate-100 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 py-8">
                 
-                <!-- NAGŁÓWEK -->
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-800 pb-6 mb-8 gap-4">
                     <div>
                         <div class="flex items-center gap-3">
@@ -400,10 +398,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     </div>
                 </div>
 
-                <!-- STATYSTYKI GŁÓWNE -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
-                        <p class="text-sm font-medium text-slate-400">Aktualna cena BTC (Binance/Coinbase)</p>
+                        <p class="text-sm font-medium text-slate-400">Aktualna cena BTC</p>
                         <p id="ui-price" class="text-2xl font-extrabold mt-2 text-white">Wczytywanie...</p>
                         <p id="ui-sma" class="text-xs text-slate-500 mt-2">Średnia SMA: --</p>
                     </div>
@@ -426,7 +423,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     </div>
                 </div>
 
-                <!-- AKTYWNA TRANSAKCJA -->
                 <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 mb-8 shadow-xl">
                     <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-white">
                         <i class="fa-solid fa-chart-line text-indigo-400"></i> Aktywna Pozycja (Polymarket)
@@ -437,7 +433,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- KONSOLA NA ŻYWO -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-white">
                             <i class="fa-solid fa-terminal text-emerald-400"></i> Konsola Bota na żywo
@@ -447,7 +442,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         </div>
                     </div>
 
-                    <!-- HISTORIA TRANSAKCJI -->
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col h-[400px]">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-white">
                             <i class="fa-solid fa-history text-indigo-400"></i> Ostatnie zamknięte pozycje
@@ -474,7 +468,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
             </div>
 
-            <!-- SKRYPT AKTUALIZACJI DASHBOARDU -->
             <script>
                 async function updateDashboard() {
                     try {
