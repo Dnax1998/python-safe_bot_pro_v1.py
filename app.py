@@ -30,12 +30,12 @@ USE_DYNAMIC_RISK = True      # True = bot ryzykuje % salda | False = stała kwot
 RISK_PERCENT = 5.0           # Przy 100$ na koncie, 5% to optymalne 5$ na zakład
 FIXED_TRADE_AMOUNT = 5.0     # Stała kwota transakcji w USDC (gdy USE_DYNAMIC_RISK = False)
 
-ENABLE_EARLY_EXIT = True     # Dynamiczny Stop-Loss/Take-Profit wewnątrz świecy
+ENABLE_EARLY_EXIT = True     # Pobiera realne ceny z Polymarket do Stop-Loss/Take-Profit
 STOP_LOSS_PRICE = 0.30       
 TAKE_PROFIT_PRICE = 0.85     
 
-PRICE_MARGIN = 15.0          # Wymagany dystans ceny od średniej SMA (w USD)
-STRIKE_MARGIN = 10.0         # Wymagany dystans ceny od punktu Strike (w USD)
+PRICE_MARGIN = 15.0          
+STRIKE_MARGIN = 10.0         
 # =====================================================================
 
 # --- GLOBALNY STAN BOTA ---
@@ -78,7 +78,7 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def init_clob_client():
-    """Inicjalizuje zaawansowanego klienta Polymarket CLOB z zachowaniem wymogów Pydantic"""
+    """Inicjalizuje klienta Polymarket CLOB ze skorygowanymi polami Pydantic"""
     global poly_client
     if not IS_LIVE:
         return
@@ -94,11 +94,11 @@ def init_clob_client():
         api_passphrase = os.environ.get("POLY_API_PASSPHRASE")
 
         if api_key and api_secret and api_passphrase:
-            # Poprawna inicjalizacja za pomocą argumentów nazwanych (kwargs) dla Pydantica
+            # SKORYGOWANE: SDK Polymarketu wymaga kluczy: key, secret, passphrase
             explicit_creds = ApiCreds(
-                api_key=api_key, 
-                api_secret=api_secret, 
-                api_passphrase=api_passphrase
+                key=api_key, 
+                secret=api_secret, 
+                passphrase=api_passphrase
             )
             
             poly_client = ClobClient(
@@ -123,8 +123,8 @@ def update_real_balance():
         return
         
     usdc_contracts = [
-        "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # Polymarket pUSD
-        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"  # Native USDC
+        "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", 
+        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"  
     ]
     min_abi = [{"constant": True, "inputs": [{"name": "_owner", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "balance", "type": "uint256"}], "type": "function"}]
     
@@ -171,7 +171,7 @@ def get_polymarket_15m_market():
     return None
 
 def get_btc_price():
-    """Stabilny i redundantny przelicznik ceny spot BTC"""
+    """Stabilny przelicznik ceny spot BTC"""
     try:
         res = requests.get("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", timeout=3)
         return float(res.json()['price'])
@@ -219,14 +219,12 @@ def update_candle_logic(current_price):
         if len(price_history) > 40: price_history.pop(0)
         bot_state["sma"] = sum(price_history) / len(price_history)
 
-        # Inicjalizacja nowej świecy
         if minutes_passed == 0 and seconds_passed < 8:
             if bot_state["current_candle_strike"] != current_price:
                 bot_state["current_candle_strike"] = current_price
                 add_log(f"🆕 Nowy punkt Strike świecy 15m: ${current_price:,.2f}")
                 update_real_balance()
 
-        # Automatyczne rozliczenie pozycji na koniec świecy
         if minutes_passed == 14 and seconds_passed >= 54:
             if bot_state["active_trade"]:
                 trade = bot_state["active_trade"]
@@ -282,7 +280,6 @@ def run_trading_strategy():
                 sma = bot_state["sma"]
                 balance = bot_state["real_balance"] if IS_LIVE else bot_state["virtual_balance"]
 
-            # --- MONITORING EARLY EXIT (STOP-LOSS / TAKE-PROFIT) ---
             if active and ENABLE_EARLY_EXIT:
                 btc_diff = current_price - active["btc_at_entry"]
                 est_token_price = 0.50 + (btc_diff / 80.0) if "UP" in active["direction"] else 0.50 - (btc_diff / 80.0)
@@ -309,7 +306,6 @@ def run_trading_strategy():
                         bot_state["active_trade"] = None
                     add_log(f"🚨 Awaryjne zamknięcie pozycji ({'Take-Profit' if is_tp else 'Stop-Loss'}) przy cenie tokenu {est_token_price:.2f}")
 
-            # --- REALIZACJA LOGIKI STRATEGII WEJŚCIA ---
             if not active and strike > 0 and sma > 0:
                 buy_up = (current_price > strike + STRIKE_MARGIN) and (current_price > sma + PRICE_MARGIN)
                 buy_down = (current_price < strike - STRIKE_MARGIN) and (current_price < sma - PRICE_MARGIN)
@@ -473,7 +469,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         const res = await fetch('/api/status');
                         const data = await res.json();
 
-                        // Dynamiczne dopasowanie salda (realne vs wirtualne)
                         const currentBalance = data.real_balance > 0 ? data.real_balance : data.virtual_balance;
                         document.getElementById('ui-balance').innerText = `$${currentBalance.toFixed(2)} USDC`;
 
