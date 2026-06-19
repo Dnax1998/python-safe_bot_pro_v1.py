@@ -15,7 +15,7 @@ HAS_SDK = False
 try:
     from py_clob_client.client import ClobClient
     from py_clob_client.constants import POLYGON
-    from py_clob_client.clob_types import OrderArgs, ApiKeys
+    from py_clob_client.clob_types import OrderArgs, ApiCreds
     HAS_SDK = True
 except ImportError:
     HAS_SDK = False
@@ -84,7 +84,7 @@ def init_clob_client():
         return
     
     if not HAS_SDK:
-        add_log("❌ BŁĄD SDK: Brak 'py-clob-client' w środowisku Render! Dodaj tę bibliotekę do requirements.txt.")
+        add_log("❌ BŁĄD SDK: Brak 'py-clob-client' lub błąd krytyczny importu typów w środowisku Render.")
         return
 
     try:
@@ -94,11 +94,12 @@ def init_clob_client():
         api_passphrase = os.environ.get("POLY_API_PASSPHRASE")
 
         if api_key and api_secret and api_passphrase:
+            # Poprawione użycie api_creds oraz klasy ApiCreds zgodnie ze specyfikacją Polymarket SDK
             poly_client = ClobClient(
                 host="https://clob.polymarket.com",
                 key=private_key,
                 chain_id=POLYGON,
-                api_keys=ApiKeys(key=api_key, secret=api_secret, passphrase=api_passphrase)
+                api_creds=ApiCreds(key=api_key, secret=api_secret, passphrase=api_passphrase)
             )
             add_log("✅ Autoryzacja CLOB powiodła się. Moduł handlowy aktywny.")
         else:
