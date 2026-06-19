@@ -43,15 +43,21 @@ bot_state = {
 price_history = []
 state_lock = threading.RLock()
 
-# Twoja spersonalizowana lista węzłów RPC z Alchemy na samym przedzie!
-RPC_URLS = [
-    "https://polygon-mainnet.g.alchemy.com/v2/GgV6bskYPafh8Shs5W2LY",
+# Inteligentne zarządzanie węzłami RPC (pobiera Twój prywatny link z ustawień Rendera)
+PRIVATE_RPC = os.environ.get("POLYGON_RPC_URL")
+RPC_URLS = []
+
+if PRIVATE_RPC:
+    RPC_URLS.append(PRIVATE_RPC.strip())
+
+# Lista zapasowych węzłów publicznych
+RPC_URLS.extend([
     "https://polygon-rpc.com",
     "https://rpc.ankr.com/polygon",
     "https://1rpc.io/matic",
     "https://polygon.llamarpc.com",
     "https://gateway.tenderly.co/public/polygon"
-]
+])
 
 def add_log(message):
     """Dodaje wpis do konsoli bota na żywo oraz do logów systemowych"""
@@ -73,9 +79,9 @@ def update_real_balance():
         add_log("⚠️ Błąd konfiguracji: Brak zmiennej WALLET_ADDRESS w panelu Render!")
         return
         
-    # Adresy kontraktów USDC, w tym najważniejszy pUSD od Polymarketu
+    # Oficjalne i zaktualizowane adresy kontraktów dla Polymarket V2 na sieci Polygon
     usdc_contracts = [
-        "0x4B5C2D3cf0D21E4A55d491C62F8a43f8A4cc72DE", # Polymarket pUSD (Tutaj masz środki)
+        "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # Oficjalny Polymarket pUSD (V2)
         "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", # Nowe Natywne USDC
         "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"  # Starsze Bridged USDC.e
     ]
@@ -102,10 +108,15 @@ def update_real_balance():
                     pass
 
             total_balance = 0.0
+            
+            # Pętla sprawdzająca każdy kontrakt indywidualnie (odporna na błędy pojedynczego tokenu)
             for contract_addr in usdc_contracts:
-                contract = temp_w3.eth.contract(address=temp_w3.to_checksum_address(contract_addr), abi=min_abi)
-                balance_raw = contract.functions.balanceOf(temp_w3.to_checksum_address(wallet_address)).call()
-                total_balance += (balance_raw / 1_000_000.0)
+                try:
+                    contract = temp_w3.eth.contract(address=temp_w3.to_checksum_address(contract_addr), abi=min_abi)
+                    balance_raw = contract.functions.balanceOf(temp_w3.to_checksum_address(wallet_address)).call()
+                    total_balance += (balance_raw / 1_000_000.0)
+                except:
+                    continue # Jeśli jeden kontrakt zawiedzie lub nie istnieje, przejdź do kolejnego
             
             with state_lock:
                 bot_state["real_balance"] = total_balance
