@@ -14,9 +14,8 @@ from web3 import Web3
 try:
     from py_clob_client.client import ClobClient
     from py_clob_client.constants import POLYGON
-    from py_clob_client.clob_types import OrderArgs
+    from py_clob_client.clob_types import OrderArgs, ApiKeys
 except ImportError:
-    # Zabezpieczenie, jeśli pakiet instaluje się dynamicznie
     pass
 
 # Sprawdzanie czy bot działa na żywo (Render), czy lokalnie/testowo
@@ -29,248 +28,167 @@ USE_DYNAMIC_RISK = True      # True = bot ryzykuje % salda | False = stała kwot
 RISK_PERCENT = 5.0           # Przy 100$ na koncie, 5% to optymalne 5$ na zakład
 FIXED_TRADE_AMOUNT = 5.0     # Stała kwota transakcji w USDC (gdy USE_DYNAMIC_RISK = False)
 
-ENABLE_EARLY_EXIT = True     # Pobiera realne ceny z Polymarket do Stop-Loss/Take-Profit
+ENABLE_EARLY_EXIT = True     # Dynamiczny Stop-Loss/Take-Profit wewnątrz świecy
 STOP_LOSS_PRICE = 0.30       
 TAKE_PROFIT_PRICE = 0.85     
 
-PRICE_MARGIN = 15.0          
-STRIKE_MARGIN = 10.0         
+PRICE_MARGIN = 15.0          # Wymagany dystans ceny od średniej SMA (w USD)
+STRIKE_MARGIN = 10.0         # Wymagany dystans ceny od punktu Strike (w USD)
 # =====================================================================
 
 # --- GLOBALNY STAN BOTA ---
 bot_state = {
-    "virtual_balance": 100.0,       # Używane tylko w trybie symulacji
-    "real_balance": 0.0,            # Prawdziwe saldo pobrane z Polymarket
-    "current_price": 0.0,           # Aktualna cena BTC
-    "sma": 0.0,                     # Średnia krocząca (SMA)
-    "minutes_left": 0,              # Minuty do końca świecy
-    "seconds_remain": 0,            # Sekundy do końca świecy
-    "current_candle_strike": 0.0,   # Cena początkowa świecy 15m (Strike)
-    "active_trade": None,           # Aktualnie otwarta pozycja
-    "trade_history": [],            # Historia zamkniętych transakcji
-    "logs": []                      # Logi bota wyświetlane w konsoli
+    "virtual_balance": 100.0,       
+    "real_balance": 0.0,            
+    "current_price": 0.0,           
+    "sma": 0.0,                     
+    "minutes_left": 0,              
+    "seconds_remain": 0,            
+    "current_candle_strike": 0.0,   
+    "active_trade": None,           
+    "trade_history": [],            
+    "logs": []                      
 }
 
 price_history = []
 state_lock = threading.RLock()
-poly_client = None  # Globalny obiekt klienta Polymarket
+poly_client = None  
 
-# Inteligentne zarządzanie węzłami RPC (pobiera Twój prywatny link z ustawień Rendera)
+# Zarządzanie węzłami RPC Polygon
 PRIVATE_RPC = os.environ.get("POLYGON_RPC_URL")
 RPC_URLS = []
-
 if PRIVATE_RPC:
     RPC_URLS.append(PRIVATE_RPC.strip())
-
-# Lista zapasowych węzłów publicznych
 RPC_URLS.extend([
     "https://polygon-rpc.com",
     "https://rpc.ankr.com/polygon",
-    "https://1rpc.io/matic",
-    "https://polygon.llamarpc.com"
+    "https://1rpc.io/matic"
 ])
 
 def add_log(message):
-    """Dodaje wpis do konsoli bota na żywo oraz do logów systemowych"""
+    """Dodaje wpis do konsoli bota oraz do pamięci stanów UI"""
     timestamp = datetime.utcnow().strftime("%H:%M:%S")
     log_entry = f"[{timestamp}] {message}"
     print(log_entry)  
     with state_lock:
         bot_state["logs"].append(log_entry)
-        if len(bot_state["logs"]) > 50:
+        if len(bot_state["logs"]) > 40:
             bot_state["logs"].pop(0)
 
 def init_clob_client():
-    """Inicjalizuje klienta ClobClient, jeśli bot działa w trybie LIVE"""
+    """Inicjalizuje zaawansowanego klienta Polymarket CLOB"""
     global poly_client
     if not IS_LIVE:
         return
     try:
         private_key = os.environ.get("WALLET_PRIVATE_KEY", "").replace("0x", "")
-        poly_client = ClobClient(
-            host="https://clob.polymarket.com",
-            key=private_key,
-            chain_id=POLYGON
-        )
-        add_log("✅ Zainicjalizowano moduł ClobClient do automatycznego zawierania transakcji!")
+        api_key = os.environ.get("POLY_API_KEY")
+        api_secret = os.environ.get("POLY_API_SECRET")
+        api_passphrase = os.environ.get("POLY_API_PASSPHRASE")
+
+        if api_key and api_secret and api_passphrase:
+            poly_client = ClobClient(
+                host="https://clob.polymarket.com",
+                key=private_key,
+                chain_id=POLYGON,
+                api_keys=ApiKeys(key=api_key, secret=api_secret, passphrase=api_passphrase)
+            )
+            add_log("✅ Autoryzacja CLOB powiodła się. Moduł handlowy aktywny.")
+        else:
+            poly_client = ClobClient(host="https://clob.polymarket.com", key=private_key, chain_id=POLYGON)
+            add_log("⚠️ Moduł CLOB zainicjalizowany bez kluczy API Secret/Passphrase (Tylko odczyt).")
     except Exception as e:
-        add_log(f"⚠️ Nie udało się wdrożyć modułu ClobClient ({e}). Używam podstawowego API.")
+        add_log(f"⚠️ Podsystem transakcyjny CLOB nie mógł wystartować: {e}")
 
 def update_real_balance():
-    """Pobiera stan konta z Polygon przy użyciu wielowęzłowego systemu z obsługą pUSD oraz PoA"""
+    """Pobiera zabezpieczone saldo USDC i pUSD z portfela Polygon"""
     if not IS_LIVE:
         return
-    
     wallet_address = os.environ.get("WALLET_ADDRESS")
     if not wallet_address:
-        add_log("⚠️ Błąd konfiguracji: Brak zmiennej WALLET_ADDRESS w panelu Render!")
         return
         
     usdc_contracts = [
-        "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # Oficjalny Polymarket pUSD (V2)
-        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", # Nowe Natywne USDC
-        "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"  # Starsze Bridged USDC.e
+        "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb", # Polymarket pUSD
+        "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"  # Native USDC
     ]
-    
-    min_abi = [
-        {"constant": True, "inputs": [{"name": "_owner", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "balance", "type": "uint256"}], "type": "function"}
-    ]
+    min_abi = [{"constant": True, "inputs": [{"name": "_owner", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "balance", "type": "uint256"}], "type": "function"}]
     
     for rpc in RPC_URLS:
         try:
-            temp_w3 = Web3(Web3.HTTPProvider(rpc, request_kwargs={'timeout': 4}))
-            
+            temp_w3 = Web3(Web3.HTTPProvider(rpc, request_kwargs={'timeout': 3}))
             try:
                 from web3.middleware import geth_poa_middleware
                 temp_w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-            except:
-                try:
-                    from web3.middleware import ExtraDataToPoAMiddleware
-                    temp_w3.middleware_onion.inject(ExtraDataToPoAMiddleware, layer=0)
-                except:
-                    pass
+            except: pass
 
             total_balance = 0.0
-            
             for contract_addr in usdc_contracts:
                 try:
                     contract = temp_w3.eth.contract(address=temp_w3.to_checksum_address(contract_addr), abi=min_abi)
                     balance_raw = contract.functions.balanceOf(temp_w3.to_checksum_address(wallet_address)).call()
                     total_balance += (balance_raw / 1_000_000.0)
-                except:
-                    continue 
+                except: continue
             
             with state_lock:
                 bot_state["real_balance"] = total_balance
                 bot_state["virtual_balance"] = total_balance
-            return  
-        except:
-            continue  
+            return
+        except: continue
 
 def get_polymarket_15m_market():
-    """
-    Stabilne pobieranie aktywnych rynków za pomocą Gamma API z filtrowaniem 
-    pod kątem struktury rynków 15-minutowych Bitcoina.
-    """
+    """Pobiera dane strukturalne aktualnego rynku BTC z Gamma API"""
     try:
-        url = "https://gamma-api.polymarket.com/markets?closed=false&order=volume&direction=desc&limit=100&slug=bitcoin"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(url, headers=headers, timeout=5)
-        
+        url = "https://gamma-api.polymarket.com/markets?closed=false&order=volume&direction=desc&limit=60&slug=bitcoin"
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=4)
         if response.status_code == 200:
             markets_list = response.json()
-            
-            if not isinstance(markets_list, list):
-                return None
-
-            # KROK 1: Precyzyjne szukanie rynku 15-minutowego
             for market in markets_list:
-                if not isinstance(market, dict):
-                    continue
                 q = market.get("question", "")
                 title = market.get("title", "")
-                
                 if "Bitcoin" in q and any(x in q.lower() or x in title.lower() for x in ["15m", "15-min", "15 min", "quarter"]):
-                    clob_token_ids = market.get("clobTokenIds")
-                    if clob_token_ids and isinstance(clob_token_ids, str):
-                        try:
-                            clob_token_ids = json.loads(clob_token_ids)
-                        except:
-                            continue
-                            
-                    if clob_token_ids and len(clob_token_ids) >= 2:
-                        return {
-                            "UP_TOKEN": clob_token_ids[0],    
-                            "DOWN_TOKEN": clob_token_ids[1],  
-                            "market_id": market.get("conditionId"),
-                            "found_by": "GAMMA_15M"
-                        }
-            
-            # KROK 2: Fallback rynków szybkiego handlu BTC
-            for market in markets_list:
-                if not isinstance(market, dict):
-                    continue
-                q = market.get("question", "")
-                if "Bitcoin" in q:
-                    clob_token_ids = market.get("clobTokenIds")
-                    if clob_token_ids and isinstance(clob_token_ids, str):
-                        try:
-                            clob_token_ids = json.loads(clob_token_ids)
-                        except:
-                            continue
-                    if clob_token_ids and len(clob_token_ids) >= 2:
-                        return {
-                            "UP_TOKEN": clob_token_ids[0],    
-                            "DOWN_TOKEN": clob_token_ids[1],  
-                            "market_id": market.get("conditionId"),
-                            "found_by": "GAMMA_FALLBACK"
-                        }
-                        
+                    tokens = market.get("clobTokenIds")
+                    if tokens and isinstance(tokens, str):
+                        tokens = json.loads(tokens)
+                    if tokens and len(tokens) >= 2:
+                        return {"UP_TOKEN": tokens[0], "DOWN_TOKEN": tokens[1], "market_id": market.get("conditionId")}
     except Exception as e:
-        add_log(f"⚠️ Błąd podczas odpytywania Gamma API: {e}")
+        add_log(f"⚠️ Problem z Gamma API: {e}")
     return None
 
 def get_btc_price():
-    """Bezpieczne pobieranie ceny BTC z obsługą fallbacków (Binance -> Coinbase)"""
-    headers = {'User-Agent': 'Mozilla/5.0'}
+    """Stabilny i redundantny przelicznik ceny spot BTC"""
     try:
-        url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200:
-            return float(response.json()['price'])
-    except: pass
-
-    try:
-        url = "https://api.coinbase.com/v2/prices/BTC-USD/spot"
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200:
-            return float(response.json()['data']['amount'])
-    except: pass
-
-    return None
+        res = requests.get("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", timeout=3)
+        return float(res.json()['price'])
+    except:
+        try:
+            res = requests.get("https://api.coinbase.com/v2/prices/BTC-USD/spot", timeout=3)
+            return float(res.json()['data']['amount'])
+        except: return None
 
 def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
-    """Wysyła zapytanie handlowe do Relayer API Polymarket przy użyciu Twojego klucza"""
+    """Składa bezpieczne zlecenie na giełdzie"""
     if not IS_LIVE:
-        add_log(f"🤖 [SYMULACJA] Wykonano zlecenie {side} dla tokenu {token_id[:6]}... za {amount_usdc} USDC")
+        add_log(f"🤖 [SYMULACJA] Zlecenie {side} | Token: {token_id[:6]}... | Kwota: {amount_usdc} USDC")
         return True
-
-    # Jeżeli moduł ClobClient jest gotowy, wysyłamy przez bezpieczne SDK
     global poly_client
-    if poly_client:
+    if poly_client and hasattr(poly_client, 'create_order'):
         try:
-            estimated_price = 0.50
-            shares_count = round(amount_usdc / estimated_price, 2)
-            order_response = poly_client.create_order(OrderArgs(
-                price=estimated_price,
-                size=shares_count,
-                side=side,
-                token_id=token_id
-            ))
-            return order_response
-        except Exception as sdk_err:
-            add_log(f"⚠️ Próba zapytania przez SDK zwróciła błąd: {sdk_err}. Uruchamiam fallback REST...")
-
-    api_key = os.environ.get("POLY_API_KEY")
+            return poly_client.create_order(OrderArgs(price=0.50, size=round(amount_usdc/0.50, 1), side=side, token_id=token_id))
+        except Exception as e:
+            add_log(f"❌ Błąd SDK CLOB: {e}. Próba wykonania żądania REST...")
+            
     url = "https://clob.polymarket.com/order"
-    headers = {"x-api-key": api_key, "Content-Type": "application/json"}
-    payload = {
-        "token_id": token_id,
-        "amount": amount_usdc,
-        "side": side,
-        "account": os.environ.get("WALLET_ADDRESS")
-    }
+    headers = {"x-api-key": os.environ.get("POLY_API_KEY", ""), "Content-Type": "application/json"}
+    payload = {"token_id": token_id, "amount": amount_usdc, "side": side, "account": os.environ.get("WALLET_ADDRESS")}
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=5)
-        if response.status_code in [200, 201]:
-            return response.json()
-        else:
-            add_log(f"❌ Odrzucenie zlecenia przez Polymarket API: {response.text}")
-    except Exception as e:
-        add_log(f"🚨 Błąd sieciowy podczas wysyłania zlecenia: {e}")
-    return None
+        res = requests.post(url, headers=headers, json=payload, timeout=4)
+        return res.status_code in [200, 201]
+    except: return False
 
 def update_candle_logic(current_price):
+    """Zarządza cyklem życia świecy 15-minutowej oraz historii transakcji"""
     global price_history
     now = datetime.utcnow()
     minutes_passed = now.minute % 15
@@ -283,88 +201,130 @@ def update_candle_logic(current_price):
         bot_state["current_price"] = current_price
 
         price_history.append(current_price)
-        if len(price_history) > 30:
-            price_history.pop(0)
+        if len(price_history) > 40: price_history.pop(0)
         bot_state["sma"] = sum(price_history) / len(price_history)
 
-        if minutes_passed == 0 and seconds_passed < 10:
+        # Inicjalizacja nowej świecy
+        if minutes_passed == 0 and seconds_passed < 8:
             if bot_state["current_candle_strike"] != current_price:
                 bot_state["current_candle_strike"] = current_price
-                add_log(f"🆕 Rozpoczęcie nowej świecy 15m. Strike: ${current_price:,.2f}")
+                add_log(f"🆕 Nowy punkt Strike świecy 15m: ${current_price:,.2f}")
                 update_real_balance()
 
-        if minutes_passed == 14 and seconds_passed >= 55:
+        # Automatyczne rozliczenie pozycji na koniec świecy
+        if minutes_passed == 14 and seconds_passed >= 54:
             if bot_state["active_trade"]:
-                add_log(f"🏁 Koniec czasu świecy. Pozycja przekazana do rozliczenia.")
+                trade = bot_state["active_trade"]
+                is_up = "UP" in trade["direction"]
+                win = (current_price > trade["strike_price"]) if is_up else (current_price < trade["strike_price"])
+                profit = trade["cost"] * 0.85 if win else -trade["cost"]
+                
+                history_entry = {
+                    "direction": trade["direction"],
+                    "entry_btc": trade["btc_at_entry"],
+                    "strike_btc": trade["strike_price"],
+                    "exit_btc": current_price,
+                    "result": "WIN" if win else "LOSS",
+                    "profit": profit
+                }
+                bot_state["trade_history"].append(history_entry)
+                if not IS_LIVE and win:
+                    bot_state["virtual_balance"] += (trade["cost"] * 1.85)
+                
+                add_log(f"🏁 Koniec świecy rozliczony. Wynik: {'SUKCES 💰' if win else 'PORAŻKA 📉'}")
                 bot_state["active_trade"] = None
                 update_real_balance()
 
 def run_trading_strategy():
-    add_log(f"System analizy rynkowej uruchomiony. Tryb: {'PRODUKCYJNY (LIVE)' if IS_LIVE else 'TESTOWY (PAPER TRADING)'}")
+    add_log(f"Uruchomiono system tradingowy Krajekis. Tryb: {'PRODUKCJA' if IS_LIVE else 'SYMULACJA'}")
     init_clob_client()
     update_real_balance()
     
-    init_price = get_btc_price()
-    if init_price:
+    init_p = get_btc_price()
+    if init_p:
         with state_lock:
-            bot_state["current_candle_strike"] = init_price
-            bot_state["current_price"] = init_price
-        add_log(f"🟢 Połączono z serwerem cenowym! Początkowe BTC: ${init_price:,.2f}")
-
+            bot_state["current_candle_strike"] = init_p
+            bot_state["current_price"] = init_p
+            
     balance_ticker = 0
     while True:
         try:
             current_price = get_btc_price()
             if not current_price:
-                time.sleep(5)
+                time.sleep(4)
                 continue
-            
+                
             update_candle_logic(current_price)
             
             balance_ticker += 1
-            if balance_ticker >= 12:
+            if balance_ticker >= 15:
                 update_real_balance()
                 balance_ticker = 0
-            
+                
             with state_lock:
-                m_left = bot_state["minutes_left"]
                 active = bot_state["active_trade"]
                 strike = bot_state["current_candle_strike"]
+                sma = bot_state["sma"]
                 balance = bot_state["real_balance"] if IS_LIVE else bot_state["virtual_balance"]
 
-            # Analiza i wykonywanie pozycji handlowych
-            if not active:  
-                investment = (balance * RISK_PERCENT) / 100.0 if USE_DYNAMIC_RISK else FIXED_TRADE_AMOUNT
-                investment = min(balance, max(2.0, investment))
-
-                markets_data = get_polymarket_15m_market()
+            # --- MONITORING EARLY EXIT (STOP-LOSS / TAKE-PROFIT) ---
+            if active and ENABLE_EARLY_EXIT:
+                btc_diff = current_price - active["btc_at_entry"]
+                est_token_price = 0.50 + (btc_diff / 80.0) if "UP" in active["direction"] else 0.50 - (btc_diff / 80.0)
+                est_token_price = max(0.05, min(0.95, est_token_price))
                 
-                if markets_data and investment >= 2.0:
-                    method = markets_data.get("found_by", "UNKNOWN")
-                    add_log(f"📡 [SUKCES] Wykryto rynek BTC metodą: {method}! Dokonuję zakupu.")
-                    share_price = 0.50  
+                if est_token_price <= STOP_LOSS_PRICE or est_token_price >= TAKE_PROFIT_PRICE:
+                    is_tp = est_token_price >= TAKE_PROFIT_PRICE
+                    profit = active["cost"] * (est_token_price / 0.50 - 1)
                     
-                    success = execute_polymarket_order(markets_data["UP_TOKEN"], investment, side="BUY")
-                    if success:
-                        with state_lock:
-                            bot_state["active_trade"] = {
-                                "direction": f"UP ({method})",
-                                "token_id": markets_data["UP_TOKEN"],
-                                "entry_price": share_price,
-                                "strike_price": strike if strike > 0 else current_price,
-                                "btc_at_entry": current_price,
-                                "amount_shares": investment / share_price,
-                                "cost": investment
-                            }
-                            if not IS_LIVE: 
-                                bot_state["virtual_balance"] -= investment
-                elif not markets_data:
-                    add_log("⏳ API Polymarket nie zwróciło w tej chwili aktywnego rynku 15m BTC. Ponawianie...")
-            
+                    execute_polymarket_order(active["token_id"], active["cost"], side="SELL")
+                    
+                    history_entry = {
+                        "direction": f"EARLY {'TP' if is_tp else 'SL'}",
+                        "entry_btc": active["btc_at_entry"],
+                        "strike_btc": active["strike_price"],
+                        "exit_btc": current_price,
+                        "result": "WIN" if is_tp else "LOSS",
+                        "profit": profit
+                    }
+                    with state_lock:
+                        bot_state["trade_history"].append(history_entry)
+                        if not IS_LIVE:
+                            bot_state["virtual_balance"] += (active["cost"] + profit)
+                        bot_state["active_trade"] = None
+                    add_log(f"🚨 Awaryjne zamknięcie pozycji ({'Take-Profit' if is_tp else 'Stop-Loss'}) przy cenie tokenu {est_token_price:.2f}")
+
+            # --- REALIZACJA LOGIKI STRATEGII WEJŚCIA ---
+            if not active and strike > 0 and sma > 0:
+                buy_up = (current_price > strike + STRIKE_MARGIN) and (current_price > sma + PRICE_MARGIN)
+                buy_down = (current_price < strike - STRIKE_MARGIN) and (current_price < sma - PRICE_MARGIN)
+                
+                if buy_up or buy_down:
+                    investment = (balance * RISK_PERCENT) / 100.0 if USE_DYNAMIC_RISK else FIXED_TRADE_AMOUNT
+                    investment = min(balance, max(2.0, investment))
+                    
+                    markets_data = get_polymarket_15m_market()
+                    if markets_data and investment >= 2.0:
+                        chosen_token = markets_data["UP_TOKEN"] if buy_up else markets_data["DOWN_TOKEN"]
+                        dir_str = "UP" if buy_up else "DOWN"
+                        method = markets_data.get("market_id", "Gamma")
+                        
+                        add_log(f"🎯 Sygnał {dir_str}! BTC: ${current_price:,.2f} | SMA: ${sma:,.2f}. Kupuję kontrakt...")
+                        if execute_polymarket_order(chosen_token, investment, side="BUY"):
+                            with state_lock:
+                                bot_state["active_trade"] = {
+                                    "direction": f"{dir_str} ({method[:6]})",
+                                    "token_id": chosen_token,
+                                    "entry_price": 0.50,
+                                    "strike_price": strike,
+                                    "btc_at_entry": current_price,
+                                    "cost": investment
+                                }
+                                if not IS_LIVE:
+                                    bot_state["virtual_balance"] -= investment
         except Exception as e:
             add_log(f"🚨 Awaria pętli decyzyjnej: {e}")
-            
-        time.sleep(5)
+        time.sleep(4)
 
 # --- PANEL KONTROLNY (WEB SERWER) ---
 class DashboardHandler(BaseHTTPRequestHandler):
@@ -377,10 +337,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_header('Connection', 'close')
             self.end_headers()
             with state_lock:
-                display_state = bot_state.copy()
-                if IS_LIVE:
-                    display_state["virtual_balance"] = bot_state["real_balance"]
-                self.wfile.write(json.dumps(display_state).encode('utf-8'))
+                self.wfile.write(json.dumps(bot_state).encode('utf-8'))
             return
 
         self.send_response(200)
@@ -447,7 +404,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
                         <p class="text-sm font-medium text-slate-400">Skuteczność systemu</p>
                         <p id="ui-stats" class="text-2xl font-extrabold mt-2 text-white">0 / 0 (0%)</p>
-                        <p id="ui-profit" class="text-xs mt-2 text-emerald-400">Wynik: $0.00 USDC</p>
+                        <p id="ui-profit" class="text-xs mt-2 text-emerald-400 font-semibold">Wynik: $0.00 USDC</p>
                     </div>
                 </div>
 
@@ -531,7 +488,29 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                     <div><p class="text-xs text-slate-400">KOSZT TRANSAKCJI</p><p class="text-lg font-bold text-slate-200">$${trade.cost.toFixed(2)} USDC</p></div>
                                 </div>`;
                         } else {
-                            activeBox.innerHTML = `<p class="text-slate-500 py-2">Brak otwartej pozycji. Bot czeka na optymalne warunki.</p>`;
+                            activeBox.innerHTML = `<p class="text-slate-500 py-2">Brak otwartej pozycji. Bot czeka na sygnał strategii.</p>`;
+                        }
+
+                        if (data.trade_history && data.trade_history.length > 0) {
+                            const total = data.trade_history.length;
+                            const wins = data.trade_history.filter(t => t.result === 'WIN').length;
+                            const pct = ((wins / total) * 100).toFixed(0);
+                            document.getElementById('ui-stats').innerText = `${wins} / ${total} (${pct}%)`;
+                            
+                            let totalProfit = data.trade_history.reduce((sum, t) => sum + t.profit, 0);
+                            const profitEl = document.getElementById('ui-profit');
+                            profitEl.innerText = `Wynik: ${totalProfit >= 0 ? '+' : ''}$${totalProfit.toFixed(2)} USDC`;
+                            profitEl.className = totalProfit >= 0 ? "text-xs mt-2 text-emerald-400 font-semibold" : "text-xs mt-2 text-rose-400 font-semibold";
+
+                            const historyRows = document.getElementById('ui-history-rows');
+                            historyRows.innerHTML = data.trade_history.slice().reverse().map(t => `
+                                <tr class="border-b border-slate-800/30 hover:bg-slate-900/40 transition">
+                                    <td class="py-3 px-3 font-semibold ${t.direction.includes('UP') || t.direction.includes('TP') ? 'text-emerald-400' : 'text-rose-400'}">${t.direction}</td>
+                                    <td class="py-3 px-3 text-slate-300">$${t.entry_btc.toLocaleString()}</td>
+                                    <td class="py-3 px-3 text-slate-400">$${t.strike_btc.toLocaleString()} vs $${t.exit_btc.toLocaleString()}</td>
+                                    <td class="py-3 px-3 font-bold ${t.result === 'WIN' ? 'text-emerald-400' : 'text-rose-400'}">${t.result === 'WIN' ? '+' : ''}$${t.profit.toFixed(2)}</td>
+                                </tr>
+                            `).join('');
                         }
 
                         const logsDiv = document.getElementById('ui-logs');
