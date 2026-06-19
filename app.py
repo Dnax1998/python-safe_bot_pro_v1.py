@@ -78,7 +78,7 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def init_clob_client():
-    """Inicjalizuje zaawansowanego klienta Polymarket CLOB"""
+    """Inicjalizuje zaawansowanego klienta Polymarket CLOB z zachowaniem wymogów Pydantic"""
     global poly_client
     if not IS_LIVE:
         return
@@ -94,12 +94,18 @@ def init_clob_client():
         api_passphrase = os.environ.get("POLY_API_PASSPHRASE")
 
         if api_key and api_secret and api_passphrase:
-            # Parametry ApiCreds podane pozycyjnie w celu uniknięcia konfliktów nazw argumentów w SDK
+            # Jawne przekazanie nazwanych argumentów (kwargs) wymagane przez strukturę BaseModel Pydantic
+            explicit_creds = ApiCreds(
+                api_key=api_key, 
+                api_secret=api_secret, 
+                api_passphrase=api_passphrase
+            )
+            
             poly_client = ClobClient(
                 host="https://clob.polymarket.com",
                 chain_id=POLYGON,
                 private_key=private_key,
-                api_creds=ApiCreds(api_key, api_secret, api_passphrase)
+                api_creds=explicit_creds
             )
             add_log("✅ Autoryzacja CLOB powiodła się. Moduł handlowy aktywny.")
         else:
