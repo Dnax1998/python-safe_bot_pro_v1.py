@@ -9,14 +9,16 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from web3 import Web3
 
 # =====================================================================
-# --- POPRAWKA IMPORTÓW DLA OFICJALNEGO KLIENTA POLYMARKET ---
+# --- BEZPIECZNA WERYFIKACJA INTEGRACJI SDK POLYMARKET ---
 # =====================================================================
+HAS_SDK = False
 try:
     from py_clob_client.client import ClobClient
     from py_clob_client.constants import POLYGON
     from py_clob_client.clob_types import OrderArgs, ApiKeys
+    HAS_SDK = True
 except ImportError:
-    pass
+    HAS_SDK = False
 
 # Sprawdzanie czy bot działa na żywo (Render), czy lokalnie/testowo
 IS_LIVE = os.environ.get("WALLET_PRIVATE_KEY") is not None
@@ -80,6 +82,11 @@ def init_clob_client():
     global poly_client
     if not IS_LIVE:
         return
+    
+    if not HAS_SDK:
+        add_log("❌ BŁĄD SDK: Brak 'py-clob-client' w środowisku Render! Dodaj tę bibliotekę do requirements.txt.")
+        return
+
     try:
         private_key = os.environ.get("WALLET_PRIVATE_KEY", "").replace("0x", "")
         api_key = os.environ.get("POLY_API_KEY")
@@ -172,8 +179,9 @@ def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
     if not IS_LIVE:
         add_log(f"🤖 [SYMULACJA] Zlecenie {side} | Token: {token_id[:6]}... | Kwota: {amount_usdc} USDC")
         return True
+    
     global poly_client
-    if poly_client and hasattr(poly_client, 'create_order'):
+    if poly_client and HAS_SDK and hasattr(poly_client, 'create_order'):
         try:
             return poly_client.create_order(OrderArgs(price=0.50, size=round(amount_usdc/0.50, 1), side=side, token_id=token_id))
         except Exception as e:
@@ -413,7 +421,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         <i class="fa-solid fa-chart-line text-indigo-400"></i> Aktywna Pozycja (Polymarket)
                     </h2>
                     <div id="ui-active-box" class="text-slate-400 py-4 text-center">
-                        Brak otwartej pozycji. Bot czeka na optymalne warunki.
+                        Brak otwartej pozycji. Bot czeka na sygnał strategii.
                     </div>
                 </div>
 
