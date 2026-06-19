@@ -3,7 +3,7 @@ import requests
 import json
 import threading
 import os
-import math  # Potrzebne do zaawansowanych obliczeń prawdopodobieństwa (Sigmoidy)
+import math
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -24,7 +24,7 @@ STRIKE_MARGIN = 10.0         # Wymagany dystans BTC od ceny Strike (w USD)
 
 # --- GLOBALNY STAN BOTA ---
 bot_state = {
-    "virtual_balance": 1000.0,      # Stan konta (nadpisywany realnym saldem, jeśli podano POLY_ADDRESS)
+    "virtual_balance": 0.0,         # Startowo ustawione na 0.0, zostanie nadpisane przez realne saldo
     "current_price": 0.0,           # Aktualna cena BTC
     "sma": 0.0,                     # Średnia krocząca (SMA)
     "minutes_left": 0,              # Minuty do końca świecy
@@ -36,31 +36,33 @@ bot_state = {
 }
 
 price_history = []
-# RLock() zapobiega zakleszczeniom (deadlockom) w wielowątkowości
 state_lock = threading.RLock()
 
 def add_log(message):
     """Dodaje wpis do konsoli bota na żywo oraz do logów systemowych"""
     timestamp = datetime.utcnow().strftime("%H:%M:%S")
     log_entry = f"[{timestamp}] {message}"
-    print(log_entry)  # Wyświetla log w konsoli głównej serwera Render
+    print(log_entry)
     with state_lock:
         bot_state["logs"].append(log_entry)
         if len(bot_state["logs"]) > 50:
             bot_state["logs"].pop(0)
 
 def update_real_balance():
-    """Niezawodne pobieranie realnego salda (pUSD/USDC) z uwzględnieniem zabezpieczeń Polymarketu"""
+    """Pobiera realne saldo (pUSD/USDC) bezpośrednio z API Polymarketu"""
     target_address = os.environ.get("POLY_ADDRESS", "").strip()
     
     if not target_address:
+        # Jeśli nie ustawiono adresu, bot korzysta z trybu demo/wirtualnego (np. 500 USDC startowo)
+        with state_lock:
+            if bot_state["virtual_balance"] == 0.0 and len(bot_state["trade_history"]) == 0:
+                bot_state["virtual_balance"] = 500.0
         return
 
     try:
-        # Pancerne pobieranie salda przez sesję (omijające blokady 403/404)
         session = requests.Session()
         session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0.0.0",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Accept": "application/json"
         })
         url = f"https://gamma-api.polymarket.com/balance/{target_address}"
@@ -75,48 +77,32 @@ def update_real_balance():
             
             with state_lock:
                 bot_state["virtual_balance"] = total
-    except Exception:
-        pass
+        else:
+            add_log(f"⚠️ Problem z API Polymarket (Status {res.status_code}). Nie udało się pobrać salda.")
+    except Exception as e:
+        add_log(f"⚠️ Błąd połączenia podczas pobierania salda: {e}")
 
 def get_btc_price():
     """Bezpieczne pobieranie ceny BTC z obsługą fallbacków (Binance -> Coinbase -> Kraken)"""
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
-
-    # Metoda 1: Binance
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    
+    # Binance
     try:
         url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
             return float(response.json()['price'])
-        else:
-            print(f"[Binance] Kod błędu: {response.status_code} (prawdopodobnie limit IP)")
-    except Exception as e:
-        print(f"[Binance] Błąd połączenia: {e}")
+    except Exception:
+        pass
 
-    # Metoda 2: Coinbase (Bardzo odporna na blokady chmur)
+    # Coinbase
     try:
         url = "https://api.coinbase.com/v2/prices/BTC-USD/spot"
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
             return float(response.json()['data']['amount'])
-        else:
-            print(f"[Coinbase] Kod błędu: {response.status_code}")
-    except Exception as e:
-        print(f"[Coinbase] Błąd połączenia: {e}")
-
-    # Metoda 3: Kraken
-    try:
-        url = "https://api.kraken.com/0/public/Ticker?pair=XBTUSD"
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200:
-            result = response.json().get('result', {})
-            pair_key = list(result.keys())[0] if result else None
-            if pair_key:
-                return float(result[pair_key]['c'][0])
-    except Exception as e:
-        print(f"[Kraken] Błąd połączenia: {e}")
+    except Exception:
+        pass
 
     return None
 
@@ -125,7 +111,6 @@ def update_candle_logic(current_price):
     global price_history
     now = datetime.utcnow()
     
-    # Obliczanie czasu do końca świecy 15m
     minutes_passed = now.minute % 15
     seconds_passed = now.second
     total_seconds_left = (15 * 60) - (minutes_passed * 60 + seconds_passed)
@@ -135,19 +120,17 @@ def update_candle_logic(current_price):
         bot_state["seconds_remain"] = total_seconds_left % 60
         bot_state["current_price"] = current_price
 
-        # Aktualizacja historii średniej SMA
         price_history.append(current_price)
         if len(price_history) > 30:
             price_history.pop(0)
         bot_state["sma"] = sum(price_history) / len(price_history)
 
-        # Rejestracja ceny startowej świecy (Strike)
         if minutes_passed == 0 and seconds_passed < 10:
             if bot_state["current_candle_strike"] != current_price:
                 bot_state["current_candle_strike"] = current_price
                 add_log(f"🆕 Rozpoczęcie nowej świecy 15m. Strike: ${current_price:,.2f}")
 
-        # ROZSTRZYGNIĘCIE TRANSAKCJI NA KOŃCU ŚWIECY (ostatnie 5 sekund świecy)
+        # ROZSTRZYGNIĘCIE TRANSAKCJI NA KOŃCU ŚWIECY
         if minutes_passed == 14 and seconds_passed >= 55:
             if bot_state["active_trade"]:
                 trade = bot_state["active_trade"]
@@ -155,7 +138,6 @@ def update_candle_logic(current_price):
                 final_price = current_price
                 direction = trade["direction"]
                 
-                # Sprawdzanie warunku wygranej
                 won = False
                 if direction == "UP" and final_price > strike:
                     won = True
@@ -174,7 +156,6 @@ def update_candle_logic(current_price):
                     status = "PRZEGRANA"
                     add_log(f"📉 Porażka. Transakcja {direction} na koniec świecy była stratna. Strata: -${cost:.2f} USDC")
                 
-                # Zapis transakcji do historii
                 trade["exit_price"] = final_price
                 trade["status"] = status
                 trade["profit"] = profit
@@ -183,20 +164,21 @@ def update_candle_logic(current_price):
                 bot_state["trade_history"].append(trade)
                 bot_state["active_trade"] = None
                 
-                # Aktualizacja salda po zakończeniu transakcji
+                # Odświeżenie realnego salda po rozliczeniu kontraktu
                 update_real_balance()
 
 def run_trading_strategy():
     """Główna pętla handlowa bota oparta o timing i trend Krajekisa"""
     add_log("System analizy rynkowej uruchomiony pomyślnie.")
     
-    # Próba pierwszego pobrania realnego salda przy starcie systemu
+    # Pierwsza próba pobrania realnego salda przy starcie bota
     poly_address = os.environ.get("POLY_ADDRESS", "").strip()
     if poly_address:
-        add_log(f"💰 Wykryto adres portfela: {poly_address}. Pobieram saldo startowe...")
+        add_log(f"💰 Wykryto adres portfela: {poly_address}. Pobieram saldo z portfela...")
         update_real_balance()
     else:
-        add_log("⚠️ Brak POLY_ADDRESS w zmiennych środowiskowych. Bot uruchomiony z domyślnym saldem 1000.00 USDC.")
+        add_log("⚠️ Brak POLY_ADDRESS w zmiennych środowiskowych! Uruchomiono tryb demonstracyjny z wirtualnym kontem.")
+        update_real_balance()
     
     init_price = get_btc_price()
     if init_price:
@@ -204,24 +186,17 @@ def run_trading_strategy():
             bot_state["current_candle_strike"] = init_price
             bot_state["current_price"] = init_price
         add_log(f"🟢 Połączono z serwerem cenowym! Początkowe BTC: ${init_price:,.2f}")
-    else:
-        add_log("⚠️ Brak połączenia z giełdami przy starcie. Bot podejmie próbę za chwilę...")
 
-    error_count = 0
     while True:
         try:
-            # Cykliczne odświeżanie salda z API Polymarketu w każdej pętli bota
+            # Odświeżaj saldo w pętli (co każdą iterację), aby panel zawsze pokazywał prawdę
             update_real_balance()
             
             current_price = get_btc_price()
             if not current_price:
-                error_count += 1
-                if error_count % 6 == 0:
-                    add_log("❌ Problem z pobraniem ceny BTC z giełd. Sprawdź status sieci...")
                 time.sleep(5)
                 continue
             
-            error_count = 0
             update_candle_logic(current_price)
             
             with state_lock:
@@ -231,32 +206,24 @@ def run_trading_strategy():
                 strike = bot_state["current_candle_strike"]
                 balance = bot_state["virtual_balance"]
 
-            # -----------------------------------------------------------------
-            # AKTYWNE MONITOROWANIE I ZAMYKANIE POZYCJI W TRAKCIE ŚWIECY (WERSJA 2.0 - SIGMOIDA)
-            # -----------------------------------------------------------------
+            # MONITOROWANIE POSITION EARLY EXIT (STOP-LOSS / TAKE-PROFIT)
             if active and ENABLE_EARLY_EXIT:
                 price_diff = current_price - active["strike_price"]
-                
-                # Dynamiczna zmienność: im mniej czasu, tym rynek staje się bardziej nerwowy (czuły)
                 volatility_denominator = 5.0 + (m_left * 2.0)
                 
-                # Zaawansowany model prawdopodobieństwa giełdowego (Krzywa Sigmoidalna):
                 try:
                     if active["direction"] == "UP":
                         sim_share_price = 1.0 / (1.0 + math.exp(-price_diff / volatility_denominator))
-                    else: # DOWN
+                    else:
                         sim_share_price = 1.0 / (1.0 + math.exp(price_diff / volatility_denominator))
-                    
-                    # Logiczne ograniczenie cen rynkowych
                     sim_share_price = min(0.98, max(0.02, sim_share_price))
                 except OverflowError:
                     sim_share_price = 0.98 if price_diff > 0 else 0.02
 
-                # A. AKTYWNY STOP-LOSS (Cięcie strat)
+                # Stop-Loss
                 if sim_share_price <= STOP_LOSS_PRICE:
                     recovered_amount = active["amount_shares"] * sim_share_price
                     loss = recovered_amount - active["cost"]
-                    
                     with state_lock:
                         bot_state["virtual_balance"] += recovered_amount
                         active["status"] = "STOP LOSS"
@@ -265,16 +232,15 @@ def run_trading_strategy():
                         active["closed_at"] = datetime.utcnow().strftime("%H:%M:%S")
                         bot_state["trade_history"].append(active)
                         bot_state["active_trade"] = None
-                    add_log(f"🛡️ [STOP LOSS] Szybka ucieczka z pozycji {active['direction']}. Odzyskano: {recovered_amount:.2f} USDC (Uratowano kapitał, strata obniżona do: {loss:.2f} USDC)")
+                    add_log(f"🛡️ [STOP LOSS] Ucieczka z pozycji {active['direction']}. Wynik: {loss:.2f} USDC")
                     update_real_balance()
                     time.sleep(5)
                     continue
 
-                # B. AKTYWNY TAKE-PROFIT (Zabezpieczenie zysku)
+                # Take-Profit
                 elif sim_share_price >= TAKE_PROFIT_PRICE:
                     secured_amount = active["amount_shares"] * sim_share_price
                     profit = secured_amount - active["cost"]
-                    
                     with state_lock:
                         bot_state["virtual_balance"] += secured_amount
                         active["status"] = "TAKE PROFIT"
@@ -283,29 +249,29 @@ def run_trading_strategy():
                         active["closed_at"] = datetime.utcnow().strftime("%H:%M:%S")
                         bot_state["trade_history"].append(active)
                         bot_state["active_trade"] = None
-                    add_log(f"💰 [TAKE PROFIT] Cel osiągnięty przed czasem! Zamknięcie {active['direction']}. Zysk zabezpieczony: +{profit:.2f} USDC!")
+                    add_log(f"💰 [TAKE PROFIT] Zamknięcie przed czasem z zyskiem: +{profit:.2f} USDC!")
                     update_real_balance()
                     time.sleep(5)
                     continue
 
-            # -----------------------------------------------------------------
-            # OTWIERANIE NOWYCH POZYCJI (Zasada Krajekisa)
-            # -----------------------------------------------------------------
+            # OTWIERANIE NOWYCH POZYCJI
             if 5 <= m_left <= 10 and not active and sma > 0 and strike > 0:
                 price_diff = current_price - strike
                 
-                # Obliczanie stawki transakcji na podstawie ustawień ryzyka
                 if USE_DYNAMIC_RISK:
                     investment = (balance * RISK_PERCENT) / 100.0
                     investment = min(balance, max(2.0, investment))
                 else:
                     investment = min(balance, FIXED_TRADE_AMOUNT)
 
-                # Scenariusz 1: Trend wzrostowy
+                if investment < 1.0:
+                    time.sleep(5)
+                    continue
+
+                # UP
                 if current_price > sma + PRICE_MARGIN and price_diff > STRIKE_MARGIN:
                     share_price = min(0.90, max(0.55, 0.50 + (price_diff / 100)))
                     shares = investment / share_price
-                    
                     with state_lock:
                         bot_state["active_trade"] = {
                             "direction": "UP",
@@ -317,13 +283,12 @@ def run_trading_strategy():
                             "opened_at": datetime.utcnow().strftime("%H:%M:%S")
                         }
                         bot_state["virtual_balance"] -= investment
-                    add_log(f"🛒 [OTWARCIE] Kupiono UP po kursie ${share_price:.2f}. Koszt: {investment:.2f} USDC (Ryzyko: {RISK_PERCENT}%).")
+                    add_log(f"🛒 [OTWARCIE] Kupiono UP za {investment:.2f} USDC.")
 
-                # Scenariusz 2: Trend spadkowy
+                # DOWN
                 elif current_price < sma - PRICE_MARGIN and price_diff < -STRIKE_MARGIN:
                     share_price = min(0.90, max(0.55, 0.50 + (abs(price_diff) / 100)))
                     shares = investment / share_price
-                    
                     with state_lock:
                         bot_state["active_trade"] = {
                             "direction": "DOWN",
@@ -335,17 +300,17 @@ def run_trading_strategy():
                             "opened_at": datetime.utcnow().strftime("%H:%M:%S")
                         }
                         bot_state["virtual_balance"] -= investment
-                    add_log(f"🛒 [OTWARCIE] Kupiono DOWN po kursie ${share_price:.2f}. Koszt: {investment:.2f} USDC (Ryzyko: {RISK_PERCENT}%).")
+                    add_log(f"🛒 [OTWARCIE] Kupiono DOWN za {investment:.2f} USDC.")
 
         except Exception as e:
-            add_log(f"🚨 Nieoczekiwany błąd w pętli strategii: {e}")
+            add_log(f"🚨 Błąd w pętli strategii: {e}")
             
         time.sleep(5)
 
-# --- PANEL KONTROLNY (WIELOWĄTKOWY WEB SERWER) ---
+# --- PANEL KONTROLNY (WEB SERWER) ---
 class DashboardHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
-        return # Wyłączenie logów żądań HTTP w konsoli bota dla lepszej czytelności
+        return
 
     def do_GET(self):
         if self.path == '/api/status':
@@ -367,7 +332,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
         <html lang="pl">
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Krajekis Bot Dashboard</title>
             <script src="https://cdn.tailwindcss.com"></script>
             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -403,7 +367,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
-                        <p class="text-sm font-medium text-slate-400">Aktualna cena BTC (Binance/Coinbase)</p>
+                        <p class="text-sm font-medium text-slate-400">Aktualna cena BTC</p>
                         <p id="ui-price" class="text-2xl font-extrabold mt-2 text-white">Wczytywanie...</p>
                         <p id="ui-sma" class="text-xs text-slate-500 mt-2">Średnia SMA: --</p>
                     </div>
@@ -431,7 +395,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         <i class="fa-solid fa-chart-line text-indigo-400"></i> Aktywna Pozycja (Polymarket)
                     </h2>
                     <div id="ui-active-box" class="text-slate-400 py-4 text-center">
-                        Brak otwartej pozycji. Bot czeka na optymalne warunki (okno 5-10m).
+                        Brak otwartej pozycji. Bot czeka na optymalne warunki.
                     </div>
                 </div>
 
@@ -482,7 +446,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         if (data.current_price > 0) {
                             document.getElementById('ui-price').innerText = '$' + data.current_price.toLocaleString('en-US', {minimumFractionDigits: 2});
                         } else {
-                            document.getElementById('ui-price').innerText = 'Łączenie z API...';
+                            document.getElementById('ui-price').innerText = 'Łączenie...';
                         }
                         
                         document.getElementById('ui-sma').innerText = 'Średnia SMA (30 okresów): $' + data.sma.toLocaleString('en-US', {minimumFractionDigits: 2});
@@ -495,13 +459,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         const percent = ((900 - totalSeconds) / 900) * 100;
                         document.getElementById('ui-progress').style.width = percent + '%';
 
-                        const timerEl = document.getElementById('ui-timer');
-                        if (min >= 5 && min <= 10) {
-                            timerEl.className = "text-2xl font-extrabold mt-2 text-emerald-400";
-                        } else {
-                            timerEl.className = "text-2xl font-extrabold mt-2 text-amber-500";
-                        }
-
                         if (data.current_candle_strike > 0) {
                             document.getElementById('ui-strike').innerText = '$' + data.current_candle_strike.toLocaleString('en-US', {minimumFractionDigits: 2});
                             const diff = data.current_price - data.current_candle_strike;
@@ -513,8 +470,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                 diffEl.className = "text-xs mt-2 text-rose-400";
                                 diffEl.innerText = 'Różnica: -$' + Math.abs(diff).toFixed(2);
                             }
-                        } else {
-                            document.getElementById('ui-strike').innerText = 'Czekam na nową świecę...';
                         }
 
                         const activeBox = document.getElementById('ui-active-box');
@@ -531,17 +486,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                         <p class="text-lg font-bold text-slate-200">$` + trade.entry_price.toFixed(2) + `</p>
                                     </div>
                                     <div>
-                                        <p class="text-xs text-slate-400">KURS BTC W CHWILI ZAKUPU</p>
+                                        <p class="text-xs text-slate-400">KURS BTC PRZY WEJŚCIU</p>
                                         <p class="text-lg font-bold text-slate-200">$` + trade.btc_at_entry.toLocaleString() + `</p>
                                     </div>
                                     <div>
-                                        <p class="text-xs text-slate-400">ILOŚĆ UDZIAŁÓW / KOSZT</p>
+                                        <p class="text-xs text-slate-400">UDZIAŁY / KOSZT</p>
                                         <p class="text-lg font-bold text-slate-200">` + trade.amount_shares.toFixed(1) + ` szt. / $` + trade.cost.toFixed(2) + ` USDC</p>
                                     </div>
                                 </div>
                             `;
                         } else {
-                            activeBox.innerHTML = `<p class="text-slate-500 py-2">Brak otwartej pozycji. Bot czeka na optymalne warunki (okno 5-10m do końca świecy).</p>`;
+                            activeBox.innerHTML = `<p class="text-slate-500 py-2">Brak otwartej pozycji. Bot szuka optymalnych warunków.</p>`;
                         }
 
                         const logsDiv = document.getElementById('ui-logs');
@@ -549,8 +504,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             logsDiv.innerHTML = data.logs.slice().reverse().map(function(l) {
                                 return '<div>' + l + '</div>';
                             }).join('');
-                        } else {
-                            logsDiv.innerHTML = '<div class="text-slate-500">Łączenie z botem...</div>';
                         }
 
                         const historyRows = document.getElementById('ui-history-rows');
@@ -570,30 +523,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                         <td class="py-3 px-3 font-semibold ` + dirColor + `">` + t.direction + `</td>
                                         <td class="py-3 px-3">$` + t.entry_price.toFixed(2) + `</td>
                                         <td class="py-3 px-3 text-xs text-slate-400">$` + t.strike_price.toLocaleString() + ` vs $` + t.exit_price.toLocaleString() + `</td>
-                                        <td class="py-3 px-3 font-bold ` + profitColor + `">` + t.status + ` (` + (t.profit >= 0 ? '+' : '') + `$` + t.profit.toFixed(2) + `)</td>
+                                        <td class="py-3 px-3 font-bold ` + profitColor + `">` + t.status + ` (` + (t.profit >= 0 ? '+' : '') + `$" + t.profit.toFixed(2) + ")</td>
                                     </tr>
                                 `;
                             }).join('');
                             
                             historyRows.innerHTML = rowsHtml;
-                            
                             const winRate = (totalWins / data.trade_history.length) * 100;
                             document.getElementById('ui-stats').innerText = totalWins + ' / ' + data.trade_history.length + ' (' + winRate.toFixed(0) + '%)';
                             
                             const profitEl = document.getElementById('ui-profit');
                             profitEl.innerText = 'Wynik całkowity: ' + (totalProfit >= 0 ? '+' : '') + '$' + totalProfit.toFixed(2) + ' USDC';
                             profitEl.className = totalProfit >= 0 ? 'text-xs mt-2 text-emerald-400 font-semibold' : 'text-xs mt-2 text-rose-400 font-semibold';
-                        } else {
-                            document.getElementById('ui-stats').innerText = "0 / 0 (0%)";
-                            document.getElementById('ui-profit').innerText = "Wynik: $0.00 USDC";
                         }
 
                     } catch (e) {
-                        console.error("Błąd aktualizacji interfejsu:", e);
+                        console.error("Błąd interfejsu:", e);
                     }
                 }
 
-                setInterval(updateDashboard, 3000);
+                setInterval(updateDashboard, 2000);
                 updateDashboard();
             </script>
         </body>
@@ -602,13 +551,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.wfile.write(html.encode('utf-8'))
 
 if __name__ == "__main__":
-    # Start osobnego wątku dla algorytmu tradingu
     bot_thread = threading.Thread(target=run_trading_strategy)
     bot_thread.daemon = True
     bot_thread.start()
     
-    # Start wielowątkowego serwera na porcie zdefiniowanym przez Render
     port = int(os.environ.get("PORT", 10000))
     server = ThreadingHTTPServer(('0.0.0.0', port), DashboardHandler)
-    add_log(f"Wielowątkowy serwer HTTP Dashboard wystartował na porcie {port}")
+    add_log(f"Serwer HTTP Dashboard wystartował na porcie {port}")
     server.serve_forever()
