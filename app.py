@@ -43,11 +43,14 @@ bot_state = {
 price_history = []
 state_lock = threading.RLock()
 
-# Niezależne węzły dostępowe blockchainu Polygon dla stabilności danych
+# Rozszerzona, ultra-stabilna lista węzłów RPC dla sieci Polygon
 RPC_URLS = [
+    "https://polygon-rpc.com",
     "https://rpc.ankr.com/polygon",
-    "https://polygon-mainnet.public.blastapi.io",
-    "https://polygon-rpc.com"
+    "https://1rpc.io/matic",
+    "https://polygon.llamarpc.com",
+    "https://gateway.tenderly.co/public/polygon",
+    "https://polygon-mainnet.public.blastapi.io"
 ]
 
 def add_log(message):
@@ -61,7 +64,7 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def update_real_balance():
-    """Pobiera stan konta USDC (Natywnego oraz Bridged) na Polygon przy użyciu systemu ratunkowego"""
+    """Pobiera stan konta USDC z Polygon przy użyciu wielowęzłowego systemu z obsługą PoA"""
     if not IS_LIVE:
         return
     
@@ -79,11 +82,24 @@ def update_real_balance():
         {"constant": True, "inputs": [{"name": "_owner", "type": "address"}], "name": "balanceOf", "outputs": [{"name": "balance", "type": "uint256"}], "type": "function"}
     ]
     
+    last_error = "Brak odpowiedzi z węzłów"
+    
     for rpc in RPC_URLS:
         try:
             temp_w3 = Web3(Web3.HTTPProvider(rpc, request_kwargs={'timeout': 4}))
-            total_balance = 0.0
             
+            # Bezpieczne wstrzyknięcie kompatybilnego middleware dla sieci PoA (Polygon)
+            try:
+                from web3.middleware import geth_poa_middleware
+                temp_w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+            except:
+                try:
+                    from web3.middleware import ExtraDataToPoAMiddleware
+                    temp_w3.middleware_onion.inject(ExtraDataToPoAMiddleware, layer=0)
+                except:
+                    pass
+
+            total_balance = 0.0
             for contract_addr in usdc_contracts:
                 contract = temp_w3.eth.contract(address=temp_w3.to_checksum_address(contract_addr), abi=min_abi)
                 balance_raw = contract.functions.balanceOf(temp_w3.to_checksum_address(wallet_address)).call()
@@ -92,11 +108,12 @@ def update_real_balance():
             with state_lock:
                 bot_state["real_balance"] = total_balance
                 bot_state["virtual_balance"] = total_balance
-            return  
-        except:
+            return  # Sukces, przerywamy pętlę
+        except Exception as e:
+            last_error = str(e)
             continue  
             
-    add_log("⚠️ Węzły sieci Polygon są przeciążone. Spróbuję ponownie pobrać saldo za minutę...")
+    add_log(f"⚠️ Błąd Polygon RPC: {last_error}. Ponowna próba za minutę...")
 
 def get_polymarket_15m_market():
     """Dynamicznie odpytuje rynek Polymarket w poszukiwaniu aktualnej świecy 15m BTC"""
