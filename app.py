@@ -30,7 +30,7 @@ USE_DYNAMIC_RISK = True      # True = bot ryzykuje % salda | False = stała kwot
 RISK_PERCENT = 5.0           # Przy 100$ na koncie, 5% to optymalne 5$ na zakład
 FIXED_TRADE_AMOUNT = 5.0     # Stała kwota transakcji w USDC (gdy USE_DYNAMIC_RISK = False)
 
-ENABLE_EARLY_EXIT = True     # Pobiera realne ceny z Polymarket do Stop-Loss/Take-Profit
+ENABLE_EARLY_EXIT = True     # Dynamiczny Stop-Loss/Take-Profit wewnątrz świecy
 STOP_LOSS_PRICE = 0.30       
 TAKE_PROFIT_PRICE = 0.85     
 
@@ -78,13 +78,13 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def init_clob_client():
-    """Inicjalizuje klienta Polymarket CLOB ze skorygowanymi polami Pydantic"""
+    """Inicjalizuje klienta Polymarket CLOB z zachowaniem nazw key_or_signer"""
     global poly_client
     if not IS_LIVE:
         return
     
     if not HAS_SDK:
-        add_log("❌ BŁĄD SDK: Brak 'py-clob-client' lub błąd krytyczny importu typów w środowisku Render.")
+        add_log("❌ BŁĄD SDK: Brak 'py-clob-client' w środowisku Render.")
         return
 
     try:
@@ -94,22 +94,27 @@ def init_clob_client():
         api_passphrase = os.environ.get("POLY_API_PASSPHRASE")
 
         if api_key and api_secret and api_passphrase:
-            # SKORYGOWANE: SDK Polymarketu wymaga kluczy: key, secret, passphrase
             explicit_creds = ApiCreds(
                 key=api_key, 
                 secret=api_secret, 
                 passphrase=api_passphrase
             )
             
+            # NAPRAWIONE: Używamy argumentu key_or_signer zamiast private_key
             poly_client = ClobClient(
                 host="https://clob.polymarket.com",
                 chain_id=POLYGON,
-                private_key=private_key,
+                key_or_signer=private_key,
                 api_creds=explicit_creds
             )
             add_log("✅ Autoryzacja CLOB powiodła się. Moduł handlowy aktywny.")
         else:
-            poly_client = ClobClient(host="https://clob.polymarket.com", private_key=private_key, chain_id=POLYGON)
+            # NAPRAWIONE TU RÓWNIEŻ: Zmiana na key_or_signer
+            poly_client = ClobClient(
+                host="https://clob.polymarket.com", 
+                key_or_signer=private_key, 
+                chain_id=POLYGON
+            )
             add_log("⚠️ Moduł CLOB zainicjalizowany bez kluczy API Secret/Passphrase (Tylko odczyt).")
     except Exception as e:
         add_log(f"⚠️ Podsystem transakcyjny CLOB nie mógł wystartować: {e}")
