@@ -8,18 +8,6 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from web3 import Web3
 
-# =====================================================================
-# --- BEZPIECZNA WERYFIKACJA INTEGRACJI SDK POLYMARKET ---
-# =====================================================================
-HAS_SDK = False
-try:
-    from py_clob_client.client import ClobClient
-    from py_clob_client.constants import POLYGON
-    from py_clob_client.clob_types import OrderArgs, ApiCreds
-    HAS_SDK = True
-except ImportError:
-    HAS_SDK = False
-
 # Sprawdzanie czy bot działa na żywo (Render), czy lokalnie/testowo
 IS_LIVE = os.environ.get("WALLET_PRIVATE_KEY") is not None
 
@@ -34,8 +22,9 @@ ENABLE_EARLY_EXIT = True     # Dynamiczny Stop-Loss/Take-Profit wewnątrz świec
 STOP_LOSS_PRICE = 0.30       
 TAKE_PROFIT_PRICE = 0.85     
 
-PRICE_MARGIN = 15.0          
-STRIKE_MARGIN = 10.0         
+# AGRESYWNE USTAWIENIA - KUPUJE PRAWIE ZAWSZE
+PRICE_MARGIN = 0.01          
+STRIKE_MARGIN = 0.01         
 # =====================================================================
 
 # --- GLOBALNY STAN BOTA ---
@@ -54,7 +43,6 @@ bot_state = {
 
 price_history = []
 state_lock = threading.RLock()
-poly_client = None  
 
 # Zarządzanie węzłami RPC Polygon
 PRIVATE_RPC = os.environ.get("POLYGON_RPC_URL")
@@ -78,30 +66,10 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def init_clob_client():
-    """Inicjalizuje klienta Polymarket CLOB. W razie błędów wersji przełącza na natywny REST."""
-    global poly_client
+    """Weryfikacja trybu połączenia"""
     if not IS_LIVE:
         return
-    
-    if not HAS_SDK:
-        add_log("⚠️ Brak py-clob-client. Bot użyje bezpośrednich połączeń REST API.")
-        return
-
-    try:
-        private_key = os.environ.get("WALLET_PRIVATE_KEY", "").replace("0x", "")
-        
-        # Próba inicjalizacji z nazwanymi argumentami
-        try:
-            poly_client = ClobClient(key_or_signer=private_key, chain_id=POLYGON)
-            add_log("✅ Autoryzacja podsystemu SDK powiodła się.")
-        except TypeError as te:
-            # Całkowite odcięcie rzucania wyjątków przy niezgodności wersji konstruktora
-            poly_client = None
-            add_log("ℹ️ Wersja SDK niedopasowana strukturalnie. Aktywowano bezpośredni tryb REST HTTPS.")
-            
-    except Exception as e:
-        add_log(f"ℹ️ Podsystem SDK wyłączony ({e}). Aktywowano bezpośrednie żądania HTTPS REST.")
-        poly_client = None
+    add_log("✅ Używamy czystego połączenia REST API. Moduł SDK wyłączony.")
 
 def update_real_balance():
     """Pobiera zabezpieczone saldo USDC i pUSD z portfela Polygon"""
@@ -171,34 +139,48 @@ def get_btc_price():
         except: return None
 
 def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
-    """Składa bezpieczne zlecenie na giełdzie za pomocą SDK lub bezpośredniego API REST"""
+    """Składa zlecenie przez bezpośrednie API Polymarketu L2 (Z NAPRAWIONĄ AUTORYZACJĄ)"""
     if not IS_LIVE:
         add_log(f"🤖 [SYMULACJA] Zlecenie {side} | Token: {token_id[:6]}... | Kwota: {amount_usdc} USDC")
         return True
     
-    global poly_client
-    if poly_client and HAS_SDK and hasattr(poly_client, 'create_order'):
-        try:
-            return poly_client.create_order(OrderArgs(price=0.50, size=round(amount_usdc/0.50, 1), side=side, token_id=token_id))
-        except Exception as e:
-            pass 
-            
-    # Stabilna, niezawodna ścieżka bezpośredniego zapytania REST API HTTP
     url = "https://clob.polymarket.com/order"
+    
+    api_key = os.environ.get("POLY_API_KEY", "")
+    poly_secret = os.environ.get("POLY_SECRET", "")
+    poly_pass = os.environ.get("POLY_PASSPHRASE", "")
+    wallet_address = os.environ.get("WALLET_ADDRESS", "")
+    
+    if not api_key or not poly_secret:
+        add_log("❌ Błąd: Brak kluczy POLY_API_KEY lub POLY_SECRET w środowisku Render!")
+        return False
+        
+    timestamp = str(int(time.time()))
+    
     headers = {
-        "x-api-key": os.environ.get("POLY_API_KEY", ""), 
+        "x-api-key": api_key,
+        "x-api-secret": poly_secret,
+        "x-api-passphrase": poly_pass,
+        "x-api-timestamp": timestamp,
         "Content-Type": "application/json"
     }
+    
     payload = {
-        "token_id": token_id, 
-        "amount": amount_usdc, 
-        "side": side, 
-        "account": os.environ.get("WALLET_ADDRESS")
+        "token_id": token_id,
+        "amount": str(amount_usdc),
+        "side": side,
+        "account": wallet_address
     }
+    
     try:
-        res = requests.post(url, headers=headers, json=payload, timeout=4)
-        return res.status_code in [200, 201]
-    except: 
+        res = requests.post(url, headers=headers, json=payload, timeout=5)
+        if res.status_code in [200, 201]:
+            return True
+        else:
+            add_log(f"❌ Odrzucenie API: HTTP {res.status_code} - {res.text}")
+            return False
+    except Exception as e:
+        add_log(f"❌ Wyjątek połączenia API: {e}")
         return False
 
 def update_candle_logic(current_price):
@@ -248,7 +230,7 @@ def update_candle_logic(current_price):
                 update_real_balance()
 
 def run_trading_strategy():
-    add_log(f"Uruchomiono system tradingowy Krajekis. Tryb: {'PRODUKCJA' if IS_LIVE else 'SYMULACJA'}")
+    add_log(f"Uruchomiono system tradingowy. Tryb: {'PRODUKCJA' if IS_LIVE else 'SYMULACJA'}")
     init_clob_client()
     update_real_balance()
     
@@ -263,7 +245,7 @@ def run_trading_strategy():
         try:
             current_price = get_btc_price()
             if not current_price:
-                time.sleep(4)
+                time.sleep(2)
                 continue
                 
             update_candle_logic(current_price)
@@ -303,11 +285,12 @@ def run_trading_strategy():
                         if not IS_LIVE:
                             bot_state["virtual_balance"] += (active["cost"] + profit)
                         bot_state["active_trade"] = None
-                    add_log(f"🚨 Awaryjne zamknięcie pozycji ({'Take-Profit' if is_tp else 'Stop-Loss'}) przy cenie tokenu {est_token_price:.2f}")
+                    add_log(f"🚨 Awaryjne zamknięcie pozycji ({'Take-Profit' if is_tp else 'Stop-Loss'})")
 
+            # Uproszczona, AGRESYWNA logika wejścia
             if not active and strike > 0 and sma > 0:
-                buy_up = (current_price > strike + STRIKE_MARGIN) and (current_price > sma + PRICE_MARGIN)
-                buy_down = (current_price < strike - STRIKE_MARGIN) and (current_price < sma - PRICE_MARGIN)
+                buy_up = (current_price > strike + STRIKE_MARGIN)
+                buy_down = (current_price < strike - STRIKE_MARGIN)
                 
                 if buy_up or buy_down:
                     investment = (balance * RISK_PERCENT) / 100.0 if USE_DYNAMIC_RISK else FIXED_TRADE_AMOUNT
@@ -319,7 +302,7 @@ def run_trading_strategy():
                         dir_str = "UP" if buy_up else "DOWN"
                         method = markets_data.get("market_id", "Gamma")
                         
-                        add_log(f"🎯 Sygnał {dir_str}! BTC: ${current_price:,.2f} | SMA: ${sma:,.2f}. Kupuję kontrakt...")
+                        add_log(f"🎯 AGRESYWNY Sygnał {dir_str}! BTC: ${current_price:,.2f}. Kupuję kontrakt...")
                         if execute_polymarket_order(chosen_token, investment, side="BUY"):
                             with state_lock:
                                 bot_state["active_trade"] = {
@@ -334,7 +317,7 @@ def run_trading_strategy():
                                     bot_state["virtual_balance"] -= investment
         except Exception as e:
             add_log(f"🚨 Awaria pętli decyzyjnej: {e}")
-        time.sleep(4)
+        time.sleep(2) # Szybsza pętla (2 sekundy)
 
 # --- PANEL KONTROLNY (WEB SERWER) ---
 class DashboardHandler(BaseHTTPRequestHandler):
