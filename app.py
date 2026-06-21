@@ -138,21 +138,47 @@ def update_real_balance():
         except: continue
 
 def get_polymarket_15m_market():
-    """Wyszukuje jakikolwiek aktywny rynek BTC (rozluźnione filtry)"""
+    """Wyszukuje aktywny rynek BTC za pomocą inteligentnego wyszukiwania szerokiego oraz filtrów awaryjnych"""
     try:
-        url = "https://gamma-api.polymarket.com/markets?closed=false&active=true&slug=bitcoin&limit=15"
-        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
-        if response.status_code == 200:
-            markets_list = response.json()
-            for market in markets_list:
+        # KROK 1: Używamy elastycznego wyszukiwania tekstowego zamiast restrykcyjnego slug
+        url = "https://gamma-api.polymarket.com/markets?closed=false&active=true&search=Bitcoin&limit=20"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        response = requests.get(url, headers=headers, timeout=5)
+        
+        if response.status_code != 200:
+            add_log(f"⚠️ Serwer Polymarket zwrócił kod błędu HTTP {response.status_code} zamiast danych rynkowych.")
+            return None
+            
+        markets_list = response.json()
+        
+        # KROK 2: Awaryjny fallback, gdyby wyszukiwarka zwróciła kompletnie puste dane
+        if not markets_list or len(markets_list) == 0:
+            url_fallback = "https://gamma-api.polymarket.com/markets?closed=false&active=true&limit=40"
+            res_fb = requests.get(url_fallback, headers=headers, timeout=5)
+            if res_fb.status_code == 200:
+                markets_list = res_fb.json()
+
+        # KROK 3: Przeszukiwanie listy w celu dopasowania rynku kryptowalutowego z dwoma tokenami
+        for market in markets_list:
+            title = market.get("title", "").lower()
+            slug = market.get("slug", "").lower()
+            
+            # Bot akceptuje rynki, które mają w nazwie Bitcoin lub BTC
+            if "bitcoin" in title or "btc" in title or "bitcoin" in slug:
                 tokens = market.get("clobTokenIds")
                 if tokens and isinstance(tokens, str):
-                    tokens = json.loads(tokens)
-                # Szuka jakiegokolwiek rynku, który ma 2 tokeny i nie jest rozliczony
+                    try:
+                        tokens = json.loads(tokens)
+                    except: continue
+                
                 if tokens and len(tokens) >= 2:
-                    return {"UP_TOKEN": tokens[0], "DOWN_TOKEN": tokens[1], "market_id": market.get("conditionId")}
+                    return {
+                        "UP_TOKEN": tokens[0], 
+                        "DOWN_TOKEN": tokens[1], 
+                        "market_id": market.get("conditionId", "Unknown")
+                    }
     except Exception as e:
-        add_log(f"⚠️ Problem z API rynków Polymarket: {e}")
+        add_log(f"⚠️ Wyjątek krytyczny podczas odpytywania API rynków: {e}")
     return None
 
 def get_btc_price():
@@ -298,7 +324,6 @@ def run_trading_strategy():
             with state_lock:
                 active = bot_state["active_trade"]
                 strike = bot_state["current_candle_strike"]
-                sma = bot_state["sma"]
                 balance = bot_state["real_balance"] if IS_LIVE else bot_state["virtual_balance"]
 
             # Log życia bota (co około 30 sekund)
