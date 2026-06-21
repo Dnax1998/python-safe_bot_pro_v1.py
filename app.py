@@ -79,36 +79,69 @@ def add_log(message):
             bot_state["logs"].pop(0)
 
 def init_clob_client():
-    """Inicjalizuje klienta Polymarket CLOB. W razie błędów wersji przełącza na natywny REST."""
+    """Inicjalizuje klienta Polymarket CLOB. Jeśli brakuje kluczy API, tworzy je automatycznie przez SDK."""
     global poly_client
     if not IS_LIVE:
         return
     
-    if not HAS_SDK:
-        add_log("⚠️ Brak py-clob-client. Bot użyje bezpośrednich połączeń REST API z podpisem L2.")
+    private_key = os.environ.get("WALLET_PRIVATE_KEY", "").replace("0x", "")
+    if not private_key:
+        add_log("❌ Błąd krytyczny: Brak WALLET_PRIVATE_KEY w środowisku Render!")
         return
 
-    try:
-        private_key = os.environ.get("WALLET_PRIVATE_KEY", "").replace("0x", "")
-        api_key = os.environ.get("POLY_API_KEY", "")
-        poly_secret = os.environ.get("POLY_SECRET", "")
-        poly_pass = os.environ.get("POLY_PASSPHRASE", "")
-        
-        if api_key and poly_secret and poly_pass:
-            try:
+    api_key = os.environ.get("POLY_API_KEY", "")
+    poly_secret = os.environ.get("POLY_SECRET", "")
+    poly_pass = os.environ.get("POLY_PASSPHRASE", "")
+
+    if HAS_SDK:
+        try:
+            if api_key and poly_secret and poly_pass:
+                # Jeśli użytkownik podał klucze ręcznie
                 creds = ApiCreds(api_key=api_key, api_secret=poly_secret, api_passphrase=poly_pass)
                 poly_client = ClobClient(key_or_signer=private_key, chain_id=POLYGON, creds=creds)
-                add_log("✅ Pełna autoryzacja podsystemu SDK (Klucz prywatny + API) powiodła się.")
-            except Exception as sdk_err:
-                poly_client = None
-                add_log(f"ℹ️ Inicjalizacja SDK nieudana, przełączanie na tryb bezpośredni REST: {sdk_err}")
-        else:
-            add_log("ℹ️ Brak pełnych danych API w środowisku. Aktywowano rezerwowy tryb REST HTTPS.")
+                add_log("✅ Autoryzacja SDK powiodła się na podstawie wczytanych kluczy z Render.")
+            else:
+                # AUTOMATYCZNE GENEROWANIE KLUCZY PRZEZ PODPIS L2
+                add_log("ℹ️ Wykryto portfel, ale brakuje danych API. Uruchamiam AUTOMATYCZNE generowanie kluczy na giełdzie...")
+                poly_client = ClobClient(key_or_signer=private_key, chain_id=POLYGON)
+                
+                # SDK wysyła podpisany kryptograficznie wniosek o rejestrację kluczy API
+                new_creds = poly_client.create_api_keys()
+                
+                if isinstance(new_creds, dict):
+                    k = new_creds.get("apiKey") or new_creds.get("api_key")
+                    s = new_creds.get("secret")
+                    p = new_creds.get("passphrase")
+                else:
+                    k = getattr(new_creds, "apiKey", None) or getattr(new_creds, "api_key", None)
+                    s = getattr(new_creds, "secret", None)
+                    p = getattr(new_creds, "passphrase", None)
+
+                if k and s and p:
+                    # Zapisujemy w pamięci podręcznej procesu, żeby fallback REST też je widział
+                    os.environ["POLY_API_KEY"] = str(k)
+                    os.environ["POLY_SECRET"] = str(s)
+                    os.environ["POLY_PASSPHRASE"] = str(p)
+                    
+                    add_log("🔮 SPEKTAKULARNY SUKCES! Bot sam zarejestrował klucze API w Polymarket!")
+                    add_log("📌 Przepisz je do zmiennych w Render, aby nie generować nowych przy każdym restarcie bota:")
+                    add_log(f"👉 POLY_API_KEY = {k}")
+                    add_log(f"👉 POLY_SECRET = {s}")
+                    add_log(f"👉 POLY_PASSPHRASE = {p}")
+                    
+                    # Reinicjalizacja z nowymi poświadczeniami dla pełnej stabilności
+                    creds = ApiCreds(api_key=str(k), api_secret=str(s), api_passphrase=str(p))
+                    poly_client = ClobClient(key_or_signer=private_key, chain_id=POLYGON, creds=creds)
+                else:
+                    add_log("⚠️ Serwer Polymarket zwrócił nietypową strukturę kluczy. Sprawdź logi.")
+        except Exception as e:
+            add_log(f"🚨 Awaria podczas próby autogenerowania profilu API: {e}")
             poly_client = None
-            
-    except Exception as e:
-        add_log(f"ℹ️ Podsystem SDK wyłączony ({e}). Aktywowano zapytania HTTPS REST.")
-        poly_client = None
+    else:
+        if api_key and poly_secret and poly_pass:
+            add_log("⚠️ Brak py-clob-client SDK w systemie. Bot przełącza się w natywny tryb żądań HTTPS REST.")
+        else:
+            add_log("❌ Błąd: Brak biblioteki py-clob-client i brak wpisanych kluczy. Bot nie może automatycznie wygenerować zabezpieczeń.")
 
 def update_real_balance():
     """Pobiera zabezpieczone saldo USDC i pUSD z portfela Polygon"""
@@ -206,7 +239,6 @@ def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
     global poly_client
     if poly_client and HAS_SDK and hasattr(poly_client, 'create_order'):
         try:
-            # Próba realizacji przez zaawansowany portfel SDK
             res_sdk = poly_client.create_order(OrderArgs(price=0.50, size=round(amount_usdc/0.50, 1), side=side, token_id=token_id))
             if res_sdk:
                 add_log(f"✅ Zlecenie SDK {side} wykonane pomyślnie!")
@@ -222,7 +254,7 @@ def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
     wallet_address = os.environ.get("WALLET_ADDRESS", "")
     
     if not api_key or not poly_secret or not poly_pass:
-         add_log("❌ Błąd: Brak kluczy POLY_API_KEY / POLY_SECRET / POLY_PASSPHRASE w środowisku Render! Dodaj je w zakładce Environment.")
+         add_log("❌ Błąd autoryzacji: Brak kluczy API. Autogenerowanie nie powiodło się lub nie wprowadzono zmiennych.")
          return False
          
     timestamp = str(int(time.time()))
@@ -335,7 +367,6 @@ def run_trading_strategy():
                 strike = bot_state["current_candle_strike"]
                 balance = bot_state["real_balance"] if IS_LIVE else bot_state["virtual_balance"]
 
-            # Log życia bota (co około 30 sekund)
             if heartbeat_counter >= 15:
                 if not active:
                     add_log(f"👀 Nasłuchuję i czuwam... Aktualny kurs BTC: ${current_price:.2f} | Twoje saldo: ${balance:.2f} USDC")
@@ -403,12 +434,11 @@ def run_trading_strategy():
                                     if not IS_LIVE:
                                         bot_state["virtual_balance"] -= investment
                             else:
-                                # Odczekanie przy odrzuceniu, żeby nie zablokować API z powodu spamu
                                 time.sleep(5)
                                 
         except Exception as e:
             add_log(f"🚨 Awaria wewnątrz głównej pętli decyzyjnej: {e}")
-        time.sleep(2) # Niski czas spania, by móc wchodzić niemal od razu
+        time.sleep(2) 
 
 # --- PEŁNY ZAAWANSOWANY PANEL KONTROLNY (WEB SERWER HTML) ---
 class DashboardHandler(BaseHTTPRequestHandler):
