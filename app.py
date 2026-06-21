@@ -90,12 +90,21 @@ def init_clob_client():
 
     try:
         private_key = os.environ.get("WALLET_PRIVATE_KEY", "").replace("0x", "")
-        try:
-            poly_client = ClobClient(key_or_signer=private_key, chain_id=POLYGON)
-            add_log("✅ Autoryzacja podsystemu SDK powiodła się.")
-        except TypeError as te:
+        api_key = os.environ.get("POLY_API_KEY", "")
+        poly_secret = os.environ.get("POLY_SECRET", "")
+        poly_pass = os.environ.get("POLY_PASSPHRASE", "")
+        
+        if api_key and poly_secret and poly_pass:
+            try:
+                creds = ApiCreds(api_key=api_key, api_secret=poly_secret, api_passphrase=poly_pass)
+                poly_client = ClobClient(key_or_signer=private_key, chain_id=POLYGON, creds=creds)
+                add_log("✅ Pełna autoryzacja podsystemu SDK (Klucz prywatny + API) powiodła się.")
+            except Exception as sdk_err:
+                poly_client = None
+                add_log(f"ℹ️ Inicjalizacja SDK nieudana, przełączanie na tryb bezpośredni REST: {sdk_err}")
+        else:
+            add_log("ℹ️ Brak pełnych danych API w środowisku. Aktywowano rezerwowy tryb REST HTTPS.")
             poly_client = None
-            add_log("ℹ️ Wersja SDK niedopasowana strukturalnie. Aktywowano tryb REST HTTPS.")
             
     except Exception as e:
         add_log(f"ℹ️ Podsystem SDK wyłączony ({e}). Aktywowano zapytania HTTPS REST.")
@@ -140,7 +149,6 @@ def update_real_balance():
 def get_polymarket_15m_market():
     """Wyszukuje aktywny rynek BTC za pomocą inteligentnego wyszukiwania szerokiego oraz filtrów awaryjnych"""
     try:
-        # KROK 1: Używamy elastycznego wyszukiwania tekstowego zamiast restrykcyjnego slug
         url = "https://gamma-api.polymarket.com/markets?closed=false&active=true&search=Bitcoin&limit=20"
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
         response = requests.get(url, headers=headers, timeout=5)
@@ -151,19 +159,16 @@ def get_polymarket_15m_market():
             
         markets_list = response.json()
         
-        # KROK 2: Awaryjny fallback, gdyby wyszukiwarka zwróciła kompletnie puste dane
         if not markets_list or len(markets_list) == 0:
             url_fallback = "https://gamma-api.polymarket.com/markets?closed=false&active=true&limit=40"
             res_fb = requests.get(url_fallback, headers=headers, timeout=5)
             if res_fb.status_code == 200:
                 markets_list = res_fb.json()
 
-        # KROK 3: Przeszukiwanie listy w celu dopasowania rynku kryptowalutowego z dwoma tokenami
         for market in markets_list:
             title = market.get("title", "").lower()
             slug = market.get("slug", "").lower()
             
-            # Bot akceptuje rynki, które mają w nazwie Bitcoin lub BTC
             if "bitcoin" in title or "btc" in title or "bitcoin" in slug:
                 tokens = market.get("clobTokenIds")
                 if tokens and isinstance(tokens, str):
@@ -193,7 +198,7 @@ def get_btc_price():
         except: return None
 
 def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
-    """Składa bezpieczne zlecenie używając PEŁNEJ autoryzacji L2 dla REST API"""
+    """Składa bezpieczne zlecenie używając autoryzacji L2 lub interfejsu SDK"""
     if not IS_LIVE:
         add_log(f"🤖 [SYMULACJA] Zlecenie {side} | Token: {token_id[:6]}... | Kwota: {amount_usdc} USDC")
         return True
@@ -201,9 +206,13 @@ def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
     global poly_client
     if poly_client and HAS_SDK and hasattr(poly_client, 'create_order'):
         try:
-            return poly_client.create_order(OrderArgs(price=0.50, size=round(amount_usdc/0.50, 1), side=side, token_id=token_id))
+            # Próba realizacji przez zaawansowany portfel SDK
+            res_sdk = poly_client.create_order(OrderArgs(price=0.50, size=round(amount_usdc/0.50, 1), side=side, token_id=token_id))
+            if res_sdk:
+                add_log(f"✅ Zlecenie SDK {side} wykonane pomyślnie!")
+                return True
         except Exception as e:
-            pass 
+            add_log(f"ℹ️ Próba SDK odrzucona ({e}). Przełączanie awaryjne na podpis REST...")
             
     url = "https://clob.polymarket.com/order"
     
@@ -213,7 +222,7 @@ def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
     wallet_address = os.environ.get("WALLET_ADDRESS", "")
     
     if not api_key or not poly_secret or not poly_pass:
-         add_log("❌ Błąd: Brak kluczy API/Secret/Passphrase w środowisku Render!")
+         add_log("❌ Błąd: Brak kluczy POLY_API_KEY / POLY_SECRET / POLY_PASSPHRASE w środowisku Render! Dodaj je w zakładce Environment.")
          return False
          
     timestamp = str(int(time.time()))
@@ -236,13 +245,13 @@ def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
     try:
         res = requests.post(url, headers=headers, json=payload, timeout=5)
         if res.status_code in [200, 201]:
-            add_log(f"✅ Zlecenie {side} udane!")
+            add_log(f"✅ Bezpośrednie zlecenie REST {side} udane!")
             return True
         else:
-            add_log(f"❌ Odmowa API: HTTP {res.status_code} | {res.text}")
+            add_log(f"❌ Odmowa giełdy Polymarket: HTTP {res.status_code} | {res.text}")
             return False
     except Exception as e:
-        add_log(f"❌ Wyjątek połączenia: {e}")
+        add_log(f"❌ Wyjątek połączenia sieciowego z Polymarket: {e}")
         return False
 
 def update_candle_logic(current_price):
@@ -292,7 +301,7 @@ def update_candle_logic(current_price):
                 update_real_balance()
 
 def run_trading_strategy():
-    add_log(f"🚀 Uruchomiono PEŁNY system tradingowy. Tryb: {'PRODUKCJA' if IS_LIVE else 'SYMULACJA'}")
+    add_log(f"🚀 Uruchomiono PEŁNY system tradingowy. Tryb: {'PRODUKCJA LIVE' if IS_LIVE else 'SYMULACJA'}")
     init_clob_client()
     update_real_balance()
     
