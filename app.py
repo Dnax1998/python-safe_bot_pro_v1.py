@@ -90,18 +90,15 @@ def init_clob_client():
 
     try:
         private_key = os.environ.get("WALLET_PRIVATE_KEY", "").replace("0x", "")
-        
-        # Próba inicjalizacji z nazwanymi argumentami
         try:
             poly_client = ClobClient(key_or_signer=private_key, chain_id=POLYGON)
             add_log("✅ Autoryzacja podsystemu SDK powiodła się.")
         except TypeError as te:
-            # Całkowite odcięcie rzucania wyjątków przy niezgodności wersji konstruktora
             poly_client = None
-            add_log("ℹ️ Wersja SDK niedopasowana strukturalnie. Aktywowano bezpośredni tryb REST HTTPS.")
+            add_log("ℹ️ Wersja SDK niedopasowana strukturalnie. Aktywowano tryb REST HTTPS.")
             
     except Exception as e:
-        add_log(f"ℹ️ Podsystem SDK wyłączony ({e}). Aktywowano bezpośrednie żądania HTTPS REST.")
+        add_log(f"ℹ️ Podsystem SDK wyłączony ({e}). Aktywowano zapytania HTTPS REST.")
         poly_client = None
 
 def update_real_balance():
@@ -141,23 +138,21 @@ def update_real_balance():
         except: continue
 
 def get_polymarket_15m_market():
-    """Pobiera dane strukturalne aktualnego rynku BTC z Gamma API"""
+    """Wyszukuje jakikolwiek aktywny rynek BTC (rozluźnione filtry)"""
     try:
-        url = "https://gamma-api.polymarket.com/markets?closed=false&order=volume&direction=desc&limit=60&slug=bitcoin"
-        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=4)
+        url = "https://gamma-api.polymarket.com/markets?closed=false&active=true&slug=bitcoin&limit=15"
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=5)
         if response.status_code == 200:
             markets_list = response.json()
             for market in markets_list:
-                q = market.get("question", "")
-                title = market.get("title", "")
-                if "Bitcoin" in q and any(x in q.lower() or x in title.lower() for x in ["15m", "15-min", "15 min", "quarter"]):
-                    tokens = market.get("clobTokenIds")
-                    if tokens and isinstance(tokens, str):
-                        tokens = json.loads(tokens)
-                    if tokens and len(tokens) >= 2:
-                        return {"UP_TOKEN": tokens[0], "DOWN_TOKEN": tokens[1], "market_id": market.get("conditionId")}
+                tokens = market.get("clobTokenIds")
+                if tokens and isinstance(tokens, str):
+                    tokens = json.loads(tokens)
+                # Szuka jakiegokolwiek rynku, który ma 2 tokeny i nie jest rozliczony
+                if tokens and len(tokens) >= 2:
+                    return {"UP_TOKEN": tokens[0], "DOWN_TOKEN": tokens[1], "market_id": market.get("conditionId")}
     except Exception as e:
-        add_log(f"⚠️ Problem z Gamma API: {e}")
+        add_log(f"⚠️ Problem z API rynków Polymarket: {e}")
     return None
 
 def get_btc_price():
@@ -184,10 +179,8 @@ def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
         except Exception as e:
             pass 
             
-    # Stabilna, niezawodna ścieżka bezpośredniego zapytania REST API HTTP
     url = "https://clob.polymarket.com/order"
     
-    # Pobieranie kluczy
     api_key = os.environ.get("POLY_API_KEY", "")
     poly_secret = os.environ.get("POLY_SECRET", "")
     poly_pass = os.environ.get("POLY_PASSPHRASE", "")
@@ -198,7 +191,6 @@ def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
          return False
          
     timestamp = str(int(time.time()))
-    
     headers = {
         "x-api-key": api_key,
         "x-api-secret": poly_secret,
@@ -221,7 +213,7 @@ def execute_polymarket_order(token_id, amount_usdc, side="BUY"):
             add_log(f"✅ Zlecenie {side} udane!")
             return True
         else:
-            add_log(f"❌ Odmowa API: {res.text}")
+            add_log(f"❌ Odmowa API: HTTP {res.status_code} | {res.text}")
             return False
     except Exception as e:
         add_log(f"❌ Wyjątek połączenia: {e}")
@@ -274,7 +266,7 @@ def update_candle_logic(current_price):
                 update_real_balance()
 
 def run_trading_strategy():
-    add_log(f"Uruchomiono system tradingowy Krajekis. Tryb: {'PRODUKCJA' if IS_LIVE else 'SYMULACJA'}")
+    add_log(f"🚀 Uruchomiono PEŁNY system tradingowy. Tryb: {'PRODUKCJA' if IS_LIVE else 'SYMULACJA'}")
     init_clob_client()
     update_real_balance()
     
@@ -284,7 +276,9 @@ def run_trading_strategy():
             bot_state["current_candle_strike"] = init_p
             bot_state["current_price"] = init_p
             
+    heartbeat_counter = 0
     balance_ticker = 0
+    
     while True:
         try:
             current_price = get_btc_price()
@@ -299,12 +293,21 @@ def run_trading_strategy():
                 update_real_balance()
                 balance_ticker = 0
                 
+            heartbeat_counter += 1
+            
             with state_lock:
                 active = bot_state["active_trade"]
                 strike = bot_state["current_candle_strike"]
                 sma = bot_state["sma"]
                 balance = bot_state["real_balance"] if IS_LIVE else bot_state["virtual_balance"]
 
+            # Log życia bota (co około 30 sekund)
+            if heartbeat_counter >= 15:
+                if not active:
+                    add_log(f"👀 Nasłuchuję i czuwam... Aktualny kurs BTC: ${current_price:.2f} | Twoje saldo: ${balance:.2f} USDC")
+                heartbeat_counter = 0
+
+            # --- DYNAMICZNY STOP-LOSS / TAKE-PROFIT ---
             if active and ENABLE_EARLY_EXIT:
                 btc_diff = current_price - active["btc_at_entry"]
                 est_token_price = 0.50 + (btc_diff / 80.0) if "UP" in active["direction"] else 0.50 - (btc_diff / 80.0)
@@ -331,7 +334,7 @@ def run_trading_strategy():
                         bot_state["active_trade"] = None
                     add_log(f"🚨 Awaryjne zamknięcie pozycji ({'Take-Profit' if is_tp else 'Stop-Loss'}) przy cenie tokenu {est_token_price:.2f}")
 
-            # ZModyfikowany, bardzo agresywny warunek kupna
+            # --- WARUNEK ZAKUPU (BARDZO AGRESYWNY) ---
             if not active and strike > 0:
                 buy_up = (current_price > strike + STRIKE_MARGIN)
                 buy_down = (current_price < strike - STRIKE_MARGIN)
@@ -340,30 +343,40 @@ def run_trading_strategy():
                     investment = (balance * RISK_PERCENT) / 100.0 if USE_DYNAMIC_RISK else FIXED_TRADE_AMOUNT
                     investment = min(balance, max(2.0, investment))
                     
-                    markets_data = get_polymarket_15m_market()
-                    if markets_data and investment >= 2.0:
-                        chosen_token = markets_data["UP_TOKEN"] if buy_up else markets_data["DOWN_TOKEN"]
-                        dir_str = "UP" if buy_up else "DOWN"
-                        method = markets_data.get("market_id", "Gamma")
-                        
-                        add_log(f"🎯 AGRESYWNY Sygnał {dir_str}! BTC: ${current_price:,.2f}. Próba kupna...")
-                        if execute_polymarket_order(chosen_token, investment, side="BUY"):
-                            with state_lock:
-                                bot_state["active_trade"] = {
-                                    "direction": f"{dir_str} ({method[:6]})",
-                                    "token_id": chosen_token,
-                                    "entry_price": 0.50,
-                                    "strike_price": strike,
-                                    "btc_at_entry": current_price,
-                                    "cost": investment
-                                }
-                                if not IS_LIVE:
-                                    bot_state["virtual_balance"] -= investment
+                    if investment < 2.0:
+                        if heartbeat_counter == 1:
+                            add_log(f"⚠️ Zbyt niskie saldo do wejścia (${investment:.2f}). Minimalny limit giełdy to 2.0 USDC.")
+                    else:
+                        markets_data = get_polymarket_15m_market()
+                        if not markets_data:
+                            add_log("⚠️ Chcę kupić kontrakt, ale API Polymarket nie zwraca w tej sekundzie aktywnych rynków!")
+                        else:
+                            chosen_token = markets_data["UP_TOKEN"] if buy_up else markets_data["DOWN_TOKEN"]
+                            dir_str = "UP" if buy_up else "DOWN"
+                            method = str(markets_data.get("market_id", "G"))[:6]
+                            
+                            add_log(f"🎯 AGRESYWNY Sygnał {dir_str}! BTC: ${current_price:,.2f}. Próba kupna za {investment:.2f} USDC...")
+                            if execute_polymarket_order(chosen_token, investment, side="BUY"):
+                                with state_lock:
+                                    bot_state["active_trade"] = {
+                                        "direction": f"{dir_str} ({method})",
+                                        "token_id": chosen_token,
+                                        "entry_price": 0.50,
+                                        "strike_price": strike,
+                                        "btc_at_entry": current_price,
+                                        "cost": investment
+                                    }
+                                    if not IS_LIVE:
+                                        bot_state["virtual_balance"] -= investment
+                            else:
+                                # Odczekanie przy odrzuceniu, żeby nie zablokować API z powodu spamu
+                                time.sleep(5)
+                                
         except Exception as e:
-            add_log(f"🚨 Awaria pętli decyzyjnej: {e}")
-        time.sleep(2) # Zmniejszony czas oczekiwania dla szybszych reakcji
+            add_log(f"🚨 Awaria wewnątrz głównej pętli decyzyjnej: {e}")
+        time.sleep(2) # Niski czas spania, by móc wchodzić niemal od razu
 
-# --- PANEL KONTROLNY (WEB SERWER) ---
+# --- PEŁNY ZAAWANSOWANY PANEL KONTROLNY (WEB SERWER HTML) ---
 class DashboardHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args): return 
 
@@ -554,7 +567,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
                         const logsDiv = document.getElementById('ui-logs');
                         if (data.logs.length > 0) {
-                            logsDiv.innerHTML = data.logs.slice().reverse().map(l => `<div>${l}</div>`).join('');
+                            logsDiv.innerHTML = data.logs.slice().reverse().map(l => {
+                                let color = "text-emerald-400/90";
+                                if (l.includes("❌") || l.includes("🚨") || l.includes("Błąd")) color = "text-rose-400 font-bold";
+                                if (l.includes("⚠️")) color = "text-amber-400";
+                                if (l.includes("👀")) color = "text-slate-400";
+                                return `<div class="${color}">${l}</div>`;
+                            }).join('');
                         }
                     } catch (e) { console.error(e); }
                 }
