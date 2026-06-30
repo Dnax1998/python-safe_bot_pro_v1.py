@@ -1,0 +1,13 @@
+{
+  "name": "polymarket-copy-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@polymarket/clob-client": "^0.2.0",
+    "ethers": "^5.7.2",
+    "dotenv": "^16.0.3"
+  }
+}
