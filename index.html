@@ -8,88 +8,116 @@
 <style>
 body{
     margin:0;
-    background:#0f172a;
-    color:white;
-    font-family:Arial,sans-serif;
+    font-family:Inter,Arial,sans-serif;
+    background:linear-gradient(180deg,#0b1020,#131a35);
+    color:#fff;
 }
 
 header{
-    padding:20px;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    background:#111827;
+    padding:20px;
 }
 
 .logo{
-    font-size:24px;
-    font-weight:bold;
+    font-size:32px;
+    font-weight:800;
     color:#f3ba2f;
 }
 
-button{
-    background:#f3ba2f;
+.wallet{
+    padding:14px 22px;
     border:none;
-    padding:12px 20px;
-    border-radius:10px;
-    cursor:pointer;
+    border-radius:16px;
+    background:#f3ba2f;
     font-weight:bold;
-}
-
-.container{
-    max-width:500px;
-    margin:40px auto;
+    cursor:pointer;
 }
 
 .card{
-    background:#1e293b;
-    padding:20px;
-    border-radius:20px;
+    max-width:520px;
+    margin:30px auto;
+    padding:24px;
+    border-radius:24px;
+    background:rgba(255,255,255,.06);
+    backdrop-filter:blur(15px);
 }
 
-.input-box{
-    margin-top:15px;
+.box{
+    background:#1b233d;
+    padding:18px;
+    border-radius:18px;
+    margin:12px 0;
+}
+
+.token{
+    font-size:18px;
+    margin-bottom:10px;
 }
 
 input{
     width:100%;
-    padding:15px;
+    background:transparent;
     border:none;
-    border-radius:10px;
-    margin-top:5px;
-    background:#334155;
     color:white;
-    box-sizing:border-box;
+    font-size:28px;
 }
 
-.swap-btn{
+input:focus{
+    outline:none;
+}
+
+.switch{
+    text-align:center;
+    font-size:30px;
+    margin:10px 0;
+}
+
+button.swap{
     width:100%;
-    margin-top:20px;
+    padding:18px;
+    border:none;
+    border-radius:18px;
+    background:#f3ba2f;
+    font-weight:bold;
+    cursor:pointer;
+    font-size:18px;
 }
 
 .stats{
-    margin-top:30px;
+    max-width:900px;
+    margin:20px auto;
     display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:15px;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
 }
 
 .stat{
-    background:#1e293b;
+    background:rgba(255,255,255,.06);
     padding:15px;
-    border-radius:15px;
+    border-radius:18px;
     text-align:center;
 }
 
-.history{
-    margin-top:30px;
+.port{
+    max-width:900px;
+    margin:20px auto;
+    background:rgba(255,255,255,.06);
+    padding:20px;
+    border-radius:18px;
 }
 
-.tx{
-    background:#1e293b;
-    padding:10px;
-    border-radius:10px;
-    margin-bottom:10px;
+.asset{
+    display:flex;
+    justify-content:space-between;
+    padding:10px 0;
+}
+
+@media(max-width:700px){
+    .stats{
+        grid-template-columns:repeat(2,1fr);
+    }
 }
 </style>
 </head>
@@ -97,89 +125,88 @@ input{
 <body>
 
 <header>
-<div class="logo">BSC DEX</div>
-<button onclick="connectWallet()">Connect Wallet</button>
+    <div class="logo">BSC DEX</div>
+    <button class="wallet">Connect Wallet</button>
 </header>
-
-<div class="container">
 
 <div class="card">
 
-<h2>Swap</h2>
+    <h2>Swap</h2>
 
-<div class="input-box">
-<label>From</label>
-<input id="fromAmount" type="number" placeholder="0.0">
-</div>
+    <div class="box">
+        <div class="token">🟡 BNB</div>
+        <input id="from" placeholder="0.0">
+    </div>
 
-<div class="input-box">
-<label>To</label>
-<input id="toAmount" type="number" placeholder="0.0" readonly>
-</div>
+    <div class="switch">⇅</div>
 
-<button class="swap-btn" onclick="swap()">
-Swap
-</button>
+    <div class="box">
+        <div class="token">🟢 USDT</div>
+        <input id="to" placeholder="0.0" readonly>
+    </div>
+
+    <button class="swap" onclick="swap()">
+        Swap Now
+    </button>
 
 </div>
 
 <div class="stats">
 
-<div class="stat">
-<h3>TVL</h3>
-<p>$1,250,000</p>
+    <div class="stat">
+        <h3>TVL</h3>
+        <p>$12.4M</p>
+    </div>
+
+    <div class="stat">
+        <h3>Volume</h3>
+        <p>$2.1M</p>
+    </div>
+
+    <div class="stat">
+        <h3>Pairs</h3>
+        <p>245</p>
+    </div>
+
+    <div class="stat">
+        <h3>Users</h3>
+        <p>14520</p>
+    </div>
+
 </div>
 
-<div class="stat">
-<h3>Volume 24h</h3>
-<p>$320,000</p>
-</div>
+<div class="port">
 
-</div>
+    <h2>Portfolio</h2>
 
-<div class="history">
-<h3>Transactions</h3>
-<div id="history"></div>
-</div>
+    <div class="asset">
+        <span>BNB</span>
+        <span>2.45</span>
+    </div>
+
+    <div class="asset">
+        <span>USDT</span>
+        <span>1240</span>
+    </div>
+
+    <div class="asset">
+        <span>USDC</span>
+        <span>320</span>
+    </div>
 
 </div>
 
 <script>
+function swap() {
 
-let walletConnected = false;
+    let v =
+    parseFloat(
+        document.getElementById('from').value
+    ) || 0;
 
-function connectWallet(){
-
-    walletConnected = true;
-
-    alert("Wallet Connected");
+    document.getElementById('to').value =
+    (v * 0.98).toFixed(4);
 }
-
-function swap(){
-
-    const amount =
-        parseFloat(
-            document.getElementById("fromAmount").value
-        ) || 0;
-
-    const output = amount * 0.98;
-
-    document.getElementById("toAmount").value =
-        output.toFixed(4);
-
-    const tx =
-        document.createElement("div");
-
-    tx.className = "tx";
-
-    tx.innerHTML =
-        `Swap ${amount} BNB → ${output.toFixed(4)} USDT`;
-
-    document
-        .getElementById("history")
-        .prepend(tx);
-}
-
 </script>
 
 </body>
