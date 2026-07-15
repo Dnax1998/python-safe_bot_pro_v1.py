@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSC DEX</title>
+
+<style>
+body{
+    margin:0;
+    background:#0f172a;
+    color:white;
+    font-family:Arial,sans-serif;
+}
+
+header{
+    padding:20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#111827;
+}
+
+.logo{
+    font-size:24px;
+    font-weight:bold;
+    color:#f3ba2f;
+}
+
+button{
+    background:#f3ba2f;
+    border:none;
+    padding:12px 20px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.container{
+    max-width:500px;
+    margin:40px auto;
+}
+
+.card{
+    background:#1e293b;
+    padding:20px;
+    border-radius:20px;
+}
+
+.input-box{
+    margin-top:15px;
+}
+
+input{
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:10px;
+    margin-top:5px;
+    background:#334155;
+    color:white;
+    box-sizing:border-box;
+}
+
+.swap-btn{
+    width:100%;
+    margin-top:20px;
+}
+
+.stats{
+    margin-top:30px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.stat{
+    background:#1e293b;
+    padding:15px;
+    border-radius:15px;
+    text-align:center;
+}
+
+.history{
+    margin-top:30px;
+}
+
+.tx{
+    background:#1e293b;
+    padding:10px;
+    border-radius:10px;
+    margin-bottom:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="logo">BSC DEX</div>
+<button onclick="connectWallet()">Connect Wallet</button>
+</header>
+
+<div class="container">
+
+<div class="card">
+
+<h2>Swap</h2>
+
+<div class="input-box">
+<label>From</label>
+<input id="fromAmount" type="number" placeholder="0.0">
+</div>
+
+<div class="input-box">
+<label>To</label>
+<input id="toAmount" type="number" placeholder="0.0" readonly>
+</div>
+
+<button class="swap-btn" onclick="swap()">
+Swap
+</button>
+
+</div>
+
+<div class="stats">
+
+<div class="stat">
+<h3>TVL</h3>
+<p>$1,250,000</p>
+</div>
+
+<div class="stat">
+<h3>Volume 24h</h3>
+<p>$320,000</p>
+</div>
+
+</div>
+
+<div class="history">
+<h3>Transactions</h3>
+<div id="history"></div>
+</div>
+
+</div>
+
+<script>
+
+let walletConnected = false;
+
+function connectWallet(){
+
+    walletConnected = true;
+
+    alert("Wallet Connected");
+}
+
+function swap(){
+
+    const amount =
+        parseFloat(
+            document.getElementById("fromAmount").value
+        ) || 0;
+
+    const output = amount * 0.98;
+
+    document.getElementById("toAmount").value =
+        output.toFixed(4);
+
+    const tx =
+        document.createElement("div");
+
+    tx.className = "tx";
+
+    tx.innerHTML =
+        `Swap ${amount} BNB → ${output.toFixed(4)} USDT`;
+
+    document
+        .getElementById("history")
+        .prepend(tx);
+}
+
+</script>
+
+</body>
+</html>
