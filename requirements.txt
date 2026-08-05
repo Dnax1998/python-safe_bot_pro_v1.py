@@ -1,5 +1,7 @@
 ccxt
 pandas
-pandas-ta
+numpy
+scipy
+--no-deps pandas-ta
 flask
 gunicorn
