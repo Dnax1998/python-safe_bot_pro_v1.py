@@ -1,7 +1,0 @@
-ccxt
-pandas
-numpy
-scipy
---no-deps pandas-ta
-flask
-gunicorn
