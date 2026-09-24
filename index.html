@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metropolis 2.5D - Symulator Miasta</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+        }
+        #game-container {
+            position: relative;
+            flex: 1;
+            height: 100%;
+            background: #000;
+        }
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        /* HUD UI */
+        #top-bar {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            height: 60px;
+            background: rgba(20, 25, 35, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        .stat-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4cd137;
+        }
+        .stat-value.negative { color: #e84118; }
+        
+        /* Indicators RCI */
+        .rci-container {
+            display: flex;
+            gap: 6px;
+            align-items: flex-end;
+            height: 30px;
+            background: rgba(0,0,0,0.3);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .rci-bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 14px;
+        }
+        .rci-bar {
+            width: 100%;
+            background: #444;
+            border-radius: 2px;
+            transition: height 0.3s ease;
+        }
+        .rci-r { background: #4cd137; }
+        .rci-c { background: #00a8ff; }
+        .rci-i { background: #fbc531; }
+
+        /* Sidebar Tools */
+        #sidebar {
+            position: absolute;
+            left: 15px;
+            top: 90px;
+            width: 220px;
+            background: rgba(20, 25, 35, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        .tool-category {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+        .tool-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+        .tool-btn:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateX(3px);
+        }
+        .tool-btn.active {
+            background: #00a8ff;
+            border-color: #00a8ff;
+            font-weight: bold;
+        }
+        .tool-cost {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* News Ticker */
+        #news-ticker {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            background: rgba(20, 25, 35, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-size: 13px;
+            color: #fbc531;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="top-bar">
+        <div class="stat-group">
+            <div class="stat-item">
+                <span class="stat-label">Budżet</span>
+                <span class="stat-value" id="val-money">$50,000</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Mieszkańcy</span>
+                <span class="stat-value" id="val-pop" style="color:#fff;">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Zadowolenie</span>
+                <span class="stat-value" id="val-happy" style="color:#00a8ff;">100%</span>
+            </div>
+        </div>
+
+        <div class="rci-container">
+            <div class="rci-bar-wrapper">
+                <div id="rci-r" class="rci-bar rci-r" style="height: 50%;"></div>
+                <span style="font-size: 9px; margin-top:2px;">R</span>
+            </div>
+            <div class="rci-bar-wrapper">
+                <div id="rci-c" class="rci-bar rci-c" style="height: 30%;"></div>
+                <span style="font-size: 9px; margin-top:2px;">C</span>
+            </div>
+            <div class="rci-bar-wrapper">
+                <div id="rci-i" class="rci-bar rci-i" style="height: 40%;"></div>
+                <span style="font-size: 9px; margin-top:2px;">I</span>
+            </div>
+        </div>
+
+        <div class="stat-group">
+            <div class="stat-item">
+                <span class="stat-label">Czas</span>
+                <span class="stat-value" id="val-date" style="color:#aaa; font-size:14px;">Rok 2000 / M1</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebar">
+        <div class="tool-category">Infrastruktura</div>
+        <button class="tool-btn active" data-tool="select">🔍 Informacje <span class="tool-cost">$0</span></button>
+        <button class="tool-btn" data-tool="road">🛣️ Droga <span class="tool-cost">$10</span></button>
+        <button class="tool-btn" data-tool="power">⚡ Elektrownia <span class="tool-cost">$500</span></button>
+        <button class="tool-btn" data-tool="park">🌳 Park <span class="tool-cost">$100</span></button>
+        
+        <div class="tool-category">Strefy Urbanistyczne</div>
+        <button class="tool-btn" data-tool="res">🏠 Mieszkalna (R) <span class="tool-cost">$50</span></button>
+        <button class="tool-btn" data-tool="com">🏢 Handlowa (C) <span class="tool-cost">$50</span></button>
+        <button class="tool-btn" data-tool="ind">🏭 Przemysłowa (I) <span class="tool-cost">$50</span></button>
+
+        <div class="tool-category">Narzędzia</div>
+        <button class="tool-btn" data-tool="demolish" style="color:#e84118;">🚜 Wyburzanie <span class="tool-cost">$5</span></button>
+    </div>
+
+    <div id="news-ticker">Wiadomości: Wioska Metropolis oficjalnie założona! Zaplanuj pierwsze drogi i elektrownię.</div>
+
+    <canvas id="cityCanvas"></canvas>
+</div>
+
+<script>
+// --- STALE I KONFIGURACJA SILNIKA ---
+const MAP_SIZE = 30;
+const TILE_W = 64;
+const TILE_H = 32;
+
+const TOOLS = {
+    SELECT: 'select',
+    ROAD: 'road',
+    POWER: 'power',
+    PARK: 'park',
+    RES: 'res',
+    COM: 'com',
+    IND: 'ind',
+    DEMOLISH: 'demolish'
+};
+
+const COSTS = {
+    road: 10,
+    power: 500,
+    park: 100,
+    res: 50,
+    com: 50,
+    ind: 50,
+    demolish: 5
+};
+
+// --- STAN GRY ---
+let state = {
+    money: 50000,
+    pop: 0,
+    happiness: 100,
+    activeTool: TOOLS.SELECT,
+    time: 0,
+    dayCycle: 0, // 0 - 1 (Dzień - Noc)
+    rci: { r: 50, c: 30, i: 40 },
+    hasPowerGrid: false
+};
+
+// --- INICJALIZACJA SIATKI MAPY ---
+let map = [];
+for (let x = 0; x < MAP_SIZE; x++) {
+    map[x] = [];
+    for (let y = 0; y < MAP_SIZE; y++) {
+        map[x][y] = {
+            type: 'empty',
+            level: 0,
+            powered: false,
+            variant: Math.floor(Math.random() * 3),
+            height: 0
+        };
+    }
+}
+
+// Pojazdy
+let vehicles = [];
+
+// Canvas i kontekst
+const canvas = document.getElementById('cityCanvas');
+const ctx = canvas.getContext('2d');
+
+let cameraOffset = { x: 0, y: 0 };
+let isDragging = false;
+let dragStart = { x: 0, y: 0 };
+let hoveredTile = { x: -1, y: -1 };
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    if (cameraOffset.x === 0 && cameraOffset.y === 0) {
+        cameraOffset.x = canvas.width / 2;
+        cameraOffset.y = 150;
+    }
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// --- TRANSFORMATION MATH (GRID <-> ISOMETRIC) ---
+function gridToIso(gx, gy) {
+    return {
+        x: (gx - gy) * (TILE_W / 2) + cameraOffset.x,
+        y: (gx + gy) * (TILE_H / 2) + cameraOffset.y
+    };
+}
+
+function isoToGrid(screenX, screenY) {
+    let relX = screenX - cameraOffset.x;
+    let relY = screenY - cameraOffset.y;
+    
+    let gx = (relX / (TILE_W / 2) + relY / (TILE_H / 2)) / 2;
+    let gy = (relY / (TILE_H / 2) - relX / (TILE_W / 2)) / 2;
+    
+    return { x: Math.floor(gx), y: Math.floor(gy) };
+}
+
+// --- RYSOWANIE GRAFIKI (PROCEDURALNE 2.5D) ---
+function drawIsoTileBase(isoX, isoY, color) {
+    ctx.beginPath();
+    ctx.moveTo(isoX, isoY);
+    ctx.lineTo(isoX + TILE_W / 2, isoY + TILE_H / 2);
+    ctx.lineTo(isoX, isoY + TILE_H);
+    ctx.lineTo(isoX - TILE_W / 2, isoY + TILE_H / 2);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.stroke();
+}
+
+function drawIsoCube(isoX, isoY, height, topColor, leftColor, rightColor) {
+    let topY = isoY - height;
+
+    // Ściana lewa
+    ctx.beginPath();
+    ctx.moveTo(isoX - TILE_W / 2, isoY + TILE_H / 2);
+    ctx.lineTo(isoX, isoY + TILE_H);
+    ctx.lineTo(isoX, isoY + TILE_H - height);
+    ctx.lineTo(isoX - TILE_W / 2, isoY + TILE_H / 2 - height);
+    ctx.closePath();
+    ctx.fillStyle = leftColor;
+    ctx.fill();
+
+    // Ściana prawa
+    ctx.beginPath();
+    ctx.moveTo(isoX, isoY + TILE_H);
+    ctx.lineTo(isoX + TILE_W / 2, isoY + TILE_H / 2);
+    ctx.lineTo(isoX + TILE_W / 2, isoY + TILE_H / 2 - height);
+    ctx.lineTo(isoX, isoY + TILE_H - height);
+    ctx.closePath();
+    ctx.fillStyle = rightColor;
+    ctx.fill();
+
+    // Dach
+    ctx.beginPath();
+    ctx.moveTo(isoX, topY);
+    ctx.lineTo(isoX + TILE_W / 2, topY + TILE_H / 2);
+    ctx.lineTo(isoX, topY + TILE_H);
+    ctx.lineTo(isoX - TILE_W / 2, topY + TILE_H / 2);
+    ctx.closePath();
+    ctx.fillStyle = topColor;
+    ctx.fill();
+}
+
+function renderMap() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Tło nieba / otoczenia z uwzględnieniem pory dnia
+    let nightAlpha = Math.sin(state.dayCycle * Math.PI);
+    let skyColor = `rgb(${Math.floor(20 - nightAlpha * 15)}, ${Math.floor(25 - nightAlpha * 20)}, ${Math.floor(35 - nightAlpha * 25)})`;
+    ctx.fillStyle = skyColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Renderowanie siatki w kolejności izometrycznej (od tyłu do przodu)
+    for (let x = 0; x < MAP_SIZE; x++) {
+        for (let y = 0; y < MAP_SIZE; y++) {
+            let iso = gridToIso(x, y);
+            
+            // Renderowanie tylko widocznych płytek
+            if (iso.x < -100 || iso.x > canvas.width + 100 || iso.y < -100 || iso.y > canvas.height + 200) {
+                continue;
+            }
+
+            let cell = map[x][y];
+            
+            // Bazowy teren (Trawa)
+            drawIsoTileBase(iso.x, iso.y, cell.powered ? '#2ed573' : '#26af5f');
+
+            // Podświetlenie myszki
+            if (hoveredTile.x === x && hoveredTile.y === y) {
+                drawIsoTileBase(iso.x, iso.y, 'rgba(255, 255, 255, 0.4)');
+            }
+
+            // Rysowanie obiektów
+            if (cell.type === 'road') {
+                drawIsoTileBase(iso.x, iso.y, '#57606f');
+                // Linie na drodze
+                ctx.strokeStyle = '#fbc531';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(iso.x - 8, iso.y + TILE_H/2 - 4);
+                ctx.lineTo(iso.x + 8, iso.y + TILE_H/2 + 4);
+                ctx.stroke();
+            } 
+            else if (cell.type === 'power') {
+                drawIsoCube(iso.x, iso.y, 35, '#718093', '#2f3640', '#353b48');
+                // Wieża/Komin
+                ctx.fillStyle = '#e84118';
+                ctx.fillRect(iso.x - 4, iso.y - 45, 8, 15);
+            } 
+            else if (cell.type === 'park') {
+                drawIsoTileBase(iso.x, iso.y, '#10ac84');
+                // Drzewka
+                drawIsoCube(iso.x - 8, iso.y + 5, 15, '#1dd1a1', '#10ac84', '#10ac84');
+                drawIsoCube(iso.x + 8, iso.y + 10, 20, '#1dd1a1', '#10ac84', '#10ac84');
+            } 
+            else if (cell.type === 'res') {
+                if (cell.level === 0) {
+                    drawIsoTileBase(iso.x, iso.y, 'rgba(76, 209, 55, 0.3)');
+                } else {
+                    let h = cell.level * 18;
+                    drawIsoCube(iso.x, iso.y, h, '#7bed9f', '#2ed573', '#26af5f');
+                }
+            } 
+            else if (cell.type === 'com') {
+                if (cell.level === 0) {
+                    drawIsoTileBase(iso.x, iso.y, 'rgba(0, 168, 255, 0.3)');
+                } else {
+                    let h = cell.level * 28;
+                    drawIsoCube(iso.x, iso.y, h, '#70a1ff', '#1e90ff', '#0097e6');
+                }
+            } 
+            else if (cell.type === 'ind') {
+                if (cell.level === 0) {
+                    drawIsoTileBase(iso.x, iso.y, 'rgba(251, 197, 49, 0.3)');
+                } else {
+                    let h = cell.level * 15;
+                    drawIsoCube(iso.x, iso.y, h, '#eccc68', '#ffa502', '#ff7f50');
+                }
+            }
+        }
+    }
+
+    // Renderowanie aut na drogach
+    vehicles.forEach(v => {
+        let iso = gridToIso(v.x, v.y);
+        ctx.fillStyle = v.color;
+        ctx.fillRect(iso.x - 3, iso.y + 12, 6, 4);
+    });
+
+    // Nakładka nocy
+    if (nightAlpha > 0.1) {
+        ctx.fillStyle = `rgba(5, 10, 25, ${nightAlpha * 0.6})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+// --- SYMULTACJA I LOGIKA MIEJSKA ---
+function updateSimulation() {
+    state.time++;
+    state.dayCycle = (state.time % 360) / 360;
+
+    // Prąd i propagacja energii z elektrowni
+    let powerSources = [];
+    for (let x = 0; x < MAP_SIZE; x++) {
+        for (let y = 0; y < MAP_SIZE; y++) {
+            map[x][y].powered = false;
+            if (map[x][y].type === 'power') powerSources.push({x, y});
+        }
+    }
+
+    // Zasilanie przyległych stref
+    powerSources.forEach(src => {
+        let radius = 8;
+        for (let x = Math.max(0, src.x - radius); x < Math.min(MAP_SIZE, src.x + radius); x++) {
+            for (let y = Math.max(0, src.y - radius); y < Math.min(MAP_SIZE, src.y + radius); y++) {
+                map[x][y].powered = true;
+            }
+        }
+    });
+
+    // Rozwój stref RCI
+    let totalPop = 0;
+    let taxIncome = 0;
+
+    for (let x = 0; x < MAP_SIZE; x++) {
+        for (let y = 0; y < MAP_SIZE; y++) {
+            let cell = map[x][y];
+
+            if (cell.powered && (cell.type === 'res' || cell.type === 'com' || cell.type === 'ind')) {
+                // Rozwój budynków, jeśli jest zapotrzebowanie
+                if (Math.random() < 0.05) {
+                    if (cell.type === 'res' && state.rci.r > 20 && cell.level < 4) cell.level++;
+                    if (cell.type === 'com' && state.rci.c > 20 && cell.level < 5) cell.level++;
+                    if (cell.type === 'ind' && state.rci.i > 20 && cell.level < 3) cell.level++;
+                }
+
+                if (cell.type === 'res') totalPop += cell.level * 12;
+                taxIncome += cell.level * 5;
+            }
+        }
+    }
+
+    state.pop = totalPop;
+
+    // Pobieranie podatków co 10 sekund (20 tyknięć)
+    if (state.time % 20 === 0) {
+        state.money += taxIncome;
+        updateUI();
+    }
+
+    // Dynamiczne generowanie pojazdów na drogach
+    if (Math.random() < 0.3) {
+        let roads = [];
+        for (let x = 0; x < MAP_SIZE; x++) {
+            for (let y = 0; y < MAP_SIZE; y++) {
+                if (map[x][y].type === 'road') roads.push({x, y});
+            }
+        }
+        if (roads.length > 0 && vehicles.length < 25) {
+            let randomRoad = roads[Math.floor(Math.random() * roads.length)];
+            vehicles.push({
+                x: randomRoad.x,
+                y: randomRoad.y,
+                color: Math.random() > 0.5 ? '#e84118' : '#fbc531'
+            });
+        }
+    }
+
+    if (vehicles.length > 25) vehicles.shift();
+}
+
+function updateUI() {
+    document.getElementById('val-money').innerText = `$${state.money.toLocaleString()}`;
+    document.getElementById('val-pop').innerText = state.pop.toLocaleString();
+    
+    let year = 2000 + Math.floor(state.time / 240);
+    let month = (Math.floor(state.time / 20) % 12) + 1;
+    document.getElementById('val-date').innerText = `Rok ${year} / M${month}`;
+
+    // Paski RCI
+    document.getElementById('rci-r').style.height = `${state.rci.r}%`;
+    document.getElementById('rci-c').style.height = `${state.rci.c}%`;
+    document.getElementById('rci-i').style.height = `${state.rci.i}%`;
+}
+
+// --- STEROWANIE I MYSZKA ---
+canvas.addEventListener('mousedown', (e) => {
+    if (e.button === 0) { // Lewy przycisk myszy
+        let grid = isoToGrid(e.clientX, e.clientY);
+        if (grid.x >= 0 && grid.x < MAP_SIZE && grid.y >= 0 && grid.y < MAP_SIZE) {
+            handleTileClick(grid.x, grid.y);
+        }
+    } else if (e.button === 2 || e.button === 1) { // Prawy lub środkowy (Przesuwanie)
+        isDragging = true;
+        dragStart = { x: e.clientX - cameraOffset.x, y: e.clientY - cameraOffset.y };
+    }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        cameraOffset.x = e.clientX - dragStart.x;
+        cameraOffset.y = e.clientY - dragStart.y;
+    }
+    hoveredTile = isoToGrid(e.clientX, e.clientY);
+});
+
+window.addEventListener('mouseup', () => { isDragging = false; });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+function handleTileClick(x, y) {
+    let cell = map[x][y];
+    let tool = state.activeTool;
+
+    if (tool === TOOLS.DEMOLISH) {
+        if (cell.type !== 'empty') {
+            cell.type = 'empty';
+            cell.level = 0;
+            state.money -= COSTS.demolish;
+        }
+    } else if (COSTS[tool] && state.money >= COSTS[tool]) {
+        if (cell.type === 'empty') {
+            cell.type = tool;
+            cell.level = (tool === 'res' || tool === 'com' || tool === 'ind') ? 0 : 1;
+            state.money -= COSTS[tool];
+            
+            // Aktualizacja zapotrzebowania RCI
+            if (tool === 'res') state.rci.i += 5;
+            if (tool === 'ind') state.rci.c += 5;
+            if (tool === 'com') state.rci.r += 5;
+        }
+    }
+    updateUI();
+}
+
+// Przełączanie narzędzi w Sidebarze
+document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.activeTool = btn.dataset.tool;
+    });
+});
+
+// --- MAIN GAME LOOP ---
+function gameLoop() {
+    renderMap();
+    requestAnimationFrame(gameLoop);
+}
+
+// Taktowanie symulacji (co 500ms)
+setInterval(updateSimulation, 500);
+
+// Start gry
+gameLoop();
+</script>
+</body>
+</html>
