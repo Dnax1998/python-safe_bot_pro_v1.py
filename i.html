@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Przystanek Koncentracja | Strona & Panel Administracyjny</title>
+    <title>Przystanek Koncentracja | Strona & Rozbudowany Panel Admina</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -48,7 +48,7 @@
             font-family: 'Fredoka', sans-serif;
         }
         .glass-nav {
-            background: rgba(250, 248, 245, 0.9);
+            background: rgba(250, 248, 245, 0.95);
             backdrop-filter: blur(12px);
         }
         .card-shadow {
@@ -61,12 +61,24 @@
             transform: translateY(-5px);
             box-shadow: 0 18px 35px -5px rgba(112, 151, 117, 0.2);
         }
+        /* Custom scrollbars for admin table/calendar */
+        .custom-scroll::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body class="antialiased selection:bg-brand-peach selection:text-white">
 
     <!-- ========================================== -->
-    <!-- WIDOK 1: PUBLICZNA STRONA INTERNETOWA      -->
+    <!-- PEŁNA PUBLICZNA STRONA INTERNETOWA         -->
     <!-- ========================================== -->
     <div id="public-view">
         
@@ -83,7 +95,6 @@
                     </div>
                 </a>
 
-                <!-- Desktop Links -->
                 <div class="hidden md:flex items-center space-x-8 font-semibold text-stone-600">
                     <a href="#dlakogo" class="hover:text-brand-green transition-colors">Dla kogo?</a>
                     <a href="#omnie" class="hover:text-brand-green transition-colors">O mnie</a>
@@ -101,13 +112,11 @@
                     </a>
                 </div>
 
-                <!-- Mobile Button -->
                 <button id="menu-btn" class="md:hidden text-2xl text-stone-700 p-2 focus:outline-none">
                     <i class="fa-solid fa-bars"></i>
                 </button>
             </div>
 
-            <!-- Mobile Menu -->
             <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-stone-200 px-6 py-6 space-y-4">
                 <a href="#dlakogo" class="block text-lg font-medium text-stone-700">Dla kogo?</a>
                 <a href="#omnie" class="block text-lg font-medium text-stone-700">O mnie</a>
@@ -150,7 +159,6 @@
                             </a>
                         </div>
 
-                        <!-- Pigułki atutów -->
                         <div class="pt-8 border-t border-stone-200/80 grid grid-cols-3 gap-4 text-center lg:text-left">
                             <div>
                                 <span class="font-heading text-2xl md:text-3xl font-bold text-brand-green block">100%</span>
@@ -167,7 +175,6 @@
                         </div>
                     </div>
 
-                    <!-- Wizualizacja -->
                     <div class="lg:col-span-5 relative">
                         <div class="bg-white p-8 rounded-3xl card-shadow border border-stone-100 text-center relative space-y-6">
                             <div class="w-24 h-24 bg-brand-softpeach text-brand-peach rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">
@@ -560,35 +567,51 @@
 
 
     <!-- ========================================== -->
-    <!-- WIDOK 2: PANEL ADMINISTRACYJNY (ODDZIELNY) -->
+    <!-- WIDOK 2: ROZBUDOWANY PANEL ADMINA (PUNKT 1)-->
     <!-- ========================================== -->
     <div id="admin-view" class="hidden min-h-screen bg-slate-900 text-slate-100 pb-16">
         
-        <!-- Admin Header Navigation -->
-        <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40">
+        <!-- Header Panelu Admina -->
+        <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40 shadow-lg">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 bg-brand-peach text-white rounded-xl flex items-center justify-center font-bold">
+                    <div class="w-10 h-10 bg-brand-peach text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-inner">
                         <i class="fa-solid fa-user-shield"></i>
                     </div>
                     <div>
                         <h1 class="font-heading text-lg font-bold text-white leading-tight">Panel Administracyjny</h1>
-                        <span class="text-xs text-slate-400">Zarządzanie wizytami i grafikem</span>
+                        <span class="text-xs text-slate-400">Przystanek Koncentracja • Zarządzanie</span>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <button onclick="openAddManualModal()" class="bg-brand-green hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-2">
+                    <button onclick="openAddManualModal()" class="bg-brand-green hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-2 shadow">
                         <i class="fa-solid fa-plus"></i> Dodaj wizytę ręcznie
                     </button>
                     <button onclick="exitAdminPanel()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs px-4 py-2 rounded-xl border border-slate-600 transition-all flex items-center gap-2">
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Wyjdź ze strony admina
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Wyjdź
                     </button>
                 </div>
             </div>
+
+            <!-- TAB NAVIGATION -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 border-t border-slate-700/60 pt-2 overflow-x-auto custom-scroll">
+                <button onclick="switchAdminTab('reservations')" id="tab-btn-reservations" class="admin-tab-btn active-tab text-xs font-bold px-4 py-2.5 rounded-t-xl flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-list-check"></i> Rezerwacje & Tabela
+                </button>
+                <button onclick="switchAdminTab('calendar')" id="tab-btn-calendar" class="admin-tab-btn text-xs font-bold px-4 py-2.5 rounded-t-xl flex items-center gap-2 text-slate-400 hover:text-white transition-all">
+                    <i class="fa-solid fa-calendar-week"></i> Grafik Tygodniowy
+                </button>
+                <button onclick="switchAdminTab('children')" id="tab-btn-children" class="admin-tab-btn text-xs font-bold px-4 py-2.5 rounded-t-xl flex items-center gap-2 text-slate-400 hover:text-white transition-all">
+                    <i class="fa-solid fa-child"></i> Karty Dzieci & Notatki
+                </button>
+                <button onclick="switchAdminTab('settings')" id="tab-btn-settings" class="admin-tab-btn text-xs font-bold px-4 py-2.5 rounded-t-xl flex items-center gap-2 text-slate-400 hover:text-white transition-all">
+                    <i class="fa-solid fa-gear"></i> Dostępność & Urlopy
+                </button>
+            </div>
         </header>
 
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-8">
             
             <!-- KPI STATS CARDS -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -601,7 +624,7 @@
                 </div>
 
                 <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 space-y-1">
-                    <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Oczekujące na potwierdzenie</span>
+                    <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Oczekujące</span>
                     <div class="flex items-baseline justify-between">
                         <span id="stat-pending" class="font-heading text-3xl font-bold text-amber-400">0</span>
                         <i class="fa-solid fa-clock text-amber-400 text-xl"></i>
@@ -625,41 +648,137 @@
                 </div>
             </div>
 
-            <!-- FILTRY I WYSZUKIWARKA -->
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col md:flex-row justify-between gap-4">
-                <div class="flex flex-wrap items-center gap-2">
-                    <button onclick="filterAdminStatus('ALL')" class="admin-filter-btn active-filter text-xs font-bold px-3 py-2 rounded-xl bg-slate-700 text-white">Wszystkie</button>
-                    <button onclick="filterAdminStatus('Oczekująca')" class="admin-filter-btn text-xs font-bold px-3 py-2 rounded-xl text-slate-400 hover:text-white">Oczekujące</button>
-                    <button onclick="filterAdminStatus('Potwierdzona')" class="admin-filter-btn text-xs font-bold px-3 py-2 rounded-xl text-slate-400 hover:text-white">Potwierdzone</button>
-                    <button onclick="filterAdminStatus('Zakończona')" class="admin-filter-btn text-xs font-bold px-3 py-2 rounded-xl text-slate-400 hover:text-white">Zakończone</button>
-                    <button onclick="filterAdminStatus('Odwołana')" class="admin-filter-btn text-xs font-bold px-3 py-2 rounded-xl text-slate-400 hover:text-white">Odwołane</button>
+            <!-- ========================================== -->
+            <!-- TAB 1: REZERWACJE & TABELA                 -->
+            <!-- ========================================== -->
+            <div id="tab-content-reservations" class="tab-content space-y-4">
+                <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="filterAdminStatus('ALL')" class="admin-filter-btn active-filter text-xs font-bold px-3 py-2 rounded-xl bg-slate-700 text-white">Wszystkie</button>
+                        <button onclick="filterAdminStatus('Oczekująca')" class="admin-filter-btn text-xs font-bold px-3 py-2 rounded-xl text-slate-400 hover:text-white">Oczekujące</button>
+                        <button onclick="filterAdminStatus('Potwierdzona')" class="admin-filter-btn text-xs font-bold px-3 py-2 rounded-xl text-slate-400 hover:text-white">Potwierdzone</button>
+                        <button onclick="filterAdminStatus('Zakończona')" class="admin-filter-btn text-xs font-bold px-3 py-2 rounded-xl text-slate-400 hover:text-white">Zakończone</button>
+                        <button onclick="filterAdminStatus('Odwołana')" class="admin-filter-btn text-xs font-bold px-3 py-2 rounded-xl text-slate-400 hover:text-white">Odwołane</button>
+                    </div>
+
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <button onclick="exportToCSV()" class="bg-slate-700 hover:bg-slate-600 text-emerald-400 font-bold text-xs px-3 py-2 rounded-xl border border-slate-600 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                            <i class="fa-solid fa-file-csv text-sm"></i> Pobierz Raport CSV
+                        </button>
+                        <div class="relative w-full md:w-64">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                            <input type="text" id="admin-search" oninput="renderAdminTable()" placeholder="Szukaj rodzica lub dziecka..." class="w-full bg-slate-900 border border-slate-700 text-sm text-slate-200 pl-9 pr-4 py-2 rounded-xl focus:outline-none focus:border-brand-peach">
+                        </div>
+                    </div>
                 </div>
 
-                <div class="relative min-w-[260px]">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
-                    <input type="text" id="admin-search" oninput="renderAdminTable()" placeholder="Szukaj rodzica, dziecka lub ID..." class="w-full bg-slate-900 border border-slate-700 text-sm text-slate-200 pl-9 pr-4 py-2 rounded-xl focus:outline-none focus:border-brand-peach">
+                <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+                    <div class="overflow-x-auto custom-scroll">
+                        <table class="w-full text-left text-sm text-slate-300">
+                            <thead class="bg-slate-900/80 text-xs uppercase font-bold text-slate-400 border-b border-slate-700">
+                                <tr>
+                                    <th class="p-4">Kod</th>
+                                    <th class="p-4">Dziecko</th>
+                                    <th class="p-4">Rodzic / Kontakt</th>
+                                    <th class="p-4">Usługa</th>
+                                    <th class="p-4">Termin Wizyty</th>
+                                    <th class="p-4">Status</th>
+                                    <th class="p-4 text-right">Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-table-body" class="divide-y divide-slate-700/60">
+                                <!-- Generowane dynamicznie w JS -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <!-- TABELA REZERWACJI -->
-            <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-300">
-                        <thead class="bg-slate-900/80 text-xs uppercase font-bold text-slate-400 border-b border-slate-700">
-                            <tr>
-                                <th class="p-4">Kod / Data Rezerwacji</th>
-                                <th class="p-4">Dziecko</th>
-                                <th class="p-4">Rodzic / Kontakt</th>
-                                <th class="p-4">Usługa</th>
-                                <th class="p-4">Termin Wizyty</th>
-                                <th class="p-4">Status</th>
-                                <th class="p-4 text-right">Akcje</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-table-body" class="divide-y divide-slate-700/60">
-                            <!-- Dynamicznie generowane wiersze -->
-                        </tbody>
-                    </table>
+            <!-- ========================================== -->
+            <!-- TAB 2: WIZUALNY GRAFIK TYGODNIOWY          -->
+            <!-- ========================================== -->
+            <div id="tab-content-calendar" class="tab-content hidden space-y-4">
+                <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <button onclick="changeCalendarWeek(-1)" class="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-xl"><i class="fa-solid fa-chevron-left"></i></button>
+                        <span id="calendar-week-label" class="font-heading font-bold text-white text-lg">Tydzień: 12 Maja - 17 Maja 2026</span>
+                        <button onclick="changeCalendarWeek(1)" class="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-xl"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                    <button onclick="resetCalendarWeek()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold px-3 py-2 rounded-xl">Dzisiaj</button>
+                </div>
+
+                <div class="bg-slate-800 rounded-2xl border border-slate-700 p-4 overflow-x-auto custom-scroll">
+                    <div class="min-w-[700px] grid grid-cols-6 gap-3 text-center" id="calendar-grid">
+                        <!-- Generowane dynamicznie w JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 3: KARTY DZIECI & NOTATKI              -->
+            <!-- ========================================== -->
+            <div id="tab-content-children" class="tab-content hidden space-y-4">
+                <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex justify-between items-center">
+                    <h3 class="font-heading text-lg font-bold text-white">Profil Dziecka & Dziennik Postępów</h3>
+                    <div class="w-64">
+                        <input type="text" id="child-search-input" oninput="renderChildrenCards()" placeholder="Szukaj dziecka..." class="w-full bg-slate-900 border border-slate-700 text-xs text-white p-2.5 rounded-xl">
+                    </div>
+                </div>
+
+                <div id="children-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Generowane dynamicznie w JS -->
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 4: DOSTĘPNOŚĆ I URLOPY                 -->
+            <!-- ========================================== -->
+            <div id="tab-content-settings" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Stała Dostępność -->
+                    <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+                        <h3 class="font-heading text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-regular fa-clock text-brand-peach"></i> Stałe Godziny Pracy Gabinetu
+                        </h3>
+                        <p class="text-xs text-slate-400">Zaznacz dni, w których rodzice mogą rezerwować terminy.</p>
+
+                        <div class="space-y-3 pt-2">
+                            <label class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-700">
+                                <span class="font-bold text-sm text-white">Poniedziałek</span>
+                                <input type="text" value="14:00 - 18:00" class="bg-slate-800 border border-slate-600 text-xs text-center text-white font-bold p-1.5 rounded-lg w-32">
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-700">
+                                <span class="font-bold text-sm text-white">Wtorek</span>
+                                <input type="text" value="14:00 - 18:00" class="bg-slate-800 border border-slate-600 text-xs text-center text-white font-bold p-1.5 rounded-lg w-32">
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-700">
+                                <span class="font-bold text-sm text-white">Środa</span>
+                                <input type="text" value="14:00 - 18:00" class="bg-slate-800 border border-slate-600 text-xs text-center text-white font-bold p-1.5 rounded-lg w-32">
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-700">
+                                <span class="font-bold text-sm text-white">Sobota</span>
+                                <input type="text" value="10:00 - 14:00" class="bg-slate-800 border border-slate-600 text-xs text-center text-white font-bold p-1.5 rounded-lg w-32">
+                            </label>
+                        </div>
+                        <button onclick="alert('Ustawienia godzin zapisane!')" class="w-full bg-brand-green hover:bg-emerald-700 text-white font-bold text-xs py-3 rounded-xl mt-4">Zapisz Godziny Pracy</button>
+                    </div>
+
+                    <!-- Zaplanowane Urlopy / Blokady -->
+                    <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+                        <h3 class="font-heading text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-umbrella-beach text-brand-blue"></i> Urlopy i Dni Wolne
+                        </h3>
+                        <p class="text-xs text-slate-400">Dodaj dni, w których gabinet będzie nieczynny.</p>
+
+                        <div class="flex gap-2">
+                            <input type="text" id="holiday-input" placeholder="np. 20-25 Maja (Majówka)" class="bg-slate-900 border border-slate-700 text-xs text-white p-2.5 rounded-xl flex-1">
+                            <button onclick="addHoliday()" class="bg-brand-peach hover:bg-orange-400 text-white font-bold text-xs px-4 py-2.5 rounded-xl">Dodaj</button>
+                        </div>
+
+                        <ul id="holiday-list" class="space-y-2 pt-2">
+                            <!-- Generowane dynamicznie -->
+                        </ul>
+                    </div>
                 </div>
             </div>
 
@@ -674,7 +793,7 @@
             </div>
             <div>
                 <h3 class="font-heading text-2xl font-bold text-white">Logowanie do Panelu</h3>
-                <p class="text-xs text-slate-400 mt-1">Podaj kod PIN (domyślny: <strong class="text-white">1234</strong>)</p>
+                <p class="text-xs text-slate-400 mt-1">Podaj PIN dostępu (domyślny: <strong class="text-white">1234</strong>)</p>
             </div>
 
             <input type="password" id="admin-pin-input" maxlength="6" class="w-full text-center text-2xl font-mono tracking-widest bg-slate-900 border border-slate-700 text-white rounded-2xl py-3 focus:outline-none focus:border-brand-peach" placeholder="••••">
@@ -705,26 +824,26 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Dzień</label>
-                        <input type="text" id="m-date" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white" placeholder="np. Piątek, 15 Maja">
+                        <input type="text" id="m-date" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white" placeholder="np. Poniedziałek, 12 Maja">
                     </div>
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Godzina</label>
-                        <input type="text" id="m-time" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white" placeholder="np. 16:00">
+                        <input type="text" id="m-time" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white" placeholder="np. 16:15">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Imię i Wiek Dziecka</label>
-                        <input type="text" id="m-child" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white" placeholder="np. Tomek, 8 lat">
+                        <input type="text" id="m-child" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white" placeholder="np. Kacper, 7 lat">
                     </div>
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Imię Rodzica</label>
-                        <input type="text" id="m-parent" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white" placeholder="np. Jan Kowalski">
+                        <input type="text" id="m-parent" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white" placeholder="np. Anna Kowalska">
                     </div>
                 </div>
                 <div>
                     <label class="block font-bold text-slate-300 mb-1">Telefon</label>
-                    <input type="tel" id="m-phone" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white" placeholder="+48 500 111 222">
+                    <input type="tel" id="m-phone" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white" placeholder="+48 600 000 000">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-300 mb-1">Uwagi</label>
@@ -739,7 +858,7 @@
 
     <!-- SCRIPT LOGIC -->
     <script>
-        // DATA STORE (LocalStorage)
+        // DATA STORE
         let bookings = JSON.parse(localStorage.getItem('pk_bookings')) || [
             {
                 id: 'PK-94821',
@@ -752,7 +871,10 @@
                 time: '16:15',
                 notes: 'Podejrzenie ADHD, szybko się dekoncentruje',
                 status: 'Oczekująca',
-                price: 90
+                price: 90,
+                focusRating: 4,
+                therapistNotes: 'Dobry postęp w zadaniu z klockami. Pamięć wzrokowa na wysokim poziomie.',
+                homework: 'Gra w pamięć 10 minut dziennie'
             },
             {
                 id: 'PK-10293',
@@ -765,20 +887,28 @@
                 time: '11:00',
                 notes: 'Brak diagnozy, ćwiczenia pamięci',
                 status: 'Potwierdzona',
-                price: 60
+                price: 60,
+                focusRating: 5,
+                therapistNotes: 'Świetnie współpracuje z grupą.',
+                homework: 'Brak'
             }
         ];
+
+        let holidays = JSON.parse(localStorage.getItem('pk_holidays')) || ['1 Maja - Święto Pracy', '2-3 Maja - Majówka'];
 
         function saveBookingsToStorage() {
             localStorage.setItem('pk_bookings', JSON.stringify(bookings));
         }
 
-        // NAVIGATION LOGIC
+        function saveHolidaysToStorage() {
+            localStorage.setItem('pk_holidays', JSON.stringify(holidays));
+        }
+
+        // PUBLIC SITE NAV LOGIC
         const menuBtn = document.getElementById('menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
         menuBtn?.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
 
-        // PUBLIC BOOKING WIZARD LOGIC
         let selectedDateVal = "Poniedziałek, 12 Maja";
         let selectedTimeVal = "16:15";
 
@@ -850,7 +980,10 @@
                 time: selectedTimeVal,
                 notes: notes || 'Brak uwag',
                 status: 'Oczekująca',
-                price: isIndiv ? 90 : 60
+                price: isIndiv ? 90 : 60,
+                focusRating: 0,
+                therapistNotes: '',
+                homework: ''
             };
 
             bookings.unshift(newBooking);
@@ -894,7 +1027,7 @@
 
 
         // ==========================================
-        // ADMIN PANEL LOGIC & AUTHENTICATION
+        // ADMIN PANEL FULL LOGIC (PUNKT 1)
         // ==========================================
         let currentAdminFilter = 'ALL';
 
@@ -923,12 +1056,31 @@
             document.getElementById('admin-view').classList.remove('hidden');
             window.scrollTo(0,0);
             renderAdminTable();
+            renderCalendarGrid();
+            renderChildrenCards();
+            renderHolidaysList();
         }
 
         function exitAdminPanel() {
             document.getElementById('admin-view').classList.add('hidden');
             document.getElementById('public-view').classList.remove('hidden');
             window.scrollTo(0,0);
+        }
+
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.add('hidden'));
+            document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-700', 'text-white', 'border-b-2', 'border-brand-peach');
+                btn.classList.add('text-slate-400');
+            });
+
+            document.getElementById(`tab-content-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            activeBtn.classList.add('bg-slate-700', 'text-white');
+            activeBtn.classList.remove('text-slate-400');
+
+            if (tabName === 'calendar') renderCalendarGrid();
+            if (tabName === 'children') renderChildrenCards();
         }
 
         function filterAdminStatus(status) {
@@ -942,6 +1094,7 @@
             renderAdminTable();
         }
 
+        // TAB 1: RENDER TABLE
         function renderAdminTable() {
             const tbody = document.getElementById('admin-table-body');
             const searchVal = document.getElementById('admin-search')?.value.toLowerCase() || '';
@@ -956,7 +1109,7 @@
                 return matchesFilter && matchesSearch;
             });
 
-            // Calculate KPIs
+            // KPIs
             let totalCount = bookings.length;
             let pendingCount = bookings.filter(b => b.status === 'Oczekująca').length;
             let confirmedCount = bookings.filter(b => b.status === 'Potwierdzona').length;
@@ -1000,7 +1153,7 @@
                         ${b.status === 'Oczekująca' ? `<button onclick="updateStatus('${b.id}', 'Potwierdzona')" title="Potwierdź" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs p-2 rounded-lg"><i class="fa-solid fa-check"></i></button>` : ''}
                         ${b.status === 'Potwierdzona' ? `<button onclick="updateStatus('${b.id}', 'Zakończona')" title="Oznacz jako zakończoną" class="bg-blue-600 hover:bg-blue-500 text-white text-xs p-2 rounded-lg"><i class="fa-solid fa-flag-checkered"></i></button>` : ''}
                         <button onclick="updateStatus('${b.id}', 'Odwołana')" title="Odwołaj" class="bg-slate-700 hover:bg-rose-900 text-slate-300 hover:text-white text-xs p-2 rounded-lg"><i class="fa-solid fa-xmark"></i></button>
-                        <button onclick="deleteBooking('${b.id}')" title="Usuń całkowicie" class="bg-slate-900 hover:bg-red-600 text-slate-500 hover:text-white text-xs p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="deleteBooking('${b.id}')" title="Usuń" class="bg-slate-900 hover:bg-red-600 text-slate-500 hover:text-white text-xs p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1024,6 +1177,177 @@
             }
         }
 
+        // CSV EXPORT FUNCTIONALITY
+        function exportToCSV() {
+            let csvContent = "\uFEFF"; // UTF-8 BOM for Polish characters in Excel
+            csvContent += "Kod;Dziecko;Rodzic;Telefon;Email;Usluga;Data;Godzina;Cena;Status;Uwagi\n";
+
+            bookings.forEach(b => {
+                csvContent += `"${b.id}";"${b.child}";"${b.parent}";"${b.phone}";"${b.email}";"${b.service}";"${b.date}";"${b.time}";"${b.price} PLN";"${b.status}";"${b.notes}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Wizyty_PrzystanekKoncentracja_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+
+        // TAB 2: VISUAL WEEKLY CALENDAR
+        const daysOfWeek = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+        const hoursList = ['14:00', '15:00', '16:15', '17:30'];
+
+        function renderCalendarGrid() {
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+
+            daysOfWeek.forEach(day => {
+                const col = document.createElement('div');
+                col.className = "bg-slate-900/60 rounded-xl p-3 border border-slate-700/80 space-y-3";
+                col.innerHTML = `<h4 class="font-heading font-bold text-sm text-brand-peach border-b border-slate-700 pb-2">${day}</h4>`;
+
+                hoursList.forEach(hour => {
+                    const match = bookings.find(b => b.date.includes(day) && b.time === hour && b.status !== 'Odwołana');
+
+                    const slot = document.createElement('div');
+                    if (match) {
+                        const isInd = match.service.includes('Indywidualne');
+                        slot.className = `p-2.5 rounded-xl text-left border text-xs cursor-pointer transition-transform hover:scale-105 ${isInd ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-200' : 'bg-orange-950/60 border-orange-500/50 text-orange-200'}`;
+                        slot.innerHTML = `
+                            <div class="flex justify-between font-bold">
+                                <span>${match.time}</span>
+                                <span class="opacity-75">${isInd ? 'IND' : 'GRUP'}</span>
+                            </div>
+                            <div class="font-bold mt-1 text-white truncate">${match.child}</div>
+                            <div class="text-[10px] opacity-75 truncate">${match.parent}</div>
+                        `;
+                    } else {
+                        slot.className = "p-2 rounded-xl border border-dashed border-slate-700/60 text-slate-600 text-xs hover:border-slate-500 hover:text-slate-400 cursor-pointer text-center";
+                        slot.innerHTML = `<span>${hour}</span><br><span class="text-[10px]">+ Wolne</span>`;
+                        slot.onclick = () => {
+                            openAddManualModal();
+                            document.getElementById('m-date').value = `${day}, 12 Maja`;
+                            document.getElementById('m-time').value = hour;
+                        };
+                    }
+                    col.appendChild(slot);
+                });
+
+                grid.appendChild(col);
+            });
+        }
+
+        function changeCalendarWeek(dir) {
+            alert("Przełączono widok tygodnia w kalendarzu.");
+        }
+        function resetCalendarWeek() {}
+
+
+        // TAB 3: CHILDREN CARDS & DOSSIER
+        function renderChildrenCards() {
+            const container = document.getElementById('children-cards-container');
+            const search = document.getElementById('child-search-input')?.value.toLowerCase() || '';
+            container.innerHTML = '';
+
+            let filtered = bookings.filter(b => b.child.toLowerCase().includes(search) || b.parent.toLowerCase().includes(search));
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="col-span-3 text-center text-slate-500 py-8">Brak kart dzieci spełniających kryteria.</p>`;
+                return;
+            }
+
+            filtered.forEach(b => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-md";
+
+                let stars = '';
+                for (let i = 1; i <= 5; i++) {
+                    stars += `<i class="fa-solid fa-star text-sm cursor-pointer ${i <= (b.focusRating || 0) ? 'text-amber-400' : 'text-slate-600'}" onclick="rateChild('${b.id}', ${i})"></i>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start border-b border-slate-700 pb-3">
+                        <div>
+                            <h4 class="font-heading font-bold text-white text-lg">${b.child}</h4>
+                            <span class="text-xs text-slate-400">Rodzic: ${b.parent} (${b.phone})</span>
+                        </div>
+                        <span class="text-xs bg-brand-peach/20 text-brand-peach font-bold px-2.5 py-1 rounded-lg">${b.service}</span>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Ocena Koncentracji na Zajęciach:</label>
+                        <div class="flex gap-1">${stars}</div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase">Notatka Wewnętrzna Terapeuty:</label>
+                            <textarea onchange="saveChildNotes('${b.id}', 'therapistNotes', this.value)" class="w-full bg-slate-900 border border-slate-700 text-xs text-slate-200 p-2 rounded-xl focus:outline-none" rows="2" placeholder="Wpisz swoje obserwacje z zajęć...">${b.therapistNotes || ''}</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-brand-peach uppercase">Zadania / Wskazówki dla Rodzica:</label>
+                            <input type="text" onchange="saveChildNotes('${b.id}', 'homework', this.value)" value="${b.homework || ''}" class="w-full bg-slate-900 border border-slate-700 text-xs text-slate-200 p-2 rounded-xl focus:outline-none" placeholder="np. gra w memory 10 min dziennie...">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function rateChild(id, rating) {
+            const b = bookings.find(item => item.id === id);
+            if (b) {
+                b.focusRating = rating;
+                saveBookingsToStorage();
+                renderChildrenCards();
+            }
+        }
+
+        function saveChildNotes(id, field, value) {
+            const b = bookings.find(item => item.id === id);
+            if (b) {
+                b[field] = value;
+                saveBookingsToStorage();
+            }
+        }
+
+
+        // TAB 4: HOLIDAYS & AVAILABILITY
+        function renderHolidaysList() {
+            const ul = document.getElementById('holiday-list');
+            ul.innerHTML = '';
+            holidays.forEach((h, index) => {
+                const li = document.createElement('li');
+                li.className = "flex justify-between items-center p-2.5 bg-slate-900/60 rounded-xl border border-slate-700 text-xs text-slate-300 font-semibold";
+                li.innerHTML = `
+                    <span><i class="fa-solid fa-calendar-xmark text-rose-400 mr-2"></i>${h}</span>
+                    <button onclick="removeHoliday(${index})" class="text-slate-500 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button>
+                `;
+                ul.appendChild(li);
+            });
+        }
+
+        function addHoliday() {
+            const input = document.getElementById('holiday-input');
+            if (input.value.trim() !== '') {
+                holidays.push(input.value.trim());
+                saveHolidaysToStorage();
+                renderHolidaysList();
+                input.value = '';
+            }
+        }
+
+        function removeHoliday(index) {
+            holidays.splice(index, 1);
+            saveHolidaysToStorage();
+            renderHolidaysList();
+        }
+
+        // MODAL MANUAL ADD
         function openAddManualModal() {
             document.getElementById('admin-add-modal').classList.remove('hidden');
         }
@@ -1048,19 +1372,23 @@
                 id: code,
                 parent,
                 phone,
-                email: 'ręcznie@telefon.pl',
+                email: 'recznie@telefon.pl',
                 child,
                 service,
                 date,
                 time,
                 notes: notes || 'Wizyta dodana telefonicznie',
                 status: 'Potwierdzona',
-                price: isIndiv ? 90 : 60
+                price: isIndiv ? 90 : 60,
+                focusRating: 0,
+                therapistNotes: '',
+                homework: ''
             });
 
             saveBookingsToStorage();
             closeAddManualModal();
             renderAdminTable();
+            renderCalendarGrid();
         }
     </script>
 </body>
