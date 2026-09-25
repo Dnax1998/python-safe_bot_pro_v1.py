@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="pl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Przystanek Koncentracja | Ćwiczenia i Zabawy Koncentracyjne dla Dzieci</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            green: '#709775',
+                            lightgreen: '#E8F0E9',
+                            peach: '#FFB085',
+                            softpeach: '#FFF2EB',
+                            blue: '#85C1E9',
+                            softblue: '#EBF5FB',
+                            cream: '#FAF8F5',
+                            dark: '#2C3E50',
+                            muted: '#5D6D7E'
+                        }
+                    },
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        nunito: ['Nunito', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #FAF8F5;
+            color: #2C3E50;
+        }
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Fredoka', sans-serif;
+        }
+        .glass-nav {
+            background: rgba(250, 248, 245, 0.85);
+            backdrop-filter: blur(12px);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 30px -5px rgba(112, 151, 117, 0.12);
+        }
+        .card-shadow-hover {
+            transition: all 0.3s ease;
+        }
+        .card-shadow-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 18px 35px -5px rgba(112, 151, 117, 0.2);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-brand-peach selection:text-white">
+
+    <!-- NAWIGACJA -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-stone-200/60 transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <a href="#" class="flex items-center space-x-3 group">
+                <div class="w-12 h-12 bg-brand-green text-white rounded-2xl flex items-center justify-center text-2xl shadow-md group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <div>
+                    <span class="font-heading text-xl md:text-2xl font-bold text-brand-dark block leading-tight">Przystanek<span class="text-brand-peach">.</span>Koncentracja</span>
+                    <span class="text-xs text-brand-muted font-semibold tracking-wide block">Zabawa & Development</span>
+                </div>
+            </a>
+
+            <!-- Desktop Links -->
+            <div class="hidden md:flex items-center space-x-8 font-semibold text-stone-600">
+                <a href="#dlakogo" class="hover:text-brand-green transition-colors">Dla kogo?</a>
+                <a href="#omnie" class="hover:text-brand-green transition-colors">O mnie</a>
+                <a href="#quiz" class="hover:text-brand-green transition-colors">Darmowy Quiz</a>
+                <a href="#oferta" class="hover:text-brand-green transition-colors">Oferta i Cennik</a>
+                <a href="#faq" class="hover:text-brand-green transition-colors">FAQ</a>
+            </div>
+
+            <div class="hidden md:block">
+                <a href="#rezerwacja" class="bg-brand-peach hover:bg-orange-400 text-white font-heading font-semibold px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+                    <i class="fa-regular fa-calendar-check"></i> Umów spotkanie
+                </a>
+            </div>
+
+            <!-- Mobile Button -->
+            <button id="menu-btn" class="md:hidden text-2xl text-stone-700 p-2 focus:outline-none">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-stone-200 px-6 py-6 space-y-4">
+            <a href="#dlakogo" class="block text-lg font-medium text-stone-700 hover:text-brand-green">Dla kogo?</a>
+            <a href="#omnie" class="block text-lg font-medium text-stone-700 hover:text-brand-green">O mnie</a>
+            <a href="#quiz" class="block text-lg font-medium text-stone-700 hover:text-brand-green">Darmowy Quiz</a>
+            <a href="#oferta" class="block text-lg font-medium text-stone-700 hover:text-brand-green">Oferta i Cennik</a>
+            <a href="#faq" class="block text-lg font-medium text-stone-700 hover:text-brand-green">FAQ</a>
+            <a href="#rezerwacja" class="block text-center bg-brand-peach text-white font-heading font-semibold py-3 rounded-full shadow">Umów spotkanie</a>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-lightgreen text-brand-green font-semibold text-sm">
+                        <i class="fa-solid fa-graduation-cap"></i> Prowadzone przez studentkę psychologii
+                    </div>
+
+                    <h1 class="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-brand-dark leading-tight">
+                        Rozwijamy skupienie dzieci poprzez <span class="text-brand-green underline decoration-brand-peach decoration-wavy decoration-2">naukę i zabawę</span>
+                    </h1>
+
+                    <p class="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                        Innowacyjne zajęcia i treningi funkcji poznawczych dla dzieci w wieku 5–12 lat. Pomagam dzieciom polubić naukę, opanować emocje i wzmocnić pamięć w bezpiecznej, bezstresowej atmosferze.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
+                        <a href="#rezerwacja" class="w-full sm:w-auto text-center bg-brand-green hover:bg-emerald-800 text-white font-heading font-bold px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all text-lg flex items-center justify-center gap-3">
+                            <span>Umów pierwsze spotkanie</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                        <a href="#quiz" class="w-full sm:w-auto text-center bg-white hover:bg-stone-50 border-2 border-stone-200 text-brand-dark font-heading font-semibold px-6 py-4 rounded-2xl transition-all text-lg flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-puzzle-piece text-brand-peach"></i>
+                            <span>Sprawdź potrzeby dziecka</span>
+                        </a>
+                    </div>
+
+                    <!-- Pigułki atutów -->
+                    <div class="pt-8 border-t border-stone-200/80 grid grid-cols-3 gap-4 text-center lg:text-left">
+                        <div>
+                            <span class="font-heading text-2xl md:text-3xl font-bold text-brand-green block">100%</span>
+                            <span class="text-xs md:text-sm text-stone-500 font-medium">Nauki przez zabawę</span>
+                        </div>
+                        <div>
+                            <span class="font-heading text-2xl md:text-3xl font-bold text-brand-peach block">4-6</span>
+                            <span class="text-xs md:text-sm text-stone-500 font-medium">Osobowe grupy</span>
+                        </div>
+                        <div>
+                            <span class="font-heading text-2xl md:text-3xl font-bold text-brand-blue block">Indywidualnie</span>
+                            <span class="text-xs md:text-sm text-stone-500 font-medium">Dopasowany program</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ilustracja / Wizualizacja -->
+                <div class="lg:col-span-5 relative">
+                    <div class="relative mx-auto max-w-md lg:max-w-none">
+                        <div class="w-72 h-72 sm:w-96 sm:h-96 bg-brand-peach/20 rounded-full filter blur-3xl absolute -top-10 -left-10 -z-10"></div>
+                        <div class="w-72 h-72 sm:w-96 sm:h-96 bg-brand-green/20 rounded-full filter blur-3xl absolute -bottom-10 -right-10 -z-10"></div>
+                        
+                        <div class="bg-white p-8 rounded-3xl card-shadow border border-stone-100 text-center relative space-y-6">
+                            <div class="w-24 h-24 bg-brand-softpeach text-brand-peach rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">
+                                <i class="fa-solid fa-child-reaching"></i>
+                            </div>
+                            <h3 class="font-heading text-2xl font-bold text-brand-dark">Czym zajmujemy się na spotkaniach?</h3>
+                            <ul class="text-left space-y-3 text-stone-600 font-medium">
+                                <li class="flex items-center gap-3"><i class="fa-solid fa-circle-check text-brand-green"></i> Ćwiczenia koncentracji uwagi i pamięci</li>
+                                <li class="flex items-center gap-3"><i class="fa-solid fa-circle-check text-brand-green"></i> Gry planszowe i logiczne wspierające myślenie</li>
+                                <li class="flex items-center gap-3"><i class="fa-solid fa-circle-check text-brand-green"></i> Zabawy ruchowe wyciszające układ nerwowy</li>
+                                <li class="flex items-center gap-3"><i class="fa-solid fa-circle-check text-brand-green"></i> Trening radzenia sobie z rozproszeniami</li>
+                            </ul>
+                            <div class="p-4 bg-brand-softblue rounded-2xl text-xs text-stone-600 italic">
+                                "Każde dziecko ma swój własny rytm – pomagam mu odnaleźć radość ze skupienia."
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- WYZWANIA / DLA KOGO -->
+    <section id="dlakogo" class="py-20 bg-white border-y border-stone-200/60">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+                <span class="text-brand-peach font-bold uppercase tracking-wider text-sm">Wsparcie dla rodziców i dzieci</span>
+                <h2 class="font-heading text-3xl sm:text-4xl font-bold text-brand-dark">Czy rozpoznajesz te wyzwania u swojego dziecka?</h2>
+                <p class="text-stone-600 text-lg">Trudności z koncentracją to nie lenistwo. To umiejętność, którą można wyćwiczyć jak każdą inną.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Card 1 -->
+                <div class="bg-brand-cream p-6 rounded-3xl border border-stone-100 card-shadow-hover space-y-4">
+                    <div class="w-14 h-14 bg-brand-lightgreen text-brand-green rounded-2xl flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-brand-dark">Długie odrabianie lekcji</h3>
+                    <p class="text-stone-600 text-sm leading-relaxed">Zadanie na 15 minut zajmuje całe popołudnie przez ciągłe odrywanie się od biurka i rozpraszanie.</p>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="bg-brand-cream p-6 rounded-3xl border border-stone-100 card-shadow-hover space-y-4">
+                    <div class="w-14 h-14 bg-brand-softpeach text-brand-peach rounded-2xl flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-brand-dark">Impulsywność i ruchliwość</h3>
+                    <p class="text-stone-600 text-sm leading-relaxed">Trudność z usiedzeniem w miejscu, dokończeniem zadania czy cierpliwym czekaniem na swoją kolej.</p>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="bg-brand-cream p-6 rounded-3xl border border-stone-100 card-shadow-hover space-y-4">
+                    <div class="w-14 h-14 bg-brand-softblue text-brand-blue rounded-2xl flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-face-frown"></i>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-brand-dark">Szybka rezygnacja</h3>
+                    <p class="text-stone-600 text-sm leading-relaxed">Dziecko łatwo się zniechęca, gdy coś nie wychodzi od razu lub wymaga dłuższego wysiłku intelektualnego.</p>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="bg-brand-cream p-6 rounded-3xl border border-stone-100 card-shadow-hover space-y-4">
+                    <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-gamepad"></i>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-brand-dark">Przebodźcowanie ekranami</h3>
+                    <p class="text-stone-600 text-sm leading-relaxed">Trudność w skupieniu się na tradycyjnej książce lub zadaniu z powodu przyzwyczajenia do szybkich bodźców.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- O MNIE -->
+    <section id="omnie" class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white rounded-3xl border border-stone-200/80 p-8 md:p-12 card-shadow grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <div class="lg:col-span-5 flex justify-center">
+                    <div class="relative">
+                        <div class="w-64 h-64 md:w-80 md:h-80 rounded-3xl bg-brand-lightgreen overflow-hidden flex items-center justify-center shadow-md">
+                            <i class="fa-solid fa-user-graduate text-8xl text-brand-green/70"></i>
+                        </div>
+                        <div class="absolute -bottom-4 -right-4 bg-brand-peach text-white p-4 rounded-2xl shadow-lg font-heading font-bold text-sm">
+                            <i class="fa-solid fa-heart mr-1"></i> Z pasją do psychologii
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7 space-y-6">
+                    <span class="text-brand-green font-bold uppercase tracking-wider text-sm">Poznajmy się!</span>
+                    <h2 class="font-heading text-3xl sm:text-4xl font-bold text-brand-dark">Cześć! Jestem studentką psychologii</h2>
+                    <p class="text-stone-600 leading-relaxed">
+                        Fascynuje mnie neuropsychologia oraz rozwój dziecięcego mózgu. Zamiast nudnych arkuszy zadań, podczas moich spotkań stawiam na <strong>aktywne metody nauki przez zabawę</strong>.
+                    </p>
+                    <p class="text-stone-600 leading-relaxed">
+                        Wierzę, że każde dziecko ma w sobie ogromny potencjał – trzeba mu jedynie stworzyć bezpieczne warunki i dostarczyć odpowiednich narzędzi, aby nauczyło się czerpać satysfakcję ze skupienia i sukcesów.
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 bg-brand-lightgreen text-brand-green rounded-xl"><i class="fa-solid fa-check"></i></div>
+                            <div>
+                                <h4 class="font-bold text-brand-dark">Wiedza akademicka</h4>
+                                <p class="text-xs text-stone-500">Naukowe podłoże i aktualne metody pracy</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 bg-brand-softpeach text-brand-peach rounded-xl"><i class="fa-solid fa-smile"></i></div>
+                            <div>
+                                <h4 class="font-bold text-brand-dark">Zero presji</h4>
+                                <p class="text-xs text-stone-500">Atmosfera akceptacji i budowania pewności siebie</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- INTERAKTYWNY QUIZ -->
+    <section id="quiz" class="py-20 bg-brand-lightgreen/50">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <span class="text-brand-green font-bold uppercase tracking-wider text-sm">Szybki test (1 minuta)</span>
+            <h2 class="font-heading text-3xl sm:text-4xl font-bold text-brand-dark mt-2 mb-8">Jaka forma zajęć będzie najlepsza dla Twojego dziecka?</h2>
+
+            <div class="bg-white p-8 rounded-3xl border border-stone-200 card-shadow text-left" id="quiz-container">
+                <!-- Question 1 -->
+                <div id="q1" class="quiz-step">
+                    <h3 class="font-heading text-xl font-bold text-brand-dark mb-4">1. W jakim wieku jest Twoje dziecko?</h3>
+                    <div class="space-y-3">
+                        <button onclick="nextQuiz('q1', 'q2', 'age', '5-7')" class="w-full text-left p-4 rounded-xl border border-stone-200 hover:border-brand-green hover:bg-brand-lightgreen/30 transition-all font-semibold flex justify-between items-center">
+                            <span>5 - 7 lat (Przedszkole / Zerówka)</span>
+                            <i class="fa-solid fa-chevron-right text-stone-400"></i>
+                        </button>
+                        <button onclick="nextQuiz('q1', 'q2', 'age', '8-10')" class="w-full text-left p-4 rounded-xl border border-stone-200 hover:border-brand-green hover:bg-brand-lightgreen/30 transition-all font-semibold flex justify-between items-center">
+                            <span>8 - 10 lat (Klasy I - III)</span>
+                            <i class="fa-solid fa-chevron-right text-stone-400"></i>
+                        </button>
+                        <button onclick="nextQuiz('q1', 'q2', 'age', '11+')" class="w-full text-left p-4 rounded-xl border border-stone-200 hover:border-brand-green hover:bg-brand-lightgreen/30 transition-all font-semibold flex justify-between items-center">
+                            <span>11+ lat (Klasy IV+)</span>
+                            <i class="fa-solid fa-chevron-right text-stone-400"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div id="q2" class="quiz-step hidden">
+                    <h3 class="font-heading text-xl font-bold text-brand-dark mb-4">2. Jak dziecko zachowuje się w grupie rówieśników?</h3>
+                    <div class="space-y-3">
+                        <button onclick="nextQuiz('q2', 'q3', 'social', 'group')" class="w-full text-left p-4 rounded-xl border border-stone-200 hover:border-brand-green hover:bg-brand-lightgreen/30 transition-all font-semibold flex justify-between items-center">
+                            <span>Chętnie współpracuje i lubi rywalizację w grupie</span>
+                            <i class="fa-solid fa-chevron-right text-stone-400"></i>
+                        </button>
+                        <button onclick="nextQuiz('q2', 'q3', 'social', 'ind')" class="w-full text-left p-4 rounded-xl border border-stone-200 hover:border-brand-green hover:bg-brand-lightgreen/30 transition-all font-semibold flex justify-between items-center">
+                            <span>Łatwo się przebodźcowuje lub wstydzi w grupie</span>
+                            <i class="fa-solid fa-chevron-right text-stone-400"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div id="q3" class="quiz-step hidden">
+                    <h3 class="font-heading text-xl font-bold text-brand-dark mb-4">3. Jaki jest Twój główny cel?</h3>
+                    <div class="space-y-3">
+                        <button onclick="finishQuiz('ind')" class="w-full text-left p-4 rounded-xl border border-stone-200 hover:border-brand-green hover:bg-brand-lightgreen/30 transition-all font-semibold flex justify-between items-center">
+                            <span>Maksymalnie indywidualne podejście do trudności mojego dziecka</span>
+                            <i class="fa-solid fa-chevron-right text-stone-400"></i>
+                        </button>
+                        <button onclick="finishQuiz('group')" class="w-full text-left p-4 rounded-xl border border-stone-200 hover:border-brand-green hover:bg-brand-lightgreen/30 transition-all font-semibold flex justify-between items-center">
+                            <span>Rozwój koncentracji poprzez wspólne gry i interakcje społeczne</span>
+                            <i class="fa-solid fa-chevron-right text-stone-400"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quiz Result -->
+                <div id="q-result" class="quiz-step hidden text-center space-y-6">
+                    <div class="w-16 h-16 bg-brand-lightgreen text-brand-green rounded-full flex items-center justify-center mx-auto text-3xl">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <h3 id="result-title" class="font-heading text-2xl font-bold text-brand-dark"></h3>
+                    <p id="result-desc" class="text-stone-600 max-w-lg mx-auto"></p>
+                    <a href="#rezerwacja" class="inline-block bg-brand-peach hover:bg-orange-400 text-white font-heading font-bold px-8 py-3 rounded-full shadow transition-all">
+                        Przejdź do rezerwacji tego pakietu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- OFERTA I CENNIK -->
+    <section id="oferta" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+                <span class="text-brand-peach font-bold uppercase tracking-wider text-sm">Przejrzysty Cennik</span>
+                <h2 class="font-heading text-3xl sm:text-4xl font-bold text-brand-dark">Wybierz odpowiednią formę zajęć</h2>
+                <p class="text-stone-600 text-lg">Bez ukrytych kosztów. Możliwość stałej współpracy lub pojedynczych konsultacji.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <!-- Spotkania Indywidualne -->
+                <div class="bg-brand-cream border-2 border-stone-200 hover:border-brand-green rounded-3xl p-8 card-shadow-hover flex flex-col justify-between">
+                    <div class="space-y-6">
+                        <div class="inline-block px-3 py-1 bg-brand-lightgreen text-brand-green font-bold text-xs rounded-full uppercase">Najpopularniejsze na start</div>
+                        <h3 class="font-heading text-2xl font-bold text-brand-dark">Spotkanie Indywidualne</h3>
+                        <p class="text-stone-600 text-sm">100% uwagi poświęconej jednemu dziecku. Idealne przy zdiagnozowanym ADHD, dysleksji lub dużych trudnościach w skupieniu.</p>
+                        
+                        <div class="py-4 border-y border-stone-200">
+                            <span class="font-heading text-4xl font-bold text-brand-dark">90 PLN</span>
+                            <span class="text-stone-500 font-medium"> / 45 minut</span>
+                        </div>
+
+                        <ul class="space-y-3 text-sm text-stone-600">
+                            <li class="flex items-center gap-3"><i class="fa-solid fa-check text-brand-green"></i> Pełna Diagnoza potrzeb na 1. spotkaniu</li>
+                            <li class="flex items-center gap-3"><i class="fa-solid fa-check text-brand-green"></i> Program dostosowany do zainteresowań dziecka</li>
+                            <li class="flex items-center gap-3"><i class="fa-solid fa-check text-brand-green"></i> Krótkie podsumowanie i wskazówki dla rodzica</li>
+                        </ul>
+                    </div>
+
+                    <a href="#rezerwacja" onclick="selectService('ind')" class="mt-8 block text-center bg-brand-green hover:bg-emerald-800 text-white font-heading font-bold py-3 rounded-2xl transition-all">
+                        Zarezerwuj Indywidualne
+                    </a>
+                </div>
+
+                <!-- Zajęcia Grupowe -->
+                <div class="bg-brand-cream border-2 border-stone-200 hover:border-brand-peach rounded-3xl p-8 card-shadow-hover flex flex-col justify-between">
+                    <div class="space-y-6">
+                        <div class="inline-block px-3 py-1 bg-brand-softpeach text-brand-peach font-bold text-xs rounded-full uppercase">Małe grupy (4-6 osób)</div>
+                        <h3 class="font-heading text-2xl font-bold text-brand-dark">Warsztaty Grupowe</h3>
+                        <p class="text-stone-600 text-sm">Nauka koncentracji poprzez gry planszowe, rywalizację i współpracę w grupie rówieśników.</p>
+                        
+                        <div class="py-4 border-y border-stone-200">
+                            <span class="font-heading text-4xl font-bold text-brand-dark">60 PLN</span>
+                            <span class="text-stone-500 font-medium"> / 60 minut</span>
+                        </div>
+
+                        <ul class="space-y-3 text-sm text-stone-600">
+                            <li class="flex items-center gap-3"><i class="fa-solid fa-check text-brand-peach"></i> Grupy wiekowe: 5-7 lat lub 8-10 lat</li>
+                            <li class="flex items-center gap-3"><i class="fa-solid fa-check text-brand-peach"></i> Trening umiejętności społecznych i cierpliwości</li>
+                            <li class="flex items-center gap-3"><i class="fa-solid fa-check text-brand-peach"></i> Gry logiczne, zespołowe i elementy ruchu</li>
+                        </ul>
+                    </div>
+
+                    <a href="#rezerwacja" onclick="selectService('group')" class="mt-8 block text-center bg-brand-peach hover:bg-orange-400 text-white font-heading font-bold py-3 rounded-2xl transition-all">
+                        Zarezerwuj Grupowe
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SYSTEM REZERWACJI (WIZARD) -->
+    <section id="rezerwacja" class="py-20 bg-brand-cream border-t border-stone-200/60">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center space-y-4 mb-12">
+                <span class="text-brand-green font-bold uppercase tracking-wider text-sm">Prosty formularz</span>
+                <h2 class="font-heading text-3xl sm:text-4xl font-bold text-brand-dark">Umów wizytę w 3 minuty</h2>
+                <p class="text-stone-600">Wybierz dogodny termin – potwierdzenie otrzymasz od razu.</p>
+            </div>
+
+            <!-- Booking Container -->
+            <div class="bg-white rounded-3xl border border-stone-200 card-shadow p-6 sm:p-10">
+                
+                <!-- Steps Indicator -->
+                <div class="flex justify-between items-center mb-8 border-b border-stone-100 pb-6">
+                    <div class="flex items-center gap-2">
+                        <span id="step1-num" class="w-8 h-8 rounded-full bg-brand-green text-white font-bold flex items-center justify-center text-sm">1</span>
+                        <span class="font-bold text-xs sm:text-sm text-brand-dark">Usługa</span>
+                    </div>
+                    <div class="h-0.5 w-12 bg-stone-200"></div>
+                    <div class="flex items-center gap-2">
+                        <span id="step2-num" class="w-8 h-8 rounded-full bg-stone-200 text-stone-600 font-bold flex items-center justify-center text-sm">2</span>
+                        <span class="font-bold text-xs sm:text-sm text-stone-400">Termin</span>
+                    </div>
+                    <div class="h-0.5 w-12 bg-stone-200"></div>
+                    <div class="flex items-center gap-2">
+                        <span id="step3-num" class="w-8 h-8 rounded-full bg-stone-200 text-stone-600 font-bold flex items-center justify-center text-sm">3</span>
+                        <span class="font-bold text-xs sm:text-sm text-stone-400">Dane</span>
+                    </div>
+                </div>
+
+                <!-- Form Wizard Content -->
+                <form id="booking-form" onsubmit="event.preventDefault(); submitBooking();">
+                    
+                    <!-- STEP 1: Wybór Usługi -->
+                    <div id="booking-step-1" class="space-y-4">
+                        <h3 class="font-heading text-xl font-bold text-brand-dark mb-4">Wybierz rodzaj spotkania:</h3>
+                        
+                        <label class="block p-4 border-2 rounded-2xl cursor-pointer hover:border-brand-green transition-all flex items-center justify-between border-stone-200">
+                            <div class="flex items-center gap-4">
+                                <input type="radio" name="service_type" value="Spotkanie Indywidualne (90 PLN)" class="w-5 h-5 text-brand-green" checked>
+                                <div>
+                                    <span class="font-bold text-brand-dark block">Spotkanie Indywidualne</span>
+                                    <span class="text-xs text-stone-500">45 minut / 90 PLN / 1-na-1 z dzieckiem</span>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-user text-brand-green text-xl"></i>
+                        </label>
+
+                        <label class="block p-4 border-2 rounded-2xl cursor-pointer hover:border-brand-green transition-all flex items-center justify-between border-stone-200">
+                            <div class="flex items-center gap-4">
+                                <input type="radio" name="service_type" value="Warsztaty Grupowe (60 PLN)" class="w-5 h-5 text-brand-green">
+                                <div>
+                                    <span class="font-bold text-brand-dark block">Warsztaty Grupowe</span>
+                                    <span class="text-xs text-stone-500">60 minut / 60 PLN / Mała grupa (4-6 osób)</span>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-users text-brand-peach text-xl"></i>
+                        </label>
+
+                        <button type="button" onclick="goToStep(2)" class="w-full mt-6 bg-brand-green text-white font-heading font-bold py-3 rounded-xl shadow hover:bg-emerald-800 transition-all">
+                            Przejdź do wyboru terminu <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+
+                    <!-- STEP 2: Wybór Dnia i Godziny -->
+                    <div id="booking-step-2" class="space-y-6 hidden">
+                        <h3 class="font-heading text-xl font-bold text-brand-dark">Wybierz preferowany dzień i godzinę:</h3>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Dostępne dni:</label>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <button type="button" onclick="selectDate(this, 'Poniedziałek, 12 Maja')" class="date-btn border border-stone-200 p-3 rounded-xl text-center hover:border-brand-green">
+                                    <span class="block text-xs text-stone-400">PON</span>
+                                    <span class="font-bold text-sm">12 Maja</span>
+                                </button>
+                                <button type="button" onclick="selectDate(this, 'Wtorek, 13 Maja')" class="date-btn border border-stone-200 p-3 rounded-xl text-center hover:border-brand-green">
+                                    <span class="block text-xs text-stone-400">WTO</span>
+                                    <span class="font-bold text-sm">13 Maja</span>
+                                </button>
+                                <button type="button" onclick="selectDate(this, 'Środa, 14 Maja')" class="date-btn border border-stone-200 p-3 rounded-xl text-center hover:border-brand-green">
+                                    <span class="block text-xs text-stone-400">ŚRO</span>
+                                    <span class="font-bold text-sm">14 Maja</span>
+                                </button>
+                                <button type="button" onclick="selectDate(this, 'Sobota, 17 Maja')" class="date-btn border border-stone-200 p-3 rounded-xl text-center hover:border-brand-green">
+                                    <span class="block text-xs text-stone-400">SOB</span>
+                                    <span class="font-bold text-sm">17 Maja</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Dostępne godziny:</label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button type="button" onclick="selectTime(this, '15:00')" class="time-btn border border-stone-200 p-2.5 rounded-xl text-center font-bold text-sm hover:border-brand-green">15:00</button>
+                                <button type="button" onclick="selectTime(this, '16:15')" class="time-btn border border-stone-200 p-2.5 rounded-xl text-center font-bold text-sm hover:border-brand-green">16:15</button>
+                                <button type="button" onclick="selectTime(this, '17:30')" class="time-btn border border-stone-200 p-2.5 rounded-xl text-center font-bold text-sm hover:border-brand-green">17:30</button>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4 pt-4">
+                            <button type="button" onclick="goToStep(1)" class="w-1/2 border border-stone-300 font-heading font-bold py-3 rounded-xl hover:bg-stone-50">Wstecz</button>
+                            <button type="button" onclick="goToStep(3)" class="w-1/2 bg-brand-green text-white font-heading font-bold py-3 rounded-xl shadow hover:bg-emerald-800">Dalej</button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Dane Kontaktowe i Dziecka -->
+                    <div id="booking-step-3" class="space-y-4 hidden">
+                        <h3 class="font-heading text-xl font-bold text-brand-dark mb-2">Dane rodzica i dziecka:</h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-600 mb-1">Imię i Nazwisko Rodzica *</label>
+                                <input type="text" id="parent-name" required class="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-brand-green focus:outline-none" placeholder="Anna Kowalska">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-600 mb-1">Numer Telefonu *</label>
+                                <input type="tel" id="parent-phone" required class="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-brand-green focus:outline-none" placeholder="+48 600 000 000">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-600 mb-1">Imię i Wiek Dziecka *</label>
+                                <input type="text" id="child-info" required class="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-brand-green focus:outline-none" placeholder="Kacper, 7 lat">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-600 mb-1">Adres E-mail *</label>
+                                <input type="email" id="parent-email" required class="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-brand-green focus:outline-none" placeholder="anna@example.com">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-stone-600 mb-1">Dodatkowe uwagi / Diagnoza (opcjonalnie)</label>
+                            <textarea id="notes" rows="2" class="w-full p-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-brand-green focus:outline-none" placeholder="np. dziecko ma zdiagnozowane ADHD lub bardzo szybko się męczy..."></textarea>
+                        </div>
+
+                        <div class="pt-2">
+                            <label class="flex items-start gap-2 text-xs text-stone-500 cursor-pointer">
+                                <input type="checkbox" required class="mt-0.5 rounded text-brand-green">
+                                <span>Akceptuję regulamin rezerwacji oraz wyrażam zgodę na przetwarzanie danych osobowych w celu kontaktu.</span>
+                            </label>
+                        </div>
+
+                        <div class="flex gap-4 pt-4">
+                            <button type="button" onclick="goToStep(2)" class="w-1/2 border border-stone-300 font-heading font-bold py-3 rounded-xl hover:bg-stone-50">Wstecz</button>
+                            <button type="submit" class="w-1/2 bg-brand-peach text-white font-heading font-bold py-3 rounded-xl shadow hover:bg-orange-400">Potwierdzam Rezerwację</button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: POTWIERDZENIE -->
+                    <div id="booking-confirmation" class="text-center space-y-6 hidden py-6">
+                        <div class="w-20 h-20 bg-brand-lightgreen text-brand-green rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <h3 class="font-heading text-3xl font-bold text-brand-dark">Dziękuję za rezerwację!</h3>
+                        <p class="text-stone-600 max-w-md mx-auto">
+                            Potwierdzenie wysłaliśmy na Twój adres e-mail. Skontaktuję się z Tobą również telefonicznie w celu ustalenia szczegółów pierwszego spotkania.
+                        </p>
+                        <div class="p-4 bg-brand-cream border border-stone-200 rounded-2xl max-w-sm mx-auto text-left text-sm space-y-1">
+                            <p><strong>Kod rezerwacji:</strong> <span id="res-code" class="text-brand-green font-bold"></span></p>
+                            <p><strong>Termin:</strong> <span id="res-date"></span></p>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="py-20 bg-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center space-y-4 mb-16">
+                <span class="text-brand-peach font-bold uppercase tracking-wider text-sm">Pytania i Odpowiedzi</span>
+                <h2 class="font-heading text-3xl sm:text-4xl font-bold text-brand-dark">Najczęściej zadawane pytania</h2>
+            </div>
+
+            <div class="space-y-4">
+                <details class="bg-brand-cream p-6 rounded-2xl border border-stone-200 group">
+                    <summary class="font-heading font-bold text-lg text-brand-dark cursor-pointer flex justify-between items-center">
+                        Czy rodzic uczestniczy w zajęciach?
+                        <i class="fa-solid fa-chevron-down text-brand-peach group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <p class="mt-4 text-stone-600 leading-relaxed text-sm">
+                        Na pierwszym spotkaniu rodzic może towarzyszyć dziecku przez pierwsze 10-15 minut, aby dziecko poczuło się w pełni bezpiecznie. Dalsza część zajęć odbywa się sam na sam z osobą prowadzącą.
+                    </p>
+                </details>
+
+                <details class="bg-brand-cream p-6 rounded-2xl border border-stone-200 group">
+                    <summary class="font-heading font-bold text-lg text-brand-dark cursor-pointer flex justify-between items-center">
+                        Jak przygotować dziecko do pierwszego spotkania?
+                        <i class="fa-solid fa-chevron-down text-brand-peach group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <p class="mt-4 text-stone-600 leading-relaxed text-sm">
+                        Najlepiej powiedzieć dziecku, że idzie na fajne gry i zabawy planszowe z panią psycholog. Unikajmy słów takich jak "test", "sprawdzian" czy "terapia", aby nie budować niepotrzebnej presji.
+                    </p>
+                </details>
+
+                <details class="bg-brand-cream p-6 rounded-2xl border border-stone-200 group">
+                    <summary class="font-heading font-bold text-lg text-brand-dark cursor-pointer flex justify-between items-center">
+                        Co w przypadku konieczności odwołania zajęć?
+                        <i class="fa-solid fa-chevron-down text-brand-peach group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <p class="mt-4 text-stone-600 leading-relaxed text-sm">
+                        Spotkanie można bezpłatnie odwołać lub przełożyć na inny termin najpóźniej na 24 godziny przed planowanym rozpoczęciem zajęć.
+                    </p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-brand-dark text-stone-300 py-12 border-t border-stone-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+                <span class="font-heading text-2xl font-bold text-white block mb-2">Przystanek.Koncentracja</span>
+                <p class="text-sm text-stone-400">Ćwiczenia i zabawy rozwijające funkcje poznawcze oraz skupienie u dzieci.</p>
+            </div>
+            <div>
+                <h4 class="font-heading font-bold text-white mb-3">Kontakt</h4>
+                <p class="text-sm text-stone-400"><i class="fa-solid fa-envelope mr-2"></i> kontakt@przystanekkoncentracja.pl</p>
+                <p class="text-sm text-stone-400 mt-1"><i class="fa-solid fa-phone mr-2"></i> +48 500 000 000</p>
+            </div>
+            <div>
+                <h4 class="font-heading font-bold text-white mb-3">Informacje prawne</h4>
+                <p class="text-xs text-stone-400 leading-relaxed">
+                    Strona spełnia wymogi RODO. Dane podane w formularzu służą wyłącznie do kontaktu w sprawie rezerwacji wizyty.
+                </p>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 mt-8 border-t border-stone-800 text-center text-xs text-stone-500">
+            &copy; 2026 Przystanek Koncentracja. Wszystkie prawa zastrzeżone.
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT CODE -->
+    <script>
+        // Mobile Menu Toggle
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Quiz Logic
+        let quizAnswers = {};
+
+        function nextQuiz(currentId, nextId, key, value) {
+            quizAnswers[key] = value;
+            document.getElementById(currentId).classList.add('hidden');
+            document.getElementById(nextId).classList.remove('hidden');
+        }
+
+        function finishQuiz(preference) {
+            document.getElementById('q3').classList.add('hidden');
+            const resultBox = document.getElementById('q-result');
+            resultBox.classList.remove('hidden');
+
+            const title = document.getElementById('result-title');
+            const desc = document.getElementById('result-desc');
+
+            if (preference === 'ind' || quizAnswers.social === 'ind') {
+                title.innerText = "Rekomendacja: Spotkania Indywidualne";
+                desc.innerText = "Dla Twojego dziecka najlepszy będzie trening 1-na-1, który pozwoli dostosować tempo zajęć i wyeliminować wszelkie rozpraszacze.";
+            } else {
+                title.innerText = "Rekomendacja: Warsztaty Grupowe";
+                desc.innerText = "Twoje dziecko świetnie odnajdzie się w kameralnej grupie rówieśniczej, rozwijając koncentrację poprzez gry zespołowe i rywalizację.";
+            }
+        }
+
+        // Booking Logic
+        let selectedDateVal = "Poniedziałek, 12 Maja";
+        let selectedTimeVal = "16:15";
+
+        function goToStep(stepNumber) {
+            document.getElementById('booking-step-1').classList.add('hidden');
+            document.getElementById('booking-step-2').classList.add('hidden');
+            document.getElementById('booking-step-3').classList.add('hidden');
+
+            document.getElementById(`booking-step-${stepNumber}`).classList.remove('hidden');
+
+            // Update step indicators
+            for (let i = 1; i <= 3; i++) {
+                const numEl = document.getElementById(`step${i}-num`);
+                if (i <= stepNumber) {
+                    numEl.classList.remove('bg-stone-200', 'text-stone-600');
+                    numEl.classList.add('bg-brand-green', 'text-white');
+                } else {
+                    numEl.classList.remove('bg-brand-green', 'text-white');
+                    numEl.classList.add('bg-stone-200', 'text-stone-600');
+                }
+            }
+        }
+
+        function selectDate(btn, dateStr) {
+            document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('border-brand-green', 'bg-brand-lightgreen/50', 'font-bold'));
+            btn.classList.add('border-brand-green', 'bg-brand-lightgreen/50', 'font-bold');
+            selectedDateVal = dateStr;
+        }
+
+        function selectTime(btn, timeStr) {
+            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('border-brand-green', 'bg-brand-lightgreen/50', 'font-bold'));
+            btn.classList.add('border-brand-green', 'bg-brand-lightgreen/50', 'font-bold');
+            selectedTimeVal = timeStr;
+        }
+
+        function selectService(type) {
+            const radios = document.getElementsByName('service_type');
+            if (type === 'ind') radios[0].checked = true;
+            if (type === 'group') radios[1].checked = true;
+            goToStep(2);
+        }
+
+        function submitBooking() {
+            document.getElementById('booking-step-3').classList.add('hidden');
+            document.getElementById('booking-confirmation').classList.remove('hidden');
+
+            const randomCode = 'PK-' + Math.floor(10000 + Math.random() * 90000);
+            document.getElementById('res-code').innerText = randomCode;
+            document.getElementById('res-date').innerText = `${selectedDateVal} o godz. ${selectedTimeVal}`;
+        }
+    </script>
+</body>
+</html>
