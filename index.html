@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menedżer Piłkarski - Oficialne Ligi i Kluby</title>
+  <style>
+    :root {
+      --bg-main: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #334155;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --accent-gold: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --danger: #ef4444;
+      --pitch: #15803d;
+      --pitch-line: rgba(255, 255, 255, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #090d16;
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      color: #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+    }
+
+    .status-bar {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+
+    .status-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .status-value {
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .status-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar Navigation */
+    nav {
+      width: 240px;
+      background: #0e1626;
+      border-right: 1px solid var(--border);
+      padding: 1rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-btn:hover {
+      background: var(--bg-card);
+      color: var(--text-main);
+    }
+
+    .nav-btn.active {
+      background: var(--bg-card);
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
+
+    main {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* Setup Modal / Screen */
+    #setup-screen {
+      max-width: 800px;
+      margin: 2rem auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.75rem;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-size: 1rem;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card-hover);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Tactical Pitch */
+    .pitch-container {
+      background: var(--pitch);
+      border-radius: 10px;
+      height: 480px;
+      position: relative;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .pitch-line {
+      position: absolute;
+      border: 1px solid var(--pitch-line);
+    }
+
+    .pitch-center-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .pitch-center-line {
+      width: 100%;
+      top: 50%;
+      left: 0;
+    }
+
+    .pitch-box-top {
+      width: 180px;
+      height: 80px;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .pitch-box-bottom {
+      width: 180px;
+      height: 80px;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .player-node {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .player-dot {
+      width: 32px;
+      height: 32px;
+      background: var(--accent-gold);
+      color: #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.8rem;
+      border: 2px solid white;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    .player-name-tag {
+      background: rgba(0,0,0,0.75);
+      color: white;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 0.75rem 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .badge-pos-BR { background: #eab308; color: #000; }
+    .badge-pos-OBR { background: #3b82f6; color: #fff; }
+    .badge-pos-POM { background: #10b981; color: #000; }
+    .badge-pos-NAP { background: #ef4444; color: #fff; }
+
+    /* Match Screen */
+    .match-header {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: var(--bg-card);
+      padding: 2rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .match-team {
+      font-size: 1.4rem;
+      font-weight: 800;
+      flex: 1;
+    }
+
+    .match-score {
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--accent);
+      padding: 0 1.5rem;
+    }
+
+    .match-time {
+      font-size: 1.1rem;
+      color: var(--accent-gold);
+      font-weight: 700;
+    }
+
+    .match-log {
+      height: 250px;
+      overflow-y: auto;
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: monospace;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 0.5rem;
+    }
+
+    .log-item {
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      background: #1e293b;
+    }
+
+    .log-item.goal { border-left: 4px solid var(--accent); background: #064e3b; }
+    .log-item.card { border-left: 4px solid var(--accent-gold); }
+
+    .flex-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stats-pill {
+      background: #0f172a;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      padding: 1.5rem;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <header id="game-header" class="hidden">
+    <div class="brand">
+      <div class="brand-icon">⚽</div>
+      <span>FM Niższe Ligi & Europe</span>
+    </div>
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="status-value" id="header-club">-</span>
+        <span class="status-label" id="header-league">-</span>
+      </div>
+      <div class="status-item">
+        <span class="status-value" id="header-budget">0 PLN</span>
+        <span class="status-label">Budżet</span>
+      </div>
+      <div class="status-item">
+        <span class="status-value" id="header-date">Kolejka 1</span>
+        <span class="status-label">Sezon 2026/27</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <nav id="game-nav" class="hidden">
+      <button class="nav-btn active" onclick="switchPage('dashboard')">📊 Pulpit</button>
+      <button class="nav-btn" onclick="switchPage('squad')">👥 Kadra</button>
+      <button class="nav-btn" onclick="switchPage('tactics')">📋 Taktyka</button>
+      <button class="nav-btn" onclick="switchPage('transfers')">🔁 Transfery</button>
+      <button class="nav-btn" onclick="switchPage('stadium')">🏟️ Stadion i Baza</button>
+      <button class="nav-btn" onclick="switchPage('finances')">💰 Finanse</button>
+      <button class="nav-btn" onclick="switchPage('table')">🏆 Tabela</button>
+      <button class="nav-btn" onclick="switchPage('match')" id="nav-match-btn">⚽ Następny Mecz</button>
+    </nav>
+
+    <main>
+      <!-- NEW GAME SETUP -->
+      <div id="setup-screen">
+        <h1 style="margin-bottom: 1.5rem; color: var(--accent); font-size: 1.8rem;">Wybór Klubu i Ligi</h1>
+        
+        <div class="form-group">
+          <label>Kraj i Liga</label>
+          <select id="setup-league-select" onchange="updateTeamDropdown()">
+            <!-- Generated dynamically -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Wybierz Klub z wybranej ligi</label>
+          <select id="setup-team-select">
+            <!-- Generated dynamically -->
+          </select>
+        </div>
+
+        <div style="margin: 1.5rem 0; border-top: 1px solid var(--border); padding-top: 1rem;">
+          <h3 style="margin-bottom: 1rem;">Lub stwórz własny klub w wybranej lidze:</h3>
+          <div class="form-group">
+            <label>Nazwa Własnego Klubu</label>
+            <input type="text" id="custom-club-name" placeholder="np. KS Huragan Kraków">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Imię i Nazwisko Menedżera</label>
+          <input type="text" id="manager-name" value="Jan Kowalski">
+        </div>
+
+        <button class="btn" style="width: 100%; font-size: 1.1rem; padding: 1rem;" onclick="startNewGame()">Rozpocznij Karierę</button>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page">
+        <h2 style="margin-bottom: 1rem;">Pulpit Menedżera</h2>
+        <div class="grid-3" style="margin-bottom: 1.5rem;">
+          <div class="stats-pill">
+            <div class="status-label">Morale Zespołu</div>
+            <div class="status-value" id="dash-morale" style="color: var(--accent); font-size: 1.4rem;">Wysokie</div>
+          </div>
+          <div class="stats-pill">
+            <div class="status-label">Średnie OVR Kadry</div>
+            <div class="status-value" id="dash-ovr" style="color: var(--accent-gold); font-size: 1.4rem;">58</div>
+          </div>
+          <div class="stats-pill">
+            <div class="status-label">Miejsce w Tabeli</div>
+            <div class="status-value" id="dash-rank" style="font-size: 1.4rem;">1 / 16</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Najbliższy Mecz</div>
+            <div id="dash-next-match" style="font-size: 1.2rem; font-weight: 700; margin: 1rem 0;">
+              Ładowanie...
+            </div>
+            <button class="btn" onclick="switchPage('match')">Przejdź do meczu</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Wiadomości Klubowe</div>
+            <ul id="dash-news" style="list-style: none; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem;">
+              <li>📰 Zarząd oczekuje utrzymania w obecnym sezonie.</li>
+              <li>📰 Zbuduj mocną kadrę przed najbliższym starciem.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- SQUAD -->
+      <div id="page-squad" class="page">
+        <div class="flex-between" style="margin-bottom: 1rem;">
+          <h2>Kadra Zespołu</h2>
+          <button class="btn btn-secondary" onclick="autoPickSquad()">Automatyczna Najlepsza 11</button>
+        </div>
+
+        <div class="card" style="padding: 0; overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Poz</th>
+                <th>Nazwisko</th>
+                <th>Wiek</th>
+                <th>OVR</th>
+                <th>Kondycja</th>
+                <th>Płaca/tyg.</th>
+                <th>Wartość</th>
+                <th>Status</th>
+                <th>Akcja</th>
+              </tr>
+            </thead>
+            <tbody id="squad-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TACTICS -->
+      <div id="page-tactics" class="page">
+        <div class="grid-2">
+          <div>
+            <div class="card">
+              <div class="card-title">Ustawienia Taktyczne</div>
+              <div class="form-group">
+                <label>Formacja</label>
+                <select id="tactics-formation" onchange="changeFormation()">
+                  <option value="4-4-2">4-4-2 Klasyczne</option>
+                  <option value="4-3-3">4-3-3 Offensywne</option>
+                  <option value="4-2-3-1">4-2-3-1 Zrównoważone</option>
+                  <option value="3-5-2">3-5-2 Wahadła</option>
+                  <option value="5-3-2">5-3-2 Defensywne</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Styl Gry</label>
+                <select id="tactics-style">
+                  <option value="balanced">Zrównoważony</option>
+                  <option value="attacking">Atak Pozycyjny</option>
+                  <option value="counter">Szybki Kontratak</option>
+                  <option value="defensive">Autobus w Polu Karnym</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Ławka Rezerwowych</div>
+              <div id="bench-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto;">
+                <!-- Dynamically filled -->
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="pitch-container" id="tactical-pitch">
+              <div class="pitch-line pitch-center-line"></div>
+              <div class="pitch-line pitch-center-circle"></div>
+              <div class="pitch-line pitch-box-top"></div>
+              <div class="pitch-line pitch-box-bottom"></div>
+              <!-- Player nodes rendered here -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRANSFERS -->
+      <div id="page-transfers" class="page">
+        <h2>Rynek Transferowy i Akademia</h2>
+        <div class="grid-2" style="margin-top: 1rem;">
+          <div class="card">
+            <div class="card-title">Wolni Agenci / Do Kupienia</div>
+            <div style="max-height: 400px; overflow-y: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Poz</th>
+                    <th>Piłkarz</th>
+                    <th>OVR</th>
+                    <th>Cena</th>
+                    <th>Akcja</th>
+                  </tr>
+                </thead>
+                <tbody id="transfer-market-body">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Szkółka Młodzieżowa (Akademia)</div>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Promuj młode talenty do pierwszej drużyny.</p>
+            <button class="btn btn-secondary" onclick="scoutYouth()" style="margin-bottom: 1rem; width: 100%;">Przeprowadź Rekrutację (10,000 PLN)</button>
+            <div id="youth-list" style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <!-- Youth players -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STADIUM -->
+      <div id="page-stadium" class="page">
+        <h2>Infrastruktura Klubowa</h2>
+        <div class="grid-2" style="margin-top: 1rem;">
+          <div class="card">
+            <div class="card-title">Stadion</div>
+            <p>Obecna pojemność: <b id="stadium-capacity">1,200</b> miejsc</p>
+            <p>Cena biletu: <b id="ticket-price-val">25 PLN</b></p>
+            <div class="form-group" style="margin-top: 1rem;">
+              <label>Ustaw cene biletu (10 - 150 PLN)</label>
+              <input type="range" id="ticket-price-range" min="10" max="150" value="25" oninput="updateTicketPrice(this.value)">
+            </div>
+            <button class="btn" onclick="expandStadium()">Rozbuduj stadion (+500 miejsc / 100,000 PLN)</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Baza Treningowa</div>
+            <p>Poziom szkółki: <b id="youth-level">1 / 5</b></p>
+            <p>Jakość murawy i sprzętu: <b id="training-level">1 / 5</b></p>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+              <button class="btn btn-secondary" onclick="upgradeTraining()">Ulepsz Baza Treningową (50,000 PLN)</button>
+              <button class="btn btn-secondary" onclick="upgradeYouthLevel()">Ulepsz Akademię (50,000 PLN)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FINANCES -->
+      <div id="page-finances" class="page">
+        <h2>Finanse Klubu</h2>
+        <div class="grid-2" style="margin-top: 1rem;">
+          <div class="card">
+            <div class="card-title">Bilans Tygodniowy</div>
+            <table style="margin-bottom: 1rem;">
+              <tr><td>Przychody z biletów (ostatni mecz)</td><td id="fin-tickets" style="color:var(--accent)">0 PLN</td></tr>
+              <tr><td>Sponsor Główny</td><td id="fin-sponsor" style="color:var(--accent)">+5,000 PLN / tyg</td></tr>
+              <tr><td>Wydatki na Płace Kadry</td><td id="fin-wages" style="color:var(--danger)">-0 PLN / tyg</td></tr>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Kredyt Bankowy</div>
+            <p>Obecny Dług: <b id="bank-loan-val">0 PLN</b></p>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+              <button class="btn" onclick="takeLoan(50000)">Weź Kredyt 50,000 PLN</button>
+              <button class="btn btn-secondary" onclick="payLoan(50000)">Spłać 50,000 PLN</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div id="page-table" class="page">
+        <div class="flex-between" style="margin-bottom: 1rem;">
+          <h2>Tabela Ligowa</h2>
+          <select id="table-league-view" style="width: 250px;" onchange="renderLeagueTable(this.value)">
+            <!-- Dynamic leagues -->
+          </select>
+        </div>
+
+        <div class="card" style="padding: 0;">
+          <table>
+            <thead>
+              <tr>
+                <th>Poz</th>
+                <th>Klub</th>
+                <th>M</th>
+                <th>Pkt</th>
+                <th>Z</th>
+                <th>R</th>
+                <th>P</th>
+                <th>BR+</th>
+                <th>BR-</th>
+                <th>Bilans</th>
+              </tr>
+            </thead>
+            <tbody id="league-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MATCH SIMULATION -->
+      <div id="page-match" class="page">
+        <div class="match-header">
+          <div class="match-team" id="match-home-name">Klub A</div>
+          <div>
+            <div class="match-time" id="match-timer">00'</div>
+            <div class="match-score" id="match-score">0 - 0</div>
+          </div>
+          <div class="match-team" id="match-away-name">Klub B</div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom: 1.5rem;">
+          <div class="card">
+            <div class="card-title">Statystyki Meczu</div>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div>
+                <div class="flex-between" style="font-size:0.85rem;">
+                  <span id="stat-pos-h">50%</span>
+                  <span>Posiadanie Piłki</span>
+                  <span id="stat-pos-a">50%</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex-between" style="font-size:0.85rem;">
+                  <span id="stat-shots-h">0</span>
+                  <span>Strzały</span>
+                  <span id="stat-shots-a">0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Sterowanie Symulacją</div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn" id="start-match-btn" onclick="startMatchSimulation()">Start / Wznów</button>
+              <button class="btn btn-secondary" onclick="setMatchSpeed(1)">1x</button>
+              <button class="btn btn-secondary" onclick="setMatchSpeed(3)">3x</button>
+              <button class="btn btn-secondary" onclick="instantFinishMatch()">Szybki Wynik</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Relacja Tekstowa</div>
+          <div class="match-log" id="match-log-box">
+            <div class="log-item">Sędzia przygotowuje się do rozpoczęcia spotkania.</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    /* REAL LEAGUES DATABASE WITH ACCURATE OFFICIAL NAMES */
+    const LEAGUES_DATA = {
+      "pl_4": {
+        name: "Polska 4. Liga",
+        country: "Polska",
+        baseOvr: 52,
+        teams: [
+          "KS Wieczysta Kraków", "Mazovia Mińsk Mazowiecki", "Victoria Sulejówek", "Gryf Słupsk",
+          "Karkonosze Jelenia Góra", "Unia Skierniewice", "Huragan Wołomin", "Lublinianka Lublin",
+          "Wisła Sandomierz", "Nielba Wągrowiec", "Sparta Świdnica", "Tarnovia Tarnów",
+          "BKS Stal Bielsko-Biała", "Barycz Sułów", "Polonia Środa Śląska", "Star Starachowice"
+        ]
+      },
+      "pl_2": {
+        name: "Polska 2. Liga",
+        country: "Polska",
+        baseOvr: 60,
+        teams: [
+          "Kotwica Kołobrzeg", "KKS 1925 Kalisz", "Pogoń Siedlce", "Radunia Stężyca",
+          "Polonia Bytom", "Chojniczanka Chojnice", "Hutnik Kraków", "Olimpia Elbląg",
+          "Zagłębie Sosnowiec", "Sandecja Nowy Sącz", "ŁKS II Łódź", "Śląsk II Wrocław",
+          "Lech II Poznań", "Olimpia Grudziądz", "Stomil Olsztyn", "GKS Jastrzębie"
+        ]
+      },
+      "pl_1": {
+        name: "Polska 1. Liga",
+        country: "Polska",
+        baseOvr: 66,
+        teams: [
+          "Wisła Kraków", "Arka Gdynia", "Lechia Gdańsk", "Motor Lublin",
+          "GKS Katowice", "Odra Opole", "Górnik Łęczna", "Miedź Legnica",
+          "GKS Tychy", "Wisła Płock", "Znicz Pruszków", "Chrobry Głogów",
+          "Polonia Warszawa", "Resovia Rzeszów", "Podbeskidzie Bielsko-Biała", "Stal Rzeszów"
+        ]
+      },
+      "pl_ekstra": {
+        name: "Polska Ekstraklasa",
+        country: "Polska",
+        baseOvr: 72,
+        teams: [
+          "Raków Częstochowa", "Legia Warszawa", "Lech Poznań", "Pogoń Szczecin",
+          "Śląsk Wrocław", "Górnik Zabrze", "Jagiellonia Białystok", "Cracovia",
+          "Widzew Łódź", "Zagłębie Lubin", "Radomiak Radom", "Piast Gliwice",
+          "Korona Kielce", "Stal Mielec", "Warta Poznań", "Puszcza Niepołomice"
+        ]
+      },
+      "eng_prem": {
+        name: "Anglia Premier League",
+        country: "Anglia",
+        baseOvr: 83,
+        teams: [
+          "Manchester City FC", "Arsenal FC", "Liverpool FC", "Aston Villa FC",
+          "Tottenham Hotspur FC", "Chelsea FC", "Newcastle United FC", "Manchester United FC",
+          "West Ham United FC", "Brighton & Hove Albion FC", "AFC Bournemouth", "Fulham FC",
+          "Wolverhampton Wanderers", "Everton FC", "Brentford FC", "Nottingham Forest FC"
+        ]
+      },
+      "eng_champ": {
+        name: "Anglia Championship",
+        country: "Anglia",
+        baseOvr: 74,
+        teams: [
+          "Leeds United FC", "Burnley FC", "Luton Town FC", "Sheffield United FC",
+          "West Bromwich Albion", "Norwich City FC", "Coventry City FC", "Middlesbrough FC",
+          "Hull City FC", "Preston North End", "Bristol City FC", "Cardiff City FC",
+          "Millwall FC", "Swansea City AFC", "Blackburn Rovers FC", "Stoke City FC"
+        ]
+      },
+      "es_laliga": {
+        name: "Hiszpania La Liga",
+        country: "Hiszpania",
+        baseOvr: 82,
+        teams: [
+          "Real Madrid CF", "FC Barcelona", "Atlético de Madrid", "Athletic Club Bilbao",
+          "Real Sociedad", "Real Betis Balompié", "Villarreal CF", "Girona FC",
+          "Valencia CF", "Sevilla FC", "CA Osasuna", "Getafe CF",
+          "RC Celta de Vigo", "RCD Mallorca", "Rayo Vallecano", "UD Las Palmas"
+        ]
+      },
+      "de_bunde": {
+        name: "Niemcy Bundesliga",
+        country: "Niemcy",
+        baseOvr: 81,
+        teams: [
+          "Bayer 04 Leverkusen", "FC Bayern München", "VfB Stuttgart", "RB Leipzig",
+          "Borussia Dortmund", "Eintracht Frankfurt", "TSG 1899 Hoffenheim", "1. FC Heidenheim",
+          "SV Werder Bremen", "SC Freiburg", "FC Augsburg", "VfL Wolfsburg",
+          "1. FSV Mainz 05", "Borussia Mönchengladbach", "1. FC Union Berlin", "VfL Bochum"
+        ]
+      },
+      "it_seriea": {
+        name: "Włochy Serie A",
+        country: "Włochy",
+        baseOvr: 81,
+        teams: [
+          "FC Internazionale Milano", "AC Milan", "Juventus FC", "Atalanta BC",
+          "Bologna FC 1909", "AS Roma", "SS Lazio", "ACF Fiorentina",
+          "Torino FC", "SSC Napoli", "Genoa CFC", "AC Monza",
+          "Hellas Verona FC", "US Lecce", "Udinese Calcio", "Cagliari Calcio"
+        ]
+      },
+      "fr_ligue1": {
+        name: "Francja Ligue 1",
+        country: "Francja",
+        baseOvr: 80,
+        teams: [
+          "Paris Saint-Germain FC", "AS Monaco FC", "LOSC Lille", "Stade Brestois 29",
+          "OGC Nice", "Olympique Lyonnais", "RC Lens", "Olympique de Marseille",
+          "Stade de Reims", "Stade Rennais FC", "Toulouse FC", "Montpellier HSC",
+          "RC Strasbourg Alsace", "FC Nantes", "Le Havre AC", "AJ Auxerre"
+        ]
+      }
+    };
+
+    // Name generators per country
+    const NAMES = {
+      "Polska": {
+        first: ["Mateusz", "Jan", "Kacper", "Jakub", "Piotr", "Michał", "Tomasz", "Pawel", "Kamil", "Dawid", "Szymon", "Bartosz"],
+        last: ["Kowalski", "Nowak", "Wiśniewski", "Wójcik", "Kowalczyk", "Kamiński", "Zieliński", "Szymański", "Dąbrowski", "Kozłowski"]
+      },
+      "Anglia": {
+        first: ["Jack", "Harry", "Oliver", "George", "Charlie", "Jacob", "James", "William", "Ethan", "Mason"],
+        last: ["Smith", "Jones", "Williams", "Taylor", "Brown", "Davies", "Evans", "Wilson", "Thomas", "Roberts"]
+      },
+      "Hiszpania": {
+        first: ["Alejandro", "Pablo", "Daniel", "David", "Adrian", "Alvaro", "Hugo", "Javier", "Sergio", "Diego"],
+        last: ["Garcia", "Rodriguez", "Gonzalez", "Fernandez", "Lopez", "Martinez", "Sanchez", "Perez", "Gomez", "Martin"]
+      },
+      "Niemcy": {
+        first: ["Lukas", "Maximilian", "Jakob", "Jonas", "Felix", "Leon", "Paul", "Finn", "Noah", "Elias"],
+        last: ["Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker", "Schulz", "Hoffmann"]
+      },
+      "Włochy": {
+        first: ["Francesco", "Alessandro", "Mattia", "Lorenzo", "Leonardo", "Andrea", "Gabriele", "Matteo", "Tommaso", "Riccardo"],
+        last: ["Rossi", "Russo", "Ferrari", "Esposito", "Bianchi", "Romano", "Colombo", "Ricci", "Marino", "Greco"]
+      },
+      "Francja": {
+        first: ["Lucas", "Léo", "Louis", "Hugo", "Gabriel", "Ethan", "Jules", "Mathis", "Arthur", "Nathan"],
+        last: ["Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois", "Moreau", "Laurent"]
+      }
+    };
+
+    // GAME STATE
+    let gameState = {
+      managerName: "",
+      playerLeagueKey: "pl_4",
+      playerClub: "",
+      budget: 100000,
+      round: 1,
+      formation: "4-4-2",
+      ticketPrice: 25,
+      stadiumCapacity: 1200,
+      trainingLevel: 1,
+      youthLevel: 1,
+      bankLoan: 0,
+      squad: [],
+      transferMarket: [],
+      leagueTables: {}
+    };
+
+    // Initialize UI Setup dropdowns
+    function initSetup() {
+      const leagueSelect = document.getElementById("setup-league-select");
+      leagueSelect.innerHTML = "";
+      
+      for (const [key, val] of Object.entries(LEAGUES_DATA)) {
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.innerText = `${val.name} (${val.country})`;
+        leagueSelect.appendChild(opt);
+      }
+      updateTeamDropdown();
+    }
+
+    function updateTeamDropdown() {
+      const lKey = document.getElementById("setup-league-select").value;
+      const teamSelect = document.getElementById("setup-team-select");
+      teamSelect.innerHTML = "";
+      
+      LEAGUES_DATA[lKey].teams.forEach(team => {
+        const opt = document.createElement("option");
+        opt.value = team;
+        opt.innerText = team;
+        teamSelect.appendChild(opt);
+      });
+    }
+
+    // Generator helpers
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generatePlayerName(country) {
+      const set = NAMES[country] || NAMES["Polska"];
+      const f = set.first[getRandomInt(0, set.first.length - 1)];
+      const l = set.last[getRandomInt(0, set.last.length - 1)];
+      return `${f} ${l}`;
+    }
+
+    function generatePlayer(pos, targetOvr, country) {
+      const ovr = targetOvr + getRandomInt(-4, 5);
+      const positions = ["BR", "OBR", "POM", "NAP"];
+      const pPos = pos || positions[getRandomInt(0, 3)];
+      const wage = Math.round(ovr * ovr * 0.8);
+      const value = ovr * ovr * 250;
+
+      return {
+        id: Math.random().toString(36).substr(2, 9),
+        name: generatePlayerName(country),
+        pos: pPos,
+        age: getRandomInt(17, 34),
+        ovr: ovr,
+        fitness: 100,
+        wage: wage,
+        value: value,
+        starter: false
+      };
+    }
+
+    // Start New Game
+    function startNewGame() {
+      const lKey = document.getElementById("setup-league-select").value;
+      const customName = document.getElementById("custom-club-name").value.trim();
+      const selectedTeam = document.getElementById("setup-team-select").value;
+      
+      gameState.playerLeagueKey = lKey;
+      gameState.playerClub = customName ? customName : selectedTeam;
+      gameState.managerName = document.getElementById("manager-name").value || "Jan Kowalski";
+      gameState.budget = LEAGUES_DATA[lKey].baseOvr * 3000;
+
+      // Initialize all leagues and tables
+      for (const [key, lData] of Object.entries(LEAGUES_DATA)) {
+        let teamsList = [...lData.teams];
+        if (key === lKey && customName) {
+          teamsList[teamsList.indexOf(selectedTeam)] = customName;
+        }
+
+        gameState.leagueTables[key] = teamsList.map(tName => ({
+          name: tName,
+          played: 0,
+          won: 0,
+          drawn: 0,
+          lost: 0,
+          gf: 0,
+          ga: 0,
+          pts: 0
+        }));
+      }
+
+      // Generate Player Squad
+      const baseOvr = LEAGUES_DATA[lKey].baseOvr;
+      const country = LEAGUES_DATA[lKey].country;
+      
+      gameState.squad = [];
+      // 2 GK, 6 DEF, 6 MID, 4 FWD
+      for(let i=0; i<2; i++) gameState.squad.push(generatePlayer("BR", baseOvr, country));
+      for(let i=0; i<6; i++) gameState.squad.push(generatePlayer("OBR", baseOvr, country));
+      for(let i=0; i<6; i++) gameState.squad.push(generatePlayer("POM", baseOvr, country));
+      for(let i=0; i<4; i++) gameState.squad.push(generatePlayer("NAP", baseOvr, country));
+
+      autoPickSquad();
+      generateTransferMarket();
+
+      // UI Switch
+      document.getElementById("setup-screen").classList.add("hidden");
+      document.getElementById("game-header").classList.remove("hidden");
+      document.getElementById("game-nav").classList.remove("hidden");
+
+      populateTableSelect();
+      updateHeader();
+      switchPage('dashboard');
+    }
+
+    function autoPickSquad() {
+      gameState.squad.forEach(p => p.starter = false);
+
+      const br = gameState.squad.filter(p => p.pos === "BR").sort((a,b) => b.ovr - a.ovr);
+      const obr = gameState.squad.filter(p => p.pos === "OBR").sort((a,b) => b.ovr - a.ovr);
+      const pom = gameState.squad.filter(p => p.pos === "POM").sort((a,b) => b.ovr - a.ovr);
+      const nap = gameState.squad.filter(p => p.pos === "NAP").sort((a,b) => b.ovr - a.ovr);
+
+      if (br[0]) br[0].starter = true;
+      for(let i=0; i<4 && obr[i]; i++) obr[i].starter = true;
+      for(let i=0; i<4 && pom[i]; i++) pom[i].starter = true;
+      for(let i=0; i<2 && nap[i]; i++) nap[i].starter = true;
+
+      renderSquadTable();
+      renderPitch();
+    }
+
+    function updateHeader() {
+      document.getElementById("header-club").innerText = gameState.playerClub;
+      document.getElementById("header-league").innerText = LEAGUES_DATA[gameState.playerLeagueKey].name;
+      document.getElementById("header-budget").innerText = `${gameState.budget.toLocaleString()} PLN`;
+      document.getElementById("header-date").innerText = `Kolejka ${gameState.round}`;
+    }
+
+    // Switch Page
+    function switchPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+      const target = document.getElementById(`page-${pageId}`);
+      if (target) target.classList.add('active');
+
+      if (pageId === 'dashboard') renderDashboard();
+      if (pageId === 'squad') renderSquadTable();
+      if (pageId === 'tactics') renderPitch();
+      if (pageId === 'transfers') renderTransfers();
+      if (pageId === 'stadium') renderStadium();
+      if (pageId === 'finances') renderFinances();
+      if (pageId === 'table') renderLeagueTable(gameState.playerLeagueKey);
+      if (pageId === 'match') prepareMatchPage();
+    }
+
+    // DASHBOARD
+    function renderDashboard() {
+      const starters = gameState.squad.filter(p => p.starter);
+      const avgOvr = starters.length ? Math.round(starters.reduce((acc,p) => acc + p.ovr, 0) / starters.length) : 0;
+      
+      document.getElementById("dash-ovr").innerText = avgOvr;
+      
+      // Get Next Opponent
+      const table = gameState.leagueTables[gameState.playerLeagueKey];
+      const opponents = table.filter(t => t.name !== gameState.playerClub);
+      const opp = opponents[(gameState.round - 1) % opponents.length].name;
+
+      document.getElementById("dash-next-match").innerText = `${gameState.playerClub} vs ${opp}`;
+
+      // Rank
+      const sorted = [...table].sort((a,b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
+      const rank = sorted.findIndex(t => t.name === gameState.playerClub) + 1;
+      document.getElementById("dash-rank").innerText = `${rank} / ${table.length}`;
+    }
+
+    // SQUAD TABLE
+    function renderSquadTable() {
+      const tbody = document.getElementById("squad-table-body");
+      tbody.innerHTML = "";
+
+      gameState.squad.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><span class="badge badge-pos-${p.pos}">${p.pos}</span></td>
+          <td><b>${p.name}</b> ${p.starter ? '⭐' : ''}</td>
+          <td>${p.age}</td>
+          <td><b>${p.ovr}</b></td>
+          <td>${p.fitness}%</td>
+          <td>${p.wage.toLocaleString()} PLN</td>
+          <td>${p.value.toLocaleString()} PLN</td>
+          <td>${p.starter ? '<span style="color:var(--accent)">11-stka</span>' : 'Rezerwa'}</td>
+          <td>
+            <button class="btn btn-secondary" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="toggleStarter('${p.id}')">
+              ${p.starter ? 'Zdejmij' : 'Wstaw'}
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function toggleStarter(id) {
+      const p = gameState.squad.find(x => x.id === id);
+      if (p) {
+        const currentStarters = gameState.squad.filter(x => x.starter).length;
+        if (!p.starter && currentStarters >= 11) {
+          alert("Masz już 11 zawodników w wyjściowym składzie!");
+          return;
+        }
+        p.starter = !p.starter;
+        renderSquadTable();
+        renderPitch();
+      }
+    }
+
+    // TACTICAL PITCH
+    function renderPitch() {
+      const pitch = document.getElementById("tactical-pitch");
+      const benchList = document.getElementById("bench-list");
+      
+      // Clean previous nodes
+      document.querySelectorAll('.player-node').forEach(el => el.remove());
+
+      const starters = gameState.squad.filter(p => p.starter);
+      const formation = document.getElementById("tactics-formation").value;
+
+      // Positions presets for 11 players
+      const posMap = {
+        "4-4-2": [
+          {t: 88, l: 50}, // GK
+          {t: 70, l: 20}, {t: 72, l: 40}, {t: 72, l: 60}, {t: 70, l: 80}, // DEF
+          {t: 45, l: 20}, {t: 48, l: 40}, {t: 48, l: 60}, {t: 45, l: 80}, // MID
+          {t: 20, l: 38}, {t: 20, l: 62} // FWD
+        ],
+        "4-3-3": [
+          {t: 88, l: 50},
+          {t: 70, l: 20}, {t: 72, l: 40}, {t: 72, l: 60}, {t: 70, l: 80},
+          {t: 48, l: 30}, {t: 52, l: 50}, {t: 48, l: 70},
+          {t: 22, l: 20}, {t: 18, l: 50}, {t: 22, l: 80}
+        ],
+        "4-2-3-1": [
+          {t: 88, l: 50},
+          {t: 72, l: 20}, {t: 74, l: 40}, {t: 74, l: 60}, {t: 72, l: 80},
+          {t: 56, l: 35}, {t: 56, l: 65},
+          {t: 36, l: 20}, {t: 34, l: 50}, {t: 36, l: 80},
+          {t: 18, l: 50}
+        ]
+      };
+
+      const coords = posMap[formation] || posMap["4-4-2"];
+
+      starters.forEach((p, index) => {
+        if (index < coords.length) {
+          const node = document.createElement("div");
+          node.className = "player-node";
+          node.style.top = `${coords[index].t}%`;
+          node.style.left = `${coords[index].l}%`;
+          node.innerHTML = `
+            <div class="player-dot">${p.ovr}</div>
+            <div class="player-name-tag">${p.name.split(' ')[1] || p.name}</div>
+          `;
+          pitch.appendChild(node);
+        }
+      });
+
+      // Render bench
+      benchList.innerHTML = "";
+      const bench = gameState.squad.filter(p => !p.starter);
+      bench.forEach(p => {
+        const item = document.createElement("div");
+        item.style.fontSize = "0.85rem";
+        item.style.padding = "0.4rem";
+        item.style.background = "var(--bg-main)";
+        item.style.borderRadius = "4px";
+        item.innerHTML = `<span class="badge badge-pos-${p.pos}">${p.pos}</span> ${p.name} (OVR: ${p.ovr})`;
+        benchList.appendChild(item);
+      });
+    }
+
+    function changeFormation() {
+      renderPitch();
+    }
+
+    // TRANSFERS
+    function generateTransferMarket() {
+      const baseOvr = LEAGUES_DATA[gameState.playerLeagueKey].baseOvr;
+      const country = LEAGUES_DATA[gameState.playerLeagueKey].country;
+
+      gameState.transferMarket = [];
+      for(let i=0; i<8; i++) {
+        gameState.transferMarket.push(generatePlayer(null, baseOvr, country));
+      }
+    }
+
+    function renderTransfers() {
+      const tbody = document.getElementById("transfer-market-body");
+      tbody.innerHTML = "";
+
+      gameState.transferMarket.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><span class="badge badge-pos-${p.pos}">${p.pos}</span></td>
+          <td><b>${p.name}</b> (${p.age} l.)</td>
+          <td><b>${p.ovr}</b></td>
+          <td>${p.value.toLocaleString()} PLN</td>
+          <td>
+            <button class="btn" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="buyPlayer('${p.id}')">Kup</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function buyPlayer(id) {
+      const pIndex = gameState.transferMarket.findIndex(x => x.id === id);
+      if (pIndex > -1) {
+        const player = gameState.transferMarket[pIndex];
+        if (gameState.budget >= player.value) {
+          gameState.budget -= player.value;
+          gameState.squad.push(player);
+          gameState.transferMarket.splice(pIndex, 1);
+          updateHeader();
+          renderTransfers();
+          alert(`Kupiono zawodnika ${player.name}!`);
+        } else {
+          alert("Brak wystarczających środków na koncie!");
+        }
+      }
+    }
+
+    function scoutYouth() {
+      if (gameState.budget >= 10000) {
+        gameState.budget -= 10000;
+        const baseOvr = LEAGUES_DATA[gameState.playerLeagueKey].baseOvr - 5 + (gameState.youthLevel * 2);
+        const youthPlayer = generatePlayer(null, baseOvr, LEAGUES_DATA[gameState.playerLeagueKey].country);
+        youthPlayer.age = getRandomInt(16, 18);
+
+        const list = document.getElementById("youth-list");
+        const div = document.createElement("div");
+        div.style.padding = "0.5rem";
+        div.style.background = "var(--bg-main)";
+        div.style.borderRadius = "6px";
+        div.style.display = "flex";
+        div.style.justifySpace = "space-between";
+        div.style.alignItems = "center";
+        div.innerHTML = `
+          <div>
+            <b>${youthPlayer.name}</b> (${youthPlayer.pos}, OVR: ${youthPlayer.ovr})
+          </div>
+          <button class="btn" style="padding:0.2rem 0.5rem; font-size:0.75rem;" onclick="promoteYouth('${youthPlayer.id}', ${JSON.stringify(youthPlayer).replace(/"/g, '&quot;')}, this)">Do Kadry</button>
+        `;
+        list.appendChild(div);
+        updateHeader();
+      } else {
+        alert("Potrzebujesz 10,000 PLN na rekrutację.");
+      }
+    }
+
+    function promoteYouth(id, playerObj, btnEl) {
+      gameState.squad.push(playerObj);
+      btnEl.parentElement.remove();
+      alert(`Awansowano ${playerObj.name} do pierwszej drużyny!`);
+    }
+
+    // STADIUM & FINANCES
+    function renderStadium() {
+      document.getElementById("stadium-capacity").innerText = gameState.stadiumCapacity.toLocaleString();
+      document.getElementById("ticket-price-val").innerText = `${gameState.ticketPrice} PLN`;
+      document.getElementById("youth-level").innerText = `${gameState.youthLevel} / 5`;
+      document.getElementById("training-level").innerText = `${gameState.trainingLevel} / 5`;
+    }
+
+    function updateTicketPrice(val) {
+      gameState.ticketPrice = parseInt(val);
+      document.getElementById("ticket-price-val").innerText = `${gameState.ticketPrice} PLN`;
+    }
+
+    function expandStadium() {
+      if (gameState.budget >= 100000) {
+        gameState.budget -= 100000;
+        gameState.stadiumCapacity += 500;
+        renderStadium();
+        updateHeader();
+        alert("Rozbudowano stadion o 500 miejsc!");
+      } else {
+        alert("Brak środków (100,000 PLN)!");
+      }
+    }
+
+    function upgradeTraining() {
+      if (gameState.trainingLevel < 5 && gameState.budget >= 50000) {
+        gameState.budget -= 50000;
+        gameState.trainingLevel++;
+        renderStadium();
+        updateHeader();
+        alert("Ulepszono bazę treningową!");
+      }
+    }
+
+    function upgradeYouthLevel() {
+      if (gameState.youthLevel < 5 && gameState.budget >= 50000) {
+        gameState.budget -= 50000;
+        gameState.youthLevel++;
+        renderStadium();
+        updateHeader();
+        alert("Ulepszono szkółkę młodzieżową!");
+      }
+    }
+
+    function renderFinances() {
+      const totalWages = gameState.squad.reduce((acc, p) => acc + p.wage, 0);
+      document.getElementById("fin-wages").innerText = `-${totalWages.toLocaleString()} PLN / tyg`;
+      document.getElementById("bank-loan-val").innerText = `${gameState.bankLoan.toLocaleString()} PLN`;
+    }
+
+    function takeLoan(amount) {
+      gameState.bankLoan += amount;
+      gameState.budget += amount;
+      renderFinances();
+      updateHeader();
+    }
+
+    function payLoan(amount) {
+      if (gameState.bankLoan >= amount && gameState.budget >= amount) {
+        gameState.bankLoan -= amount;
+        gameState.budget -= amount;
+        renderFinances();
+        updateHeader();
+      }
+    }
+
+    // TABLE
+    function populateTableSelect() {
+      const select = document.getElementById("table-league-view");
+      select.innerHTML = "";
+      for (const [key, val] of Object.entries(LEAGUES_DATA)) {
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.innerText = val.name;
+        select.appendChild(opt);
+      }
+    }
+
+    function renderLeagueTable(leagueKey) {
+      const tbody = document.getElementById("league-table-body");
+      tbody.innerHTML = "";
+
+      const tableData = gameState.leagueTables[leagueKey] || [];
+      const sorted = [...tableData].sort((a,b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
+
+      sorted.forEach((t, i) => {
+        const tr = document.createElement("tr");
+        if (t.name === gameState.playerClub) tr.style.background = "rgba(16, 185, 129, 0.15)";
+        
+        tr.innerHTML = `
+          <td><b>${i + 1}</b></td>
+          <td>${t.name}</td>
+          <td>${t.played}</td>
+          <td><b>${t.pts}</b></td>
+          <td>${t.won}</td>
+          <td>${t.drawn}</td>
+          <td>${t.lost}</td>
+          <td>${t.gf}</td>
+          <td>${t.ga}</td>
+          <td>${t.gf - t.ga}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // MATCH ENGINE SIMULATION
+    let matchInterval = null;
+    let matchTime = 0;
+    let matchSpeed = 1000;
+    let currentOpponent = "";
+    let homeScore = 0;
+    let awayScore = 0;
+
+    function prepareMatchPage() {
+      const table = gameState.leagueTables[gameState.playerLeagueKey];
+      const opponents = table.filter(t => t.name !== gameState.playerClub);
+      currentOpponent = opponents[(gameState.round - 1) % opponents.length].name;
+
+      document.getElementById("match-home-name").innerText = gameState.playerClub;
+      document.getElementById("match-away-name").innerText = currentOpponent;
+      document.getElementById("match-score").innerText = "0 - 0";
+      document.getElementById("match-timer").innerText = "00'";
+      document.getElementById("match-log-box").innerHTML = '<div class="log-item">Sędzia przygotowuje się do rozpoczęcia spotkania.</div>';
+
+      homeScore = 0;
+      awayScore = 0;
+      matchTime = 0;
+    }
+
+    function startMatchSimulation() {
+      if (matchInterval) return;
+
+      const starters = gameState.squad.filter(p => p.starter);
+      if (starters.length < 11) {
+        alert("Musisz mieć 11 zawodników w wyjściowym składzie, aby rozegrać mecz!");
+        return;
+      }
+
+      matchInterval = setInterval(matchTick, matchSpeed);
+    }
+
+    function setMatchSpeed(multiplier) {
+      matchSpeed = 1000 / multiplier;
+      if (matchInterval) {
+        clearInterval(matchInterval);
+        matchInterval = setInterval(matchTick, matchSpeed);
+      }
+    }
+
+    function matchTick() {
+      matchTime++;
+      document.getElementById("match-timer").innerText = `${matchTime}'`;
+
+      // Random Match Events
+      if (Math.random() < 0.08) {
+        const isHome = Math.random() < 0.55; // Home advantage
+        if (isHome) {
+          homeScore++;
+          const scorer = gameState.squad.filter(p => p.starter)[getRandomInt(0, 10)].name;
+          addMatchLog(`⚽ GOOOOOOL! ${scorer} strzela dla ${gameState.playerClub}!`, 'goal');
+        } else {
+          awayScore++;
+          addMatchLog(`⚽ BRAMKA! ${currentOpponent} zdobywa gola!`, 'goal');
+        }
+        document.getElementById("match-score").innerText = `${homeScore} - ${awayScore}`;
+      } else if (Math.random() < 0.05) {
+        addMatchLog(`🟨 Żółta kartka za faul w środku pola.`);
+      }
+
+      if (matchTime >= 90) {
+        finishMatch();
+      }
+    }
+
+    function instantFinishMatch() {
+      if (!matchInterval) startMatchSimulation();
+      while (matchTime < 90) {
+        matchTick();
+      }
+    }
+
+    function addMatchLog(text, type = '') {
+      const box = document.getElementById("match-log-box");
+      const div = document.createElement("div");
+      div.className = `log-item ${type}`;
+      div.innerText = `[${matchTime}'] ${text}`;
+      box.insertBefore(div, box.firstChild);
+    }
+
+    function finishMatch() {
+      clearInterval(matchInterval);
+      matchInterval = null;
+      addMatchLog(`🏁 Koniec meczu! Wynik końcowy: ${homeScore} - ${awayScore}.`);
+
+      // Financial rewards & Attendance
+      const attendance = Math.min(gameState.stadiumCapacity, getRandomInt(Math.round(gameState.stadiumCapacity * 0.6), gameState.stadiumCapacity));
+      const gateIncome = attendance * gameState.ticketPrice;
+      const totalWages = gameState.squad.reduce((acc, p) => acc + p.wage, 0);
+
+      gameState.budget += gateIncome;
+      gameState.budget -= totalWages;
+
+      // Update League Table
+      const table = gameState.leagueTables[gameState.playerLeagueKey];
+      const pTeam = table.find(t => t.name === gameState.playerClub);
+      const oTeam = table.find(t => t.name === currentOpponent);
+
+      if (pTeam && oTeam) {
+        pTeam.played++;
+        oTeam.played++;
+        pTeam.gf += homeScore;
+        pTeam.ga += awayScore;
+        oTeam.gf += awayScore;
+        oTeam.ga += homeScore;
+
+        if (homeScore > awayScore) {
+          pTeam.won++; pTeam.pts += 3; oTeam.lost++;
+        } else if (homeScore === awayScore) {
+          pTeam.drawn++; pTeam.pts += 1; oTeam.drawn++; oTeam.pts += 1;
+        } else {
+          pTeam.lost++; oTeam.won++; oTeam.pts += 3;
+        }
+      }
+
+      // Simulate other league matches
+      table.forEach(t => {
+        if (t.name !== gameState.playerClub && t.name !== currentOpponent) {
+          const g1 = getRandomInt(0, 3);
+          const g2 = getRandomInt(0, 3);
+          t.played++; t.gf += g1; t.ga += g2;
+          if (g1 > g2) { t.won++; t.pts += 3; }
+          else if (g1 === g2) { t.drawn++; t.pts += 1; }
+          else { t.lost++; }
+        }
+      });
+
+      gameState.round++;
+      updateHeader();
+    }
+
+    // Initialize Setup on start
+    window.onload = initSetup;
+  </script>
+</body>
+</html>
