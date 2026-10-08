@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Avenue — Web3 Billboard City</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Ethers.js v6 CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .grid-canvas {
+            display: grid;
+            grid-template-columns: repeat(10, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .plot-card {
+            aspect-ratio: 1 / 1;
+            transition: all 0.2s ease-in-out;
+        }
+        .plot-card:hover {
+            transform: translateY(-3px) scale(1.03);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-tr from-indigo-500 to-purple-500 p-2.5 rounded-xl shadow-lg shadow-indigo-500/20">
+                <i class="fa-solid fa-city text-2xl text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-xl tracking-wide bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">CRYPTO AVENUE</h1>
+                <p class="text-xs text-slate-400">On-Chain Decentralized Advertising Grid</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <div class="hidden md:flex bg-slate-800/80 rounded-xl px-4 py-2 border border-slate-700 text-xs space-x-4">
+                <div><span class="text-slate-400">Cena działki:</span> <strong id="display-price" class="text-indigo-400">0.005 ETH</strong></div>
+                <div class="border-r border-slate-700"></div>
+                <div><span class="text-slate-400">Sprzedano:</span> <strong id="sold-count" class="text-purple-400">0 / 100</strong></div>
+            </div>
+            <button id="connect-btn" onclick="connectWallet()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center space-x-2">
+                <i class="fa-solid fa-wallet"></i>
+                <span id="wallet-text">Podłącz Portfel</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Section -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col items-center">
+        
+        <!-- Hero Section -->
+        <div class="text-center my-6 max-w-2xl">
+            <h2 class="text-3xl font-extrabold sm:text-4xl leading-tight">Wykup budynek na własność i promuj swój projekt Web3</h2>
+            <p class="text-slate-400 mt-2 text-sm">Wybierz wolną działkę z siatki, połącz swój portfel i zapisz reklamę bezpośrednio w blockchainie.</p>
+        </div>
+
+        <!-- Interactive Grid -->
+        <div id="grid-container" class="grid-canvas w-full max-w-5xl bg-slate-900/60 p-5 rounded-2xl border border-slate-800 shadow-2xl backdrop-blur">
+            <!-- Dynamicznie ładowane działki -->
+        </div>
+
+    </main>
+
+    <!-- Modal (Zakup / Podgląd) -->
+    <div id="modal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            
+            <h3 id="modal-title" class="text-xl font-bold text-indigo-400 mb-4">Działka #0</h3>
+
+            <!-- Formularz zakupu -->
+            <form id="buy-form" onsubmit="handleBuy(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Nazwa projektu / Firmy</label>
+                    <input type="text" id="input-title" required placeholder="np. Uniswap / My Crypto Project" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">URL Grafiki (Logo / Banner)</label>
+                    <input type="url" id="input-image" required placeholder="https://domena.pl/logo.png" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Link Docelowy (URL Strony)</label>
+                    <input type="url" id="input-url" required placeholder="https://moj-projekt.io" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white">
+                </div>
+
+                <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50 text-xs flex justify-between items-center">
+                    <span class="text-slate-400">Koszt zakupu:</span>
+                    <span id="form-price" class="font-bold text-emerald-400 text-sm">0.005 ETH</span>
+                </div>
+
+                <button type="submit" id="submit-buy-btn" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold py-3 rounded-xl shadow-lg transition">
+                    Kup Działkę (Transakcja Web3)
+                </button>
+            </form>
+
+            <!-- Podgląd zajętej działki -->
+            <div id="occupied-view" class="hidden space-y-4">
+                <img id="view-image" src="" alt="Banner" class="w-full h-44 object-contain rounded-xl border border-slate-800 bg-slate-950/50 p-2">
+                <div>
+                    <p class="text-xs text-slate-400">Właściciel działki:</p>
+                    <p id="view-owner" class="text-xs font-mono text-indigo-300 truncate bg-slate-800 p-2 rounded-lg border border-slate-700 mt-1"></p>
+                </div>
+                <a id="view-link" href="#" target="_blank" class="block text-center w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
+                    Odwiedź Stronę <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-xs"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURACJA BLOCKCHAIN ---
+        // Wklej tu adres po wdrożeniu kontraktu w Remix (np. na Base Sepolia)
+        const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000"; 
+        
+        const ABI = [
+            "function buyPlot(uint256 plotId, string title, string imageURI, string targetUrl) external payable",
+            "function getAllPlots() external view returns (tuple(address owner, string title, string imageURI, string targetUrl, uint256 pricePaid)[])",
+            "function plotPrice() external view returns (uint256)"
+        ];
+
+        const TOTAL_PLOTS = 100;
+        let provider, signer, contract;
+        let userAccount = null;
+        let selectedPlotId = null;
+
+        // Dane demonstracyjne (gdy kontrakt nie jest jeszcze podłączony)
+        let plotsData = Array(TOTAL_PLOTS).fill(null);
+        plotsData[0] = {
+            owner: "0x71C7656EC7ab88b098defB751B7401B5f6d89A23",
+            title: "Ethereum Foundation",
+            imageURI: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+            targetUrl: "https://ethereum.org"
+        };
+
+        // Renderowanie siatki budynków
+        function renderGrid() {
+            const container = document.getElementById('grid-container');
+            container.innerHTML = '';
+            let soldCount = 0;
+
+            for (let i = 0; i < TOTAL_PLOTS; i++) {
+                const plot = plotsData[i];
+                const card = document.createElement('div');
+                
+                if (plot && plot.owner !== "0x0000000000000000000000000000000000000000") {
+                    soldCount++;
+                    card.className = "plot-card rounded-xl border border-indigo-500/40 bg-slate-800/80 hover:border-indigo-400 cursor-pointer relative overflow-hidden flex items-center justify-center p-1.5 shadow-md";
+                    card.innerHTML = `
+                        <img src="${plot.imageURI}" class="w-full h-full object-contain" alt="${plot.title}">
+                        <div class="absolute inset-0 bg-slate-950/80 opacity-0 hover:opacity-100 transition flex items-center justify-center p-1 text-center">
+                            <span class="text-[11px] font-bold text-white truncate">${plot.title}</span>
+                        </div>
+                    `;
+                } else {
+                    card.className = "plot-card rounded-xl border border-slate-800 bg-slate-900/60 hover:border-slate-600 cursor-pointer flex flex-col items-center justify-center p-2";
+                    card.innerHTML = `
+                        <i class="fa-solid fa-plus text-slate-600 text-xs mb-1"></i>
+                        <span class="text-[10px] text-slate-500 font-mono">#${i}</span>
+                    `;
+                }
+
+                card.onclick = () => openModal(i);
+                container.appendChild(card);
+            }
+
+            document.getElementById('sold-count').innerText = `${soldCount} / ${TOTAL_PLOTS}`;
+        }
+
+        // Podłączanie portfela Web3
+        async function connectWallet() {
+            if (window.ethereum) {
+                try {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    const accounts = await provider.send("eth_requestAccounts", []);
+                    signer = await provider.getSigner();
+                    userAccount = accounts[0];
+
+                    document.getElementById('wallet-text').innerText = `${userAccount.substring(0, 6)}...${userAccount.substring(userAccount.length - 4)}`;
+                    document.getElementById('connect-btn').classList.replace('bg-indigo-600', 'bg-emerald-600');
+
+                    if (CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000") {
+                        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+                        await loadContractData();
+                    }
+                } catch (err) {
+                    console.error("Błąd połączenia:", err);
+                    alert("Nie udało się połączyć z portfelem.");
+                }
+            } else {
+                alert("Nie wykryto portfela Web3. Zainstaluj MetaMask!");
+            }
+        }
+
+        // Ładowanie danych z blockchaina
+        async function loadContractData() {
+            try {
+                const chainPlots = await contract.getAllPlots();
+                for (let i = 0; i < TOTAL_PLOTS; i++) {
+                    if (chainPlots[i].owner !== "0x0000000000000000000000000000000000000000") {
+                        plotsData[i] = {
+                            owner: chainPlots[i].owner,
+                            title: chainPlots[i].title,
+                            imageURI: chainPlots[i].imageURI,
+                            targetUrl: chainPlots[i].targetUrl
+                        };
+                    }
+                }
+                renderGrid();
+            } catch (e) {
+                console.error("Błąd podczas odczytu danych z kontraktu:", e);
+            }
+        }
+
+        // Obsługa Okna Modala
+        function openModal(plotId) {
+            selectedPlotId = plotId;
+            document.getElementById('modal-title').innerText = `Działka Reklamowa #${plotId}`;
+            const plot = plotsData[plotId];
+
+            if (plot && plot.owner !== "0x0000000000000000000000000000000000000000") {
+                document.getElementById('buy-form').classList.add('hidden');
+                document.getElementById('occupied-view').classList.remove('hidden');
+                document.getElementById('view-image').src = plot.imageURI;
+                document.getElementById('view-owner').innerText = plot.owner;
+                document.getElementById('view-link').href = plot.targetUrl;
+            } else {
+                document.getElementById('buy-form').classList.remove('hidden');
+                document.getElementById('occupied-view').classList.add('hidden');
+            }
+
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        // Zakup Działki
+        async function handleBuy(e) {
+            e.preventDefault();
+
+            const title = document.getElementById('input-title').value;
+            const image = document.getElementById('input-image').value;
+            const url = document.getElementById('input-url').value;
+
+            if (!userAccount) {
+                alert("Najpierw podłącz swój portfel Web3!");
+                return;
+            }
+
+            if (contract) {
+                try {
+                    const price = await contract.plotPrice();
+                    const tx = await contract.buyPlot(selectedPlotId, title, image, url, { value: price });
+                    alert("Transakcja wysłana! Czekam na potwierdzenie bloku...");
+                    await tx.wait();
+                    alert("Transakcja potwierdzona!");
+                    await loadContractData();
+                    closeModal();
+                } catch (err) {
+                    console.error("Błąd transakcji:", err);
+                    alert("Transakcja odrzucona lub wystąpił błąd.");
+                }
+            } else {
+                // Tryb symulacyjny (dla testów bez wdrożonego kontraktu)
+                plotsData[selectedPlotId] = {
+                    owner: userAccount,
+                    title: title,
+                    imageURI: image,
+                    targetUrl: url
+                };
+                alert(`[TRYB TESTOWY] Wykupiono działkę #${selectedPlotId}!`);
+                closeModal();
+                renderGrid();
+            }
+        }
+
+        // Inicjalizacja przy ładowaniu strony
+        renderGrid();
+    </script>
+</body>
+</html>
